@@ -1,0 +1,35 @@
+PROJET : Refonte Visuelle & UX Complète d'un jeu Mobile 3D/2.5D (Style Clash / Auto-clicker à la 3ème personne)
+
+CONTEXTE & DIAGNOSTIC DU REPO :
+Je te fournis le ZIP complet du projet. 
+Après inspection du repo, voici l'état des lieux :
+- BONNE INFRASTRUCTURE : Vite + TypeScript + Three.js + Rapier3D + Capacitor. La configuration de build mobile est déjà en place.
+- GROS PROBLÈME VISUEL : Le projet actuel utilise un système de sprites/textures 2D bakées à plat (scripts Python dans /art/) posées dans la scène 3D. C'est ce qui rend le jeu moche, rigide, mal animé et daté.
+
+CONSIGNE STRATÉGIQUE (LIBERTÉ TOTALE À L'IA) :
+Tu es le Lead Developer & Lead DA. Tu as CARTA BLANCA pour choisir la meilleure stratégie d'ingénierie :
+1. Conservations intelligentes : Réutilise le setup Vite/Capacitor, la boucle de jeu et la physique Rapier3D si cela accélère le développement.
+2. Refonte visuelle totale : SUPPRIME ou IGNORER le système de spritesheets/bakes 2D actuels. Bascule sur de la VRAIE 3D stylisée (soit via des modèles GLTF Low-Poly animés, soit via des meshs Three.js procéduraux avec de superbes shaders, couleurs et ombres).
+3. Si tu penses que repartir d'un canvas Three.js totalement propre est plus rapide et plus sain que de nettoyer l'existant, FAIS-LE.
+
+CAHIER DES CHARGES VISUEL & ERGONOMIQUE (Normes iPhone / iOS) :
+
+1. DIRECTION ARTISTIQUE (Mobile Stylized Cartoon) :
+- Ambiance visuelle vibrante et moderne (style Clash of Clans / Archero / My Little Universe).
+- Vraie 3D avec éclairage directionnel doux, ombres portées (soft shadows), ambient occlusion et effet de bloom/post-processing léger pour donner du "juice".
+- Animations organiques du héros et des bâtiments (effets de squash & stretch au drop/construction, particules pop, animations de saut/marche fluides).
+
+2. UX/UI & CONTRÔLES MOBILE-FIRST :
+- Caméra : Vue 3ème personne / Isométrique 2.5D fluide qui suit le héros (damped follow camera).
+- Contrôles : Joystick virtuel tactile ultra-réactif (Dynamic Virtual Joystick) pensé pour une prise en main à une main ou deux pouces sur iPhone.
+- Safe Areas : Respect impératif des marges iOS (Dynamic Island, encoches, barre d'accueil bas).
+- Interface Juicy : Boutons tactiles stylisés (Flat 3D avec effet d'enfoncement), jauges de ressources animées, retour visuel/sonore instantané sur chaque tap.
+
+3. BOUCLE DE GAMEPLAY & MONÉTISATION (Auto-Clicker & Micro-transactions) :
+- Mécanique d'interaction : Le héros se déplace près d'un emplacement -> transfert dynamique de ressources (pièces/bois qui volent du joueur vers le chantier) pour construire/améliorer le village.
+- Monétisation incitative : Interface UI pensée pour la conversion (boutons de boost "Accélérer", pop-ups d'offres flash dorées/brillantes, boutique de gemmes/skins fluide et attrayante).
+
+INSTRUCTIONS DE DÉMARRAGE POUR REPLIT :
+1. Analyse la structure du repo ZIP.
+2. Choisis ta stratégie (Nettoyage + Refonte 3D OU Reconstruction propre sur l'infra existante).
+3. Propose-moi un résumé court de ton plan, puis implémente directement le prototype fonctionnel de la nouvelle version (Héros 3D animé + Contrôles Joystick + Scène stylisée + UI moderne).
