@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { Ground } from './scene/Ground';
 import { Hero } from './scene/Hero';
+import { Villagers } from './scene/Villagers';
 import { ResourceNodes } from './scene/ResourceNodes';
 import { Buildings } from './scene/Buildings';
 import { Enemies } from './scene/Enemies';
@@ -48,25 +49,30 @@ export function GameCanvas() {
       <Canvas shadows dpr={[1, 2]}>
         <color attach="background" args={['#0d1117']} />
         
-        <ambientLight intensity={0.2} />
+        {/* Warmer key light and softer ambient as requested */}
+        <ambientLight intensity={0.45} color="#b8c4ff" />
         <directionalLight 
           position={[10, 20, 10]} 
-          intensity={0.5} 
+          intensity={1.4} 
+          color="#fff2dd"
           castShadow 
           shadow-mapSize={[1024, 1024]}
         />
+        <pointLight position={[0, 5, 0]} intensity={0.3} color="#ffebc8" />
 
         <Camera />
         <Stars />
         <Ground />
         <Hero />
+        <Villagers />
         <ResourceNodes />
         <Buildings />
         <CrystalCore />
         <Enemies />
 
+        {/* Enhanced bloom for glowing emissive materials */}
         <EffectComposer>
-          <Bloom luminanceThreshold={0.5} intensity={1.5} />
+          <Bloom luminanceThreshold={0.45} mipmapBlur intensity={1.6} />
           <Vignette eskil={false} offset={0.1} darkness={1.1} />
         </EffectComposer>
       </Canvas>

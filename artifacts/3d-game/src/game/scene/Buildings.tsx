@@ -1,9 +1,12 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from '../store';
-import { useToonGradient } from './utils';
-import { Html } from '@react-three/drei';
+import { useToonGradient, enemyPositions } from './utils';
+import { Html, RoundedBox } from '@react-three/drei';
+
+// Scratch vector reused across frames — never allocate inside useFrame.
+const _ePos = new THREE.Vector3();
 
 type BuildingProps = {
   id: string;
@@ -24,26 +27,23 @@ export function Buildings() {
   );
 }
 
-// Reusable Base Building Component for common logic
-function BuildingWrapper({ id, pos, color, children, onTarget }: BuildingProps & { children: React.ReactNode, onTarget?: (target: THREE.Vector3 | null) => void }) {
+// Reusable Base Building Component
+function BuildingWrapper({ id, pos, color, children }: BuildingProps & { children: React.ReactNode }) {
   const level = useGameStore(state => state.buildingLevels[id] || 0);
   const selectBuilding = useGameStore(state => state.selectBuilding);
   const groupRef = useRef<THREE.Group>(null);
   
-  // Spring animation state
   const [scale, setScale] = useState(0);
-  const targetScale = level > 0 ? 1 : 1; // Plot is also scale 1
+  const targetScale = level > 0 ? 1 : 1; 
   const animRef = useRef({ vel: 0, scale: 0 });
 
   useEffect(() => {
-    // Trigger bounce on level change
     animRef.current.scale = 0;
     animRef.current.vel = 0.2;
   }, [level]);
 
   useFrame((_, delta) => {
     if (groupRef.current) {
-      // Spring physics
       const spring = (targetScale - animRef.current.scale) * 15;
       const damper = animRef.current.vel * 5;
       animRef.current.vel += (spring - damper) * delta;
@@ -54,22 +54,36 @@ function BuildingWrapper({ id, pos, color, children, onTarget }: BuildingProps &
     }
   });
 
+  const gradientMap = useToonGradient();
+
   return (
     <group position={pos}>
       {level === 0 ? (
-        <mesh 
-          position={[0, 0.05, 0]} 
-          rotation={[-Math.PI / 2, 0, 0]} 
+        <group 
           onPointerDown={(e) => { e.stopPropagation(); selectBuilding(id); }}
         >
-          <cylinderGeometry args={[1.2, 1.2, 0.1, 32]} />
-          <meshBasicMaterial color={color} wireframe transparent opacity={0.5} />
-          <Html position={[0, 0, 0]} center transform style={{ pointerEvents: 'none' }}>
+          {/* Rounded Dirt Mound */}
+          <mesh position={[0, 0.1, 0]} scale={[1, 0.3, 1]} receiveShadow>
+            <sphereGeometry args={[1.2, 24, 24]} />
+            <meshToonMaterial color="#6b4c3a" gradientMap={gradientMap} />
+          </mesh>
+          {/* Wooden Sign */}
+          <group position={[0, 0.4, 0]}>
+            <mesh castShadow>
+              <cylinderGeometry args={[0.05, 0.05, 0.8]} />
+              <meshToonMaterial color="#8a6343" gradientMap={gradientMap} />
+            </mesh>
+            <mesh position={[0, 0.2, 0.05]} castShadow>
+              <RoundedBox args={[0.8, 0.4, 0.1]} radius={0.05} />
+              <meshToonMaterial color="#c29d72" gradientMap={gradientMap} />
+            </mesh>
+          </group>
+          <Html position={[0, 0.6, 0.1]} center transform style={{ pointerEvents: 'none' }}>
             <div className="px-2 py-1 bg-black/60 rounded backdrop-blur text-white text-xs font-bold uppercase tracking-wider" style={{ color }}>
               Build
             </div>
           </Html>
-        </mesh>
+        </group>
       ) : (
         <group 
           ref={groupRef}
@@ -84,23 +98,55 @@ function BuildingWrapper({ id, pos, color, children, onTarget }: BuildingProps &
 
 function BuildingHutte(props: BuildingProps) {
   const gradientMap = useToonGradient();
+  
+  const roofProfile = useMemo(() => [
+    new THREE.Vector2(0, 0.8),
+    new THREE.Vector2(0.5, 0.75),
+    new THREE.Vector2(0.85, 0.5),
+    new THREE.Vector2(1.1, 0.1),
+    new THREE.Vector2(1.2, -0.1),
+    new THREE.Vector2(1.1, -0.2),
+    new THREE.Vector2(0.9, -0.1),
+    new THREE.Vector2(0.8, 0)
+  ], []);
+
+  const baseProfile = useMemo(() => [
+    new THREE.Vector2(0, 0),
+    new THREE.Vector2(0.8, 0),
+    new THREE.Vector2(0.95, 0.3),
+    new THREE.Vector2(0.85, 0.6),
+    new THREE.Vector2(0.75, 0.8)
+  ], []);
+
   return (
     <BuildingWrapper {...props}>
-      <mesh position={[0, 0.3, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.8, 0.8, 0.6, 16]} />
+      <mesh position={[0, 0, 0]} castShadow receiveShadow>
+        <latheGeometry args={[baseProfile, 32]} />
+        <meshToonMaterial color="#fff2df" gradientMap={gradientMap} />
+      </mesh>
+      
+      <mesh position={[0, 0.7, 0]} castShadow>
+        <latheGeometry args={[roofProfile, 32]} />
         <meshToonMaterial color={props.color} gradientMap={gradientMap} />
+        {/* Spots */}
+        <mesh position={[0.6, 0.4, 0.6]} scale={[1, 0.2, 1]} rotation={[0.5, -0.5, 0]}>
+          <sphereGeometry args={[0.2, 16, 16]} />
+          <meshToonMaterial color="#fff2df" gradientMap={gradientMap} />
+        </mesh>
+        <mesh position={[-0.7, 0.3, 0.4]} scale={[1, 0.2, 1]} rotation={[0.4, 0.5, 0]}>
+          <sphereGeometry args={[0.15, 16, 16]} />
+          <meshToonMaterial color="#fff2df" gradientMap={gradientMap} />
+        </mesh>
+        <mesh position={[0, 0.6, -0.8]} scale={[1, 0.2, 1]} rotation={[-0.5, 0, 0]}>
+          <sphereGeometry args={[0.25, 16, 16]} />
+          <meshToonMaterial color="#fff2df" gradientMap={gradientMap} />
+        </mesh>
       </mesh>
-      <mesh position={[0, 0.6, 0]} castShadow>
-        <sphereGeometry args={[0.78, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshToonMaterial color={props.color} gradientMap={gradientMap} />
-      </mesh>
-      <mesh position={[-0.3, 0.3, 0.75]} castShadow>
-        <boxGeometry args={[0.2, 0.2, 0.1]} />
-        <meshBasicMaterial color="#ffffaa" />
-      </mesh>
-      <mesh position={[0.3, 0.3, 0.75]} castShadow>
-        <boxGeometry args={[0.2, 0.2, 0.1]} />
-        <meshBasicMaterial color="#ffffaa" />
+      
+      {/* Door */}
+      <mesh position={[0, 0.25, 0.9]} rotation={[0.1, 0, 0]} scale={[1, 1.2, 1]}>
+        <sphereGeometry args={[0.25, 16, 16, 0, Math.PI * 2, 0, Math.PI/2]} />
+        <meshToonMaterial color="#a06a45" gradientMap={gradientMap} />
       </mesh>
     </BuildingWrapper>
   );
@@ -110,37 +156,90 @@ function BuildingFerme(props: BuildingProps) {
   const gradientMap = useToonGradient();
   return (
     <BuildingWrapper {...props}>
-      <mesh position={[0, 0.5, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.5, 1, 1]} />
-        <meshToonMaterial color={props.color} gradientMap={gradientMap} />
+      {/* Bed Base */}
+      <mesh position={[0, 0.2, 0]} castShadow receiveShadow>
+        <RoundedBox args={[1.8, 0.4, 1.8]} radius={0.1} />
+        <meshToonMaterial color="#7a5c47" gradientMap={gradientMap} />
       </mesh>
-      <mesh position={[0, 1.4, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
-        <coneGeometry args={[1.2, 0.8, 4]} />
-        <meshToonMaterial color="#2d6a4f" gradientMap={gradientMap} />
+      
+      {/* Glass Dome */}
+      <mesh position={[0, 0.4, 0]} castShadow>
+        <sphereGeometry args={[0.9, 24, 24, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#bff0d4" transparent opacity={0.3} roughness={0.1} />
       </mesh>
-      <pointLight position={[0, 1, 0]} color={props.color} intensity={0.6} distance={4} />
+      
+      {/* Inside Sprouts */}
+      <group position={[0, 0.4, 0]}>
+        <mesh position={[0, 0, 0]} scale={[0.5, 1, 0.5]}>
+          <sphereGeometry args={[0.2, 16, 16]} />
+          <meshToonMaterial color={props.color} gradientMap={gradientMap} />
+        </mesh>
+        <mesh position={[0.3, 0, 0.3]} scale={[0.4, 0.8, 0.4]}>
+          <sphereGeometry args={[0.2, 16, 16]} />
+          <meshToonMaterial color={props.color} gradientMap={gradientMap} />
+        </mesh>
+        <mesh position={[-0.3, 0, -0.2]} scale={[0.6, 1.2, 0.6]}>
+          <sphereGeometry args={[0.2, 16, 16]} />
+          <meshToonMaterial color={props.color} gradientMap={gradientMap} />
+        </mesh>
+      </group>
+      
+      <pointLight position={[0, 0.8, 0]} color={props.color} intensity={0.6} distance={4} />
     </BuildingWrapper>
   );
 }
 
 function BuildingBar(props: BuildingProps) {
   const gradientMap = useToonGradient();
+  
+  const barrelProfile = useMemo(() => [
+    new THREE.Vector2(0, 0),
+    new THREE.Vector2(0.8, 0),
+    new THREE.Vector2(1.0, 0.5),
+    new THREE.Vector2(0.8, 1.0),
+    new THREE.Vector2(0, 1.0)
+  ], []);
+
   return (
     <BuildingWrapper {...props}>
-      <mesh position={[0, 0.4, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.8, 0.8, 1.2]} />
+      <mesh position={[0, 0, 0]} castShadow receiveShadow>
+        <latheGeometry args={[barrelProfile, 32]} />
         <meshToonMaterial color={props.color} gradientMap={gradientMap} />
       </mesh>
-      <mesh position={[0, 0.85, 0.2]} castShadow>
-        <boxGeometry args={[2.2, 0.1, 1.5]} />
-        <meshToonMaterial color="#3d405b" gradientMap={gradientMap} />
-      </mesh>
-      {/* Neon sign */}
-      <mesh position={[0, 1, 0.8]}>
-        <boxGeometry args={[1, 0.3, 0.1]} />
+      
+      {/* Scalloped Awning */}
+      <group position={[0, 0.9, 0.9]}>
+        {[-0.6, -0.2, 0.2, 0.6].map((x, i) => (
+          <mesh key={i} position={[x, 0, 0]} rotation={[0.4, 0, 0]}>
+            <cylinderGeometry args={[0.2, 0.2, 0.8, 16, 1, false, 0, Math.PI]} />
+            <meshToonMaterial color={i % 2 === 0 ? props.color : "#fff2df"} gradientMap={gradientMap} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* Neon Sign */}
+      <mesh position={[0, 1.4, 0.8]} rotation={[0, 0, 0]}>
+        <torusGeometry args={[0.3, 0.05, 16, 32]} />
         <meshBasicMaterial color="#ff69b4" />
       </mesh>
-      <pointLight position={[0, 0.5, 1]} color="#ff69b4" intensity={0.8} distance={5} />
+      <mesh position={[0, 1.4, 0.8]}>
+        <cylinderGeometry args={[0.25, 0.25, 0.02, 32]} />
+        <meshBasicMaterial color="#ff1493" transparent opacity={0.6} />
+      </mesh>
+      
+      {/* Stools */}
+      <group position={[-0.8, 0, 1.2]}>
+        <mesh position={[0, 0.15, 0]} castShadow>
+          <cylinderGeometry args={[0.05, 0.05, 0.3]} />
+          <meshToonMaterial color="#555" gradientMap={gradientMap} />
+        </mesh>
+        <mesh position={[0, 0.3, 0]} scale={[1, 0.5, 1]} castShadow>
+          <sphereGeometry args={[0.2, 16, 16]} />
+          <meshToonMaterial color="#fff2df" gradientMap={gradientMap} />
+        </mesh>
+      </group>
+      
+      <pointLight position={[0, 1, 1]} color="#ff69b4" intensity={0.8} distance={5} />
     </BuildingWrapper>
   );
 }
@@ -150,9 +249,18 @@ function BuildingAntenne(props: BuildingProps) {
   const lightRef = useRef<THREE.PointLight>(null);
   const dishRef = useRef<THREE.Group>(null);
   
+  const spireProfile = useMemo(() => [
+    new THREE.Vector2(0, 0),
+    new THREE.Vector2(0.5, 0),
+    new THREE.Vector2(0.35, 0.8),
+    new THREE.Vector2(0.2, 1.8),
+    new THREE.Vector2(0.05, 2.5),
+    new THREE.Vector2(0, 2.5)
+  ], []);
+
   useFrame(({ clock }) => {
     if (lightRef.current) {
-      lightRef.current.intensity = Math.abs(Math.sin(clock.elapsedTime * 3));
+      lightRef.current.intensity = Math.abs(Math.sin(clock.elapsedTime * 3)) * 2;
     }
     if (dishRef.current) {
       dishRef.current.rotation.y = clock.elapsedTime * 0.5;
@@ -162,21 +270,37 @@ function BuildingAntenne(props: BuildingProps) {
 
   return (
     <BuildingWrapper {...props}>
-      <mesh position={[0, 1.25, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.12, 0.12, 2.5]} />
-        <meshToonMaterial color={props.color} gradientMap={gradientMap} />
+      <mesh position={[0, 0, 0]} castShadow receiveShadow>
+        <latheGeometry args={[spireProfile, 32]} />
+        <meshToonMaterial color="#f8f9fa" gradientMap={gradientMap} />
       </mesh>
-      <group ref={dishRef} position={[0, 2.5, 0]}>
-        <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
-          <torusGeometry args={[0.4, 0.05, 8, 16]} />
+      
+      {/* Fins */}
+      {[0, (Math.PI*2)/3, (Math.PI*4)/3].map((angle, i) => (
+        <mesh key={i} position={[Math.cos(angle)*0.4, 0.4, Math.sin(angle)*0.4]} rotation={[0, -angle + Math.PI/2, 0.2]}>
+          <RoundedBox args={[0.1, 0.8, 0.6]} radius={0.05} />
           <meshToonMaterial color={props.color} gradientMap={gradientMap} />
         </mesh>
-        <mesh position={[0, 0, 0.2]}>
-          <sphereGeometry args={[0.08]} />
-          <meshBasicMaterial color="#ff0000" />
+      ))}
+
+      {/* Dish */}
+      <group ref={dishRef} position={[0, 2.5, 0]}>
+        <mesh position={[0, -0.1, 0]} castShadow>
+          <sphereGeometry args={[0.15, 16, 16]} />
+          <meshToonMaterial color="#666" gradientMap={gradientMap} />
         </mesh>
+        <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0.1, 0]} castShadow>
+          <latheGeometry args={[
+            [new THREE.Vector2(0,-0.1), new THREE.Vector2(0.4,0), new THREE.Vector2(0.45, 0.1)], 32
+          ]} />
+          <meshToonMaterial color={props.color} gradientMap={gradientMap} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh position={[0, 0.3, 0]}>
+          <sphereGeometry args={[0.08]} />
+          <meshStandardMaterial emissive="#ff0000" emissiveIntensity={2} color="#ff0000" />
+        </mesh>
+        <pointLight ref={lightRef} position={[0, 0.4, 0]} color="#ff0000" distance={5} />
       </group>
-      <pointLight ref={lightRef} position={[0, 2.7, 0]} color="#ff0000" distance={5} />
     </BuildingWrapper>
   );
 }
@@ -185,15 +309,43 @@ function BuildingMarche(props: BuildingProps) {
   const gradientMap = useToonGradient();
   return (
     <BuildingWrapper {...props}>
-      <mesh position={[0, 0.35, 0]} castShadow receiveShadow>
-        <boxGeometry args={[2, 0.7, 1.4]} />
+      <mesh position={[0, 0.3, 0]} castShadow receiveShadow>
+        <RoundedBox args={[2.2, 0.6, 1.4]} radius={0.2} />
         <meshToonMaterial color={props.color} gradientMap={gradientMap} />
       </mesh>
-      <mesh position={[0, 0.74, 0.2]} rotation={[0.1, 0, 0]} castShadow>
-        <boxGeometry args={[2.4, 0.08, 1.8]} />
-        <meshToonMaterial color="#ffd24c" gradientMap={gradientMap} />
-      </mesh>
-      <pointLight position={[0, 0.5, 1]} color="#ffd24c" intensity={0.7} distance={5} />
+      
+      {/* Awning */}
+      <group position={[0, 0.8, 0.4]} rotation={[0.2, 0, 0]}>
+        {[-0.9, -0.3, 0.3, 0.9].map((x, i) => (
+          <mesh key={i} position={[x, 0, 0]}>
+            <cylinderGeometry args={[0.3, 0.3, 1.6, 16, 1, false, 0, Math.PI]} />
+            <meshToonMaterial color={i % 2 === 0 ? props.color : "#fff2df"} gradientMap={gradientMap} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* Crates & Fruits */}
+      <group position={[0.4, 0.6, 0.4]}>
+        <mesh castShadow>
+          <RoundedBox args={[0.5, 0.2, 0.4]} radius={0.05} />
+          <meshToonMaterial color="#8a6343" gradientMap={gradientMap} />
+        </mesh>
+        <mesh position={[-0.1, 0.15, -0.05]}><sphereGeometry args={[0.08, 8, 8]}/><meshToonMaterial color="#ff4d6d"/></mesh>
+        <mesh position={[0.1, 0.15, 0.05]}><sphereGeometry args={[0.08, 8, 8]}/><meshToonMaterial color="#ff4d6d"/></mesh>
+        <mesh position={[0.0, 0.2, 0.0]}><sphereGeometry args={[0.08, 8, 8]}/><meshToonMaterial color="#ff4d6d"/></mesh>
+      </group>
+
+      <group position={[-0.4, 0.6, 0.4]}>
+        <mesh castShadow>
+          <RoundedBox args={[0.5, 0.2, 0.4]} radius={0.05} />
+          <meshToonMaterial color="#8a6343" gradientMap={gradientMap} />
+        </mesh>
+        <mesh position={[-0.1, 0.15, 0.05]}><sphereGeometry args={[0.08, 8, 8]}/><meshToonMaterial color="#8338ec"/></mesh>
+        <mesh position={[0.1, 0.15, -0.05]}><sphereGeometry args={[0.08, 8, 8]}/><meshToonMaterial color="#8338ec"/></mesh>
+        <mesh position={[0.0, 0.2, 0.0]}><sphereGeometry args={[0.08, 8, 8]}/><meshToonMaterial color="#8338ec"/></mesh>
+      </group>
+      
+      <pointLight position={[0, 0.6, 1]} color="#ffd24c" intensity={0.7} distance={5} />
     </BuildingWrapper>
   );
 }
@@ -203,9 +355,9 @@ function BuildingTourelle(props: BuildingProps) {
   const barrelRef = useRef<THREE.Group>(null);
   const beamRef = useRef<THREE.Mesh>(null);
   
-  const [targetPos, setTargetPos] = useState<THREE.Vector3 | null>(null);
-
   const level = useGameStore(state => state.buildingLevels['tourelle'] || 0);
+  const dmgAcc = useRef(0);
+  const tickTimer = useRef(0);
 
   useFrame(({ clock }, delta) => {
     if (level === 0) return;
@@ -218,12 +370,16 @@ function BuildingTourelle(props: BuildingProps) {
     let nearestEnemy = null;
     
     if (waveActive) {
-      // Find nearest enemy
       for (const enemy of enemies) {
         if (enemy.hp <= 0) continue;
-        const dx = enemy.pos[0] - props.pos[0];
-        const dy = enemy.pos[1] - props.pos[1];
-        const dz = enemy.pos[2] - props.pos[2];
+        // Read live positions from the imperative registry (store pos is only the spawn point).
+        const live = enemyPositions.get(enemy.id);
+        const ex = live ? live.x : enemy.pos[0];
+        const ey = live ? live.y : enemy.pos[1];
+        const ez = live ? live.z : enemy.pos[2];
+        const dx = ex - props.pos[0];
+        const dy = ey - props.pos[1];
+        const dz = ez - props.pos[2];
         const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
         if (dist < nearestDist) {
           nearestDist = dist;
@@ -233,19 +389,30 @@ function BuildingTourelle(props: BuildingProps) {
     }
 
     if (nearestEnemy) {
-      // Rotate barrel toward enemy
       if (barrelRef.current) {
-        const ePos = new THREE.Vector3(...nearestEnemy.pos);
-        ePos.y += 0.5; // aim at center of body
-        barrelRef.current.lookAt(ePos);
+        const live = enemyPositions.get(nearestEnemy.id);
+        if (live) {
+          _ePos.copy(live);
+        } else {
+          _ePos.set(nearestEnemy.pos[0], nearestEnemy.pos[1], nearestEnemy.pos[2]);
+        }
+        _ePos.y += 0.5; 
+        barrelRef.current.lookAt(_ePos);
       }
-      setTargetPos(new THREE.Vector3(...nearestEnemy.pos));
-      
-      // Damage
-      state.damageEnemy(nearestEnemy.id, 50 * delta);
+      if (beamRef.current) beamRef.current.visible = true;
+      // Accumulate damage and flush ~4x/sec: same DPS, far fewer store
+      // updates (each one re-renders the enemy tree via its hp bars).
+      dmgAcc.current += 50 * delta;
+      tickTimer.current += delta;
+      if (tickTimer.current >= 0.25) {
+        state.damageEnemy(nearestEnemy.id, dmgAcc.current);
+        dmgAcc.current = 0;
+        tickTimer.current = 0;
+      }
     } else {
-      setTargetPos(null);
-      // Idle rotation
+      if (beamRef.current) beamRef.current.visible = false;
+      dmgAcc.current = 0;
+      tickTimer.current = 0;
       if (barrelRef.current) {
         barrelRef.current.rotation.y = clock.elapsedTime * 0.5;
         barrelRef.current.rotation.x = 0;
@@ -256,30 +423,42 @@ function BuildingTourelle(props: BuildingProps) {
 
   return (
     <BuildingWrapper {...props}>
-      {/* Base */}
-      <mesh position={[0, 0.25, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.7, 0.8, 0.5, 8]} />
-        <meshToonMaterial color={props.color} gradientMap={gradientMap} />
-      </mesh>
-      
-      {/* Rotating Head/Barrel */}
-      <group ref={barrelRef} position={[0, 0.6, 0]}>
-        <mesh castShadow>
-          <sphereGeometry args={[0.4]} />
+      {/* Legs */}
+      {[0, (Math.PI*2)/3, (Math.PI*4)/3].map((angle, i) => (
+        <mesh key={i} position={[Math.cos(angle)*0.5, 0.2, Math.sin(angle)*0.5]} rotation={[0, -angle, 0.3]} castShadow>
+          <capsuleGeometry args={[0.08, 0.3, 8, 16]} />
           <meshToonMaterial color="#333" gradientMap={gradientMap} />
         </mesh>
-        <mesh position={[0, 0, 0.4]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-          <cylinderGeometry args={[0.1, 0.15, 0.8]} />
-          <meshToonMaterial color={props.color} gradientMap={gradientMap} />
+      ))}
+
+      {/* Pod Body */}
+      <mesh position={[0, 0.5, 0]} scale={[1, 0.8, 1]} castShadow receiveShadow>
+        <sphereGeometry args={[0.6, 32, 32]} />
+        <meshToonMaterial color="#fff2df" gradientMap={gradientMap} />
+      </mesh>
+      
+      {/* Tracking Barrel */}
+      <group ref={barrelRef} position={[0, 0.5, 0]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.3, 24, 24]} />
+          <meshToonMaterial color="#333" gradientMap={gradientMap} />
         </mesh>
         
-        {/* Beam */}
-        {targetPos && (
-          <mesh position={[0, 0, 4.4]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.02, 0.02, 8]} />
-            <meshBasicMaterial color="#00ffff" transparent opacity={0.6} />
-          </mesh>
-        )}
+        <mesh position={[0, 0, 0.3]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+          <capsuleGeometry args={[0.15, 0.4, 16, 16]} />
+          <meshToonMaterial color={props.color} gradientMap={gradientMap} />
+        </mesh>
+
+        <mesh position={[0, 0, 0.5]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.15, 0.04, 16, 32]} />
+          <meshStandardMaterial emissive={props.color} emissiveIntensity={2} color={props.color} />
+        </mesh>
+        
+        {/* Laser beam — always mounted, visibility toggled imperatively in useFrame */}
+        <mesh ref={beamRef} visible={false} position={[0, 0, 4.5]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.03, 0.03, 8]} />
+          <meshBasicMaterial color={props.color} transparent opacity={0.6} />
+        </mesh>
       </group>
       
       <pointLight position={[0, 1, 0]} color={props.color} intensity={1} distance={5} />

@@ -1,9 +1,17 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore, ResourceType } from '../store';
 import { useToonGradient } from './utils';
-import { Html } from '@react-three/drei';
+import { Html, Float } from '@react-three/drei';
+
+// Scratch vectors reused across frames — never allocate inside useFrame.
+const _one = new THREE.Vector3(1, 1, 1);
+const _half = new THREE.Vector3(0.5, 0.5, 0.5);
+const _start = new THREE.Vector3();
+const _end = new THREE.Vector3();
+const _mid = new THREE.Vector3();
+const _pos = new THREE.Vector3();
 
 type NodeDef = {
   id: ResourceType;
@@ -37,31 +45,31 @@ function ResourceNode({ def }: { def: NodeDef }) {
   const gradientMap = useToonGradient();
   const addResources = useGameStore(state => state.addResources);
   const addParticle = useGameStore(state => state.addParticle);
+  const cooldownRef = useRef(0);
+  const displayAccum = useRef(0);
 
   useFrame((state, delta) => {
-    // Rotation animation
     if (groupRef.current) {
-      groupRef.current.rotation.y += delta * 0.5;
-      
       if (active) {
-        groupRef.current.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
+        groupRef.current.scale.lerp(_one, 0.1);
       } else {
-        groupRef.current.scale.lerp(new THREE.Vector3(0.5, 0.5, 0.5), 0.1);
+        groupRef.current.scale.lerp(_half, 0.1);
       }
     }
 
     if (!active) {
-      setCooldownTime(prev => {
-        const next = prev - delta;
-        if (next <= 0) {
-          setActive(true);
-          return 0;
-        }
-        return next;
-      });
+      cooldownRef.current -= delta;
+      displayAccum.current += delta;
+      if (cooldownRef.current <= 0) {
+        setActive(true);
+        setCooldownTime(0);
+      } else if (displayAccum.current >= 0.1) {
+        // Throttle the cooldown-bar re-render to ~10/sec instead of every frame.
+        displayAccum.current = 0;
+        setCooldownTime(cooldownRef.current);
+      }
     }
 
-    // Collision detection
     if (active) {
       const heroPos = useGameStore.getState().heroPos;
       const dx = heroPos[0] - def.pos[0];
@@ -70,12 +78,12 @@ function ResourceNode({ def }: { def: NodeDef }) {
       const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
       
       if (dist < 2) {
-        // Collect
         setActive(false);
+        cooldownRef.current = 5;
+        displayAccum.current = 0;
         setCooldownTime(5);
         addResources({ [def.id]: def.amount });
         
-        // Spawn particles
         for (let i = 0; i < 5; i++) {
           addParticle({
             from: def.pos,
@@ -88,42 +96,49 @@ function ResourceNode({ def }: { def: NodeDef }) {
 
   return (
     <group position={def.pos}>
+      {/* Dirt Mound */}
+      <mesh position={[0, -0.4, 0]} scale={[1, 0.4, 1]} receiveShadow>
+        <sphereGeometry args={[0.8, 16, 16]} />
+        <meshToonMaterial color="#6b4c3a" gradientMap={gradientMap} />
+      </mesh>
+
       <group ref={groupRef}>
         {def.id === 'boulons' && (
           <group>
-            {[0, 1, 2, 3].map(i => (
-              <mesh key={i} position={[Math.cos(i * Math.PI / 2) * 0.2, 0, Math.sin(i * Math.PI / 2) * 0.2]} rotation={[0.2, i * Math.PI / 2, 0]}>
-                <coneGeometry args={[0.2, 0.6, 4]} />
-                <meshToonMaterial color={def.color} gradientMap={gradientMap} transparent opacity={active ? 1 : 0.4} />
+            {[0, 1, 2, 3, 4].map(i => (
+              <mesh key={i} position={[Math.cos(i * Math.PI*2/5) * 0.3, 0, Math.sin(i * Math.PI*2/5) * 0.3]} rotation={[0.5, i * Math.PI*2/5, 0]} castShadow>
+                <icosahedronGeometry args={[0.3, 0]} />
+                <meshStandardMaterial color="#888" emissive="#c9c9c9" emissiveIntensity={0.5} flatShading transparent opacity={active ? 1 : 0.4} />
               </mesh>
             ))}
           </group>
         )}
+        
         {def.id === 'matiere_floue' && (
-          <mesh>
-            <octahedronGeometry args={[0.5]} />
-            <meshToonMaterial color={def.color} gradientMap={gradientMap} transparent opacity={active ? 1 : 0.4} />
-          </mesh>
+          <Float speed={2} rotationIntensity={1} floatIntensity={0.5}>
+            <mesh castShadow>
+              <icosahedronGeometry args={[0.45, 1]} />
+              <meshStandardMaterial color="#8e5ce8" emissive="#8e5ce8" emissiveIntensity={1.5} flatShading transparent opacity={active ? 1 : 0.4} />
+            </mesh>
+          </Float>
         )}
+        
         {def.id === 'energie_rire' && (
-          <group>
-            <mesh rotation={[Math.PI / 4, 0, 0]}>
-              <torusGeometry args={[0.4, 0.15, 8, 16]} />
-              <meshToonMaterial color={def.color} gradientMap={gradientMap} transparent opacity={active ? 1 : 0.4} />
+          <Float speed={3} rotationIntensity={0} floatIntensity={0.2}>
+            <mesh scale={[1, 0.8, 1]} castShadow>
+              <sphereGeometry args={[0.3, 16, 16]} />
+              <meshStandardMaterial color="#ffd24c" emissive="#ffd24c" emissiveIntensity={1} transparent opacity={active ? 1 : 0.4} />
             </mesh>
-            <mesh>
-              <sphereGeometry args={[0.2]} />
-              <meshToonMaterial color={def.color} gradientMap={gradientMap} transparent opacity={active ? 1 : 0.4} />
-            </mesh>
-          </group>
+            <OrbitingSpheres active={active} color={def.color} />
+          </Float>
         )}
       </group>
       
-      <pointLight color={def.color} intensity={active ? 1 : 0.2} distance={5} />
+      <pointLight color={def.color} intensity={active ? 1.5 : 0.2} distance={5} />
       
       {!active && (
         <Html position={[0, 1, 0]} center transform style={{ pointerEvents: 'none' }}>
-          <div className="w-8 h-2 bg-black/50 rounded overflow-hidden">
+          <div className="w-8 h-2 bg-black/50 rounded overflow-hidden border border-black/50">
             <div 
               className="h-full bg-white/80 transition-all duration-100 ease-linear"
               style={{ width: `${(1 - cooldownTime / 5) * 100}%` }}
@@ -131,6 +146,23 @@ function ResourceNode({ def }: { def: NodeDef }) {
           </div>
         </Html>
       )}
+    </group>
+  );
+}
+
+function OrbitingSpheres({ active, color }: { active: boolean, color: string }) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => {
+    if (ref.current) ref.current.rotation.y = clock.elapsedTime * 2;
+  });
+  return (
+    <group ref={ref}>
+      {[0, 1, 2, 3].map(i => (
+        <mesh key={i} position={[Math.cos(i * Math.PI/2) * 0.6, 0, Math.sin(i * Math.PI/2) * 0.6]}>
+          <sphereGeometry args={[0.1, 8, 8]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} transparent opacity={active ? 1 : 0.2} />
+        </mesh>
+      ))}
     </group>
   );
 }
@@ -168,22 +200,20 @@ function ParticleMesh({ particle }: { particle: any }) {
   useFrame(() => {
     if (ref.current) {
       const heroPos = useGameStore.getState().heroPos;
-      const start = new THREE.Vector3(...particle.from);
-      const end = new THREE.Vector3(heroPos[0], heroPos[1] + 1, heroPos[2]);
+      _start.set(particle.from[0], particle.from[1], particle.from[2]);
+      _end.set(heroPos[0], heroPos[1] + 1, heroPos[2]);
       
-      // Arc path
-      const mid = start.clone().lerp(end, 0.5);
-      mid.y += 2; // arc height
+      _mid.copy(_start).lerp(_end, 0.5);
+      _mid.y += 2;
       
-      // Quadratic bezier manually
       const t = particle.progress;
       const t1 = 1 - t;
-      const pos = new THREE.Vector3()
-        .addScaledVector(start, t1 * t1)
-        .addScaledVector(mid, 2 * t1 * t)
-        .addScaledVector(end, t * t);
+      _pos.set(0, 0, 0)
+        .addScaledVector(_start, t1 * t1)
+        .addScaledVector(_mid, 2 * t1 * t)
+        .addScaledVector(_end, t * t);
         
-      ref.current.position.copy(pos);
+      ref.current.position.copy(_pos);
       ref.current.scale.setScalar(1 - t);
     }
   });
@@ -191,7 +221,7 @@ function ParticleMesh({ particle }: { particle: any }) {
   return (
     <mesh ref={ref}>
       <sphereGeometry args={[0.15, 8, 8]} />
-      <meshBasicMaterial color={color} />
+      <meshStandardMaterial emissive={color} emissiveIntensity={2} color={color} />
     </mesh>
   );
 }
