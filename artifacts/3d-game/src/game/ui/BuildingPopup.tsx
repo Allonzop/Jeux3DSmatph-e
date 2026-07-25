@@ -1,7 +1,24 @@
 import React from 'react';
 import { useGameStore, ResourceType } from '../store';
 import { BUILDINGS } from '../gamedata';
+import { ResourceIcon, BuildingIcon, CloseIcon } from './icons';
 import { motion, AnimatePresence } from 'framer-motion';
+
+function PassiveYield({ passive }: { passive: Partial<Record<string, number>> }) {
+  const entries = Object.entries(passive).filter(([, val]) => val !== undefined);
+  if (entries.length === 0) return <span className="text-white/40">—</span>;
+  return (
+    <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
+      {entries.map(([key, val]) => (
+        <span key={key} className="inline-flex items-center gap-1.5">
+          +{val}
+          <ResourceIcon type={key as ResourceType} className="w-4 h-4 shrink-0" />
+          <span className="text-white/50 text-xs">/sec</span>
+        </span>
+      ))}
+    </span>
+  );
+}
 
 export function BuildingPopup() {
   const selectedBuilding = useGameStore(state => state.selectedBuilding);
@@ -27,29 +44,30 @@ export function BuildingPopup() {
       resources.energie_rire >= (nextLevelData.cost.energie_rire || 0);
   }
 
-  const formatPassive = (passive: Record<string, number>) => {
-    if (!passive || Object.keys(passive).length === 0) return "None";
-    return Object.entries(passive).map(([key, val]) => {
-      const icon = key === 'boulons' ? '🔩' : key === 'matiere_floue' ? '🌀' : '😄';
-      return `+${val} ${icon} / sec`;
-    }).join(", ");
-  };
-
   return (
     <AnimatePresence>
-      <div className="absolute inset-0 pointer-events-auto flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 p-4">
+      <div
+        className="absolute inset-0 pointer-events-auto flex items-center justify-center bg-black/60 backdrop-blur-sm z-50"
+        style={{
+          padding: '1rem',
+          paddingTop: 'calc(1rem + var(--safe-top))',
+          paddingBottom: 'calc(1rem + var(--safe-bottom))',
+          paddingLeft: 'calc(1rem + var(--safe-left))',
+          paddingRight: 'calc(1rem + var(--safe-right))',
+        }}
+      >
         <motion.div 
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          className="bg-[#1e2336] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+          className="bg-[#1e2336] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md overflow-y-auto max-h-full"
           style={{ boxShadow: `0 0 40px ${data.color}33` }}
         >
           {/* Header */}
           <div className="p-4 flex items-center justify-between border-b border-white/10" style={{ backgroundColor: `${data.color}22` }}>
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-black/30 flex items-center justify-center text-3xl shadow-inner border border-white/5">
-                {data.icon}
+              <div className="w-12 h-12 rounded-xl bg-black/30 flex items-center justify-center shadow-inner border border-white/5">
+                <BuildingIcon id={data.id} className="w-8 h-8" />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white tracking-wide">{data.name}</h2>
@@ -62,7 +80,7 @@ export function BuildingPopup() {
               onClick={() => selectBuilding(null)}
               className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-colors"
             >
-              ✕
+              <CloseIcon className="w-4 h-4" />
             </button>
           </div>
 
@@ -73,7 +91,7 @@ export function BuildingPopup() {
             <div className="bg-black/20 rounded-xl p-4 border border-white/5">
               <div className="text-xs uppercase tracking-wider text-white/40 mb-2">Current Production</div>
               <div className="text-white font-medium">
-                {formatPassive(currentLevelData?.passive || {})}
+                <PassiveYield passive={currentLevelData?.passive || {}} />
               </div>
               {data.id === 'tourelle' && level > 0 && (
                 <div className="text-cyan-400 font-medium text-sm mt-1">Fires beam dealing 50 dmg/sec</div>
@@ -89,13 +107,11 @@ export function BuildingPopup() {
                 
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(nextLevelData!.cost).map(([key, val]) => {
-                    const icon = key === 'boulons' ? '🔩' : key === 'matiere_floue' ? '🌀' : '😄';
-                    const color = key === 'boulons' ? '#c9c9c9' : key === 'matiere_floue' ? '#8e5ce8' : '#ffd24c';
                     const have = resources[key as ResourceType];
                     const enough = have >= val;
                     return (
                       <div key={key} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border ${enough ? 'bg-white/5 border-white/10' : 'bg-red-500/10 border-red-500/30'}`}>
-                        <span>{icon}</span>
+                        <ResourceIcon type={key as ResourceType} className="w-4 h-4 shrink-0" />
                         <span className={`font-mono font-bold ${enough ? 'text-white' : 'text-red-400'}`}>
                           {val}
                         </span>
@@ -106,7 +122,7 @@ export function BuildingPopup() {
 
                 <div className="text-sm bg-blue-500/10 text-blue-300 p-3 rounded-xl border border-blue-500/20">
                   <span className="font-bold uppercase text-xs mr-2">New Yield:</span> 
-                  {formatPassive(nextLevelData!.passive || {})}
+                  <PassiveYield passive={nextLevelData!.passive || {}} />
                   {data.id === 'tourelle' && (
                     <span>(Increased fire rate / range implicit)</span>
                   )}
@@ -127,7 +143,7 @@ export function BuildingPopup() {
               </div>
             ) : (
               <div className="py-8 text-center flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-transparent to-black/20 rounded-xl">
-                <div className="text-4xl">🌟</div>
+                <ResourceIcon type="energie_rire" className="w-10 h-10" />
                 <div className="text-amber-400 font-bold uppercase tracking-widest">Maximum Level Reached</div>
               </div>
             )}

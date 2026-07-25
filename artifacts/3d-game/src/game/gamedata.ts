@@ -3,7 +3,6 @@ import { Resources } from './store';
 export type BuildingData = {
   id: string;
   name: string;
-  icon: string;
   color: string;
   maxLevel: number;
   levels: {
@@ -16,7 +15,6 @@ export const BUILDINGS: Record<string, BuildingData> = {
   hutte: {
     id: 'hutte',
     name: 'Hutte',
-    icon: '🏠',
     color: '#f4a261',
     maxLevel: 5,
     levels: [
@@ -30,7 +28,6 @@ export const BUILDINGS: Record<string, BuildingData> = {
   ferme: {
     id: 'ferme',
     name: 'Ferme',
-    icon: '🌱',
     color: '#57cc99',
     maxLevel: 4,
     levels: [
@@ -43,7 +40,6 @@ export const BUILDINGS: Record<string, BuildingData> = {
   bar: {
     id: 'bar',
     name: 'Bar Spatial',
-    icon: '🍸',
     color: '#e07a5f',
     maxLevel: 4,
     levels: [
@@ -56,7 +52,6 @@ export const BUILDINGS: Record<string, BuildingData> = {
   antenne: {
     id: 'antenne',
     name: 'Antenne',
-    icon: '📡',
     color: '#e63946',
     maxLevel: 4,
     levels: [
@@ -69,7 +64,6 @@ export const BUILDINGS: Record<string, BuildingData> = {
   marche: {
     id: 'marche',
     name: 'Marché',
-    icon: '🛒',
     color: '#ffd24c',
     maxLevel: 3,
     levels: [
@@ -81,7 +75,6 @@ export const BUILDINGS: Record<string, BuildingData> = {
   tourelle: {
     id: 'tourelle',
     name: 'Tourelle',
-    icon: '🔫',
     color: '#4cc9f0',
     maxLevel: 5,
     levels: [

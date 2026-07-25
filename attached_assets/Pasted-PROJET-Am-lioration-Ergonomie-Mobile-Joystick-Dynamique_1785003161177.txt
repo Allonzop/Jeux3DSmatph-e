@@ -1,0 +1,31 @@
+PROJET : Amélioration Ergonomie Mobile (Joystick Dynamique) + Refonte Graphique (Vrais assets 3D) + Fix UI
+
+Super travail ! Le test en conditions réelles sur iPhone via mobile fonctionne très bien et la base de gameplay est excellente. On passe à l'étape d'ajustement UX/UI et de polish graphique.
+
+VOICI LES 3 AXES CRITIQUES À CORRIGER :
+
+1. JOYSTICK TACTILE DYNAMIQUE (Priorité Ergonomie) :
+- Supprime le joystick fixe actuel dans le coin.
+- Implémente un JOYSTICK DYNAMIQUE :
+  * Dès que le joueur touche la zone de jeu (TouchStart / PointerDown), le centre du joystick apparaît EXACTEMENT sous son doigt.
+  * Lorsque le joueur glisse son doigt (TouchMove), le personnage se déplace selon le vecteur de direction.
+  * Dès que le joueur lève le doigt (TouchEnd / PointerUp), le joystick disparaît et le héros s'arrête.
+  * C'est le standard moderne des jeux mobiles (type Archero / My Little Universe).
+
+2. DIRECTION ARTISTIQUE & VISUELS (Rendre le jeu beau) :
+- Le jeu est actuellement trop géométrique/carré et utilise des emojis natifs iPhone en guise d'icônes, ce qui fait "prototype amateur".
+- Supprime tous les emojis natifs et remplace-les par de vrais éléments graphiques stylisés (icônes vectorielles custom ou meshs 3D).
+- Rends la 3D plus douce et organique :
+  * Bâtiments, arbres et ressources avec des formes arrondies/low-poly cartoon (pas de simples cubes rigides).
+  * Palette de couleurs vibrante et chaleureuse.
+  * QUESTION POUR TOI (REPLIT) : As-tu besoin que je te fournisse des modèles 3D GLTF (ex: Poly Pizza, Kenney 3D, Sketchfab) ou peux-tu générer/charger des modèles Low-Poly stylisés propres directement dans Three.js ? Dis-moi si tu as besoin de connexions à des bibliothèques d'assets.
+
+3. RESPONSIVENESS & UI SAFE AREAS (Correction des débordements) :
+- Certains éléments d'UI débordent actuellement hors de l'écran sur iPhone.
+- Ajuste le layout CSS/UI pour utiliser des marges relatives (`vw`, `vh`, `clamp()`) et intégrer les règles `env(safe-area-inset-top)` / `env(safe-area-inset-bottom)`.
+- Rien ne doit être coupé par l'encoche/Dynamic Island ou la barre de navigation du bas.
+
+INSTRUCTIONS :
+1. Implémente le joystick dynamique en priorité pour que la prise en main soit parfaite.
+2. Corrige les marges UI pour qu'aucun bouton ne déborde.
+3. Propose une première passe sur la DA pour retirer les emojis et rendre les éléments 3D plus attrayants.

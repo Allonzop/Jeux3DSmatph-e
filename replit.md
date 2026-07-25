@@ -5,6 +5,7 @@ A mobile-first 3D village-builder / auto-clicker game built with React Three Fib
 ## Run & Operate
 
 - `pnpm --filter @workspace/3d-game run dev` — run the 3D game (port 24982, preview at `/`)
+- `pnpm --filter @workspace/village-mobile run dev` — run the Expo mobile app (preview at `/village-mobile/`)
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
@@ -26,7 +27,9 @@ A mobile-first 3D village-builder / auto-clicker game built with React Three Fib
   - `gamedata.ts` — building definitions, resource metadata
   - `GameCanvas.tsx` — root R3F Canvas with all scene components
   - `scene/` — 3D scene components (Ground, Hero, Buildings, ResourceNodes, Enemies, CrystalCore, Stars, Camera)
-  - `ui/` — HTML overlay components (HUD, Joystick, BuildingPopup)
+  - `ui/` — HTML overlay components (HUD, Joystick, BuildingPopup, icons.tsx — custom SVG icons, no emojis)
+- `artifacts/3d-game/src/lib/safeArea.ts` — safe-area inset wiring (browser env() + native WebView)
+- `artifacts/village-mobile/` — Expo app: a WebView wrapper around the web game (no native game code)
 - `artifacts/api-server/` — shared Express API (currently unused by game)
 - `lib/api-spec/openapi.yaml` — API contract source of truth
 
@@ -37,12 +40,14 @@ A mobile-first 3D village-builder / auto-clicker game built with React Three Fib
 - **Toon shading**: All materials use a 3-step RGBA DataTexture as gradientMap for the cartoon-3D look.
 - **WebGL dependency**: The 3D canvas requires WebGL. A WebGLErrorBoundary shows a friendly message if WebGL is unavailable.
 - **HUD as HTML overlay**: Game UI (resource bars, joystick, building panel) is a `position:fixed` HTML div over the canvas — not Three.js Html elements — for best performance.
+- **Dynamic joystick**: touch anywhere on the play area and the stick appears under the finger (Archero-style). Gesture state lives in refs with direct style.transform writes (no per-move React renders); quick taps are re-dispatched to the canvas as synthetic PointerEvents so 3D building meshes stay tappable.
+- **Safe-area contract with the mobile app**: the web game reads `--safe-*` CSS vars (default `env(safe-area-inset-*)`); the Expo WebView wrapper injects `window.__NATIVE_INSETS__` (env() is 0 in WebViews) which `src/lib/safeArea.ts` polls and promotes to those vars. HUD/popup sizing uses `clamp()` so all controls fit a 390px iPhone.
 
 ## Product
 
 - 6 procedural 3D buildings (Hutte, Ferme, Bar, Antenne, Marché, Tourelle)
 - 3 resources: Boulons (standard), Matière Floue (rare), Énergie de Rire (premium)
-- Virtual joystick for hero movement (touch + mouse)
+- Dynamic virtual joystick for hero movement (appears under the finger, touch + mouse)
 - Resource collection from glowing crystal nodes
 - Building upgrade system with level caps and resource costs
 - Passive resource generation from buildings
@@ -59,6 +64,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 - THREE.Clock is deprecated — use THREE.Timer instead (or just use R3F's built-in clock via useFrame delta).
 - bufferAttribute in R3F requires the `args` prop pattern: `<bufferAttribute args={[array, itemSize]} attach="..." />`.
 - The WebGL error in the Replit preview screenshot tool is expected (headless Chrome, no GPU) — it works fine in real browsers.
+- All workspace packages must keep `@types/react` / `@types/react-dom` on `catalog:` — a hardcoded pin (e.g. from a merged task-agent branch) splits the types into two copies and breaks every R3F JSX element type in the web game (see `.agents/memory/post-merge-type-dedup.md`).
 
 ## Pointers
 
