@@ -1,59 +1,78 @@
-import { CharacterDef } from './types';
+import type { CharacterDef } from './types';
 
-// Characters are pure data: adding one = adding an object here.
-// See ToonHumanoid.tsx for the rig; parts/index.ts for available keys.
+// Characters are pure data. Creating a new one = adding an object here.
+//
+// Fully-commented example:
+// {
+//   id: 'example',          // unique id
+//   seed: 1234,             // drives deterministic micro-variations
+//   bodyType: 'slim',       // 'slim' | 'round' | 'stocky' | 'tall'
+//   headScale: 1.1,         // optional head size multiplier
+//   limbThickness: 0.9,     // optional limb radius multiplier
+//   scale: 0.8,             // optional whole-character scale
+//   primary: '#57cc99',     // body color (required)
+//   secondary: '#f0f0f0',   // clothing accents (hair, hood, collar…)
+//   accent: '#e63946',      // accessories (hat, backpack, scarf…)
+//   skin: '#ffd9b3',        // head color
+//   glow: '#ffd24c',        // emissive bits (antenna bulb, necklace)
+//   headwear: 'coneHat',    // registry key or null
+//   back: 'cape',           //   "
+//   neck: 'scarf',          //   "
+//   faceGear: 'roundGlasses', // "
+//   eyeShape: 'oval',       // 'round' | 'oval' | 'wide' | 'sleepy'
+//   mouth: 'grin',          // 'smile' | 'grin' | 'neutral' | 'o'
+//   brows: true,
+//   personality: 'nervous', // 'bouncy' | 'calm' | 'heavy' | 'nervous'
+// }
 
-/** The astronaut hero — must render identically to the pre-migration model. */
+// The hero — must stay visually identical to the original hand-built rig.
 export const heroDef: CharacterDef = {
   id: 'hero',
-  seed: 1,
+  seed: 7,
   bodyType: 'round',
-  primary: '#ff8c42', // suit
-  secondary: '#4cc9f0', // backpack + hands
-  accent: '#ffd24c', // antenna light
+  primary: '#ff8c42',
+  secondary: '#f0f0f0',
+  accent: '#4cc9f0',
   skin: '#ffd9b3',
+  glow: '#ffd24c',
   headwear: 'visorHelmet',
-  back: 'satchel',
-  eyeShape: 'round',
-  mouth: 'smile',
+  back: 'backpack',
   personality: 'bouncy',
-  phase: 0, // exact legacy hero animation timing
 };
 
-/** Wave enemies — nervous horned imps. */
+export const villagerDefs: CharacterDef[] = [
+  { id: 'v1', seed: 101, bodyType: 'round', scale: 0.75, primary: '#57cc99', accent: '#e63946',
+    headwear: 'mushroom', personality: 'bouncy' },
+  { id: 'v2', seed: 202, bodyType: 'slim', scale: 0.7, primary: '#b388eb', secondary: '#3a86ff', accent: '#ffd24c',
+    headwear: 'beanie', neck: 'scarf', personality: 'calm' },
+  { id: 'v3', seed: 303, bodyType: 'stocky', scale: 0.8, primary: '#ffd24c', secondary: '#8338ec', accent: '#4cc9f0', glow: '#4cc9f0',
+    headwear: 'antennaDome', back: 'jetpack', eyeShape: 'wide', mouth: 'o', personality: 'nervous' },
+  { id: 'v4', seed: 404, bodyType: 'tall', scale: 0.75, primary: '#4361ee', secondary: '#f0e6d2', accent: '#7209b7',
+    headwear: 'coneHat', back: 'cape', faceGear: 'roundGlasses', eyeShape: 'oval', mouth: 'neutral', personality: 'calm' },
+  { id: 'v5', seed: 505, bodyType: 'round', scale: 0.8, headScale: 1.1, primary: '#80b918', secondary: '#d9a066', accent: '#2d6a4f',
+    headwear: 'leafCrown', back: 'shell', eyeShape: 'sleepy', personality: 'heavy' },
+  { id: 'v6', seed: 606, bodyType: 'slim', scale: 0.72, primary: '#ff70a6', secondary: '#ffd6e0', accent: '#e63946',
+    headwear: 'hair', back: 'wings', brows: true, mouth: 'grin', personality: 'bouncy' },
+  { id: 'v7', seed: 707, bodyType: 'stocky', scale: 0.78, limbThickness: 1.15, primary: '#9c6644', secondary: '#7f5539', accent: '#e07a5f',
+    headwear: 'hood', back: 'backpack', faceGear: 'mask', eyeShape: 'sleepy', personality: 'heavy' },
+  { id: 'v8', seed: 808, bodyType: 'tall', scale: 0.74, primary: '#2ec4b6', secondary: '#cbf3f0', accent: '#ff9f1c', glow: '#ff9f1c',
+    headwear: 'hornHelmet', neck: 'glowNecklace', faceGear: 'tintedVisor', eyeShape: 'wide', mouth: 'grin', personality: 'nervous' },
+];
+
+// Enemies — small horned imps.
 export const enemyDef: CharacterDef = {
-  id: 'enemy',
+  id: 'imp',
   seed: 666,
   bodyType: 'stocky',
-  scale: 0.8,
+  scale: 0.68,
   primary: '#ff4d6d',
   secondary: '#590d22',
-  accent: '#ff8fa3',
+  accent: '#590d22',
   skin: '#ff4d6d',
+  glow: '#ff4d6d',
   headwear: 'hornHelmet',
   back: 'wings',
   eyeShape: 'wide',
   mouth: 'grin',
-  brows: true,
   personality: 'nervous',
 };
-
-/** 8 villagers with clearly distinct silhouettes (not just tints). */
-export const villagerDefs: CharacterDef[] = [
-  { id: 'v1', seed: 101, bodyType: 'round', scale: 0.75, primary: '#57cc99', secondary: '#ffffff', accent: '#e63946', skin: '#ffd9b3',
-    headwear: 'mushroom', back: 'satchel', personality: 'bouncy' },
-  { id: 'v2', seed: 202, bodyType: 'slim', scale: 0.72, primary: '#b388eb', secondary: '#3a86ff', accent: '#ffd24c', skin: '#ffe4c9',
-    headwear: 'beanie', neck: 'scarf', personality: 'calm' },
-  { id: 'v3', seed: 303, bodyType: 'round', scale: 0.8, primary: '#ffd24c', secondary: '#8338ec', accent: '#4cc9f0', skin: '#ffd9b3',
-    headwear: 'antennaDome', faceGear: 'roundGlasses', eyeShape: 'oval', personality: 'nervous' },
-  { id: 'v4', seed: 404, bodyType: 'stocky', scale: 0.78, primary: '#8a6343', secondary: '#57cc99', accent: '#f4a261', skin: '#e8b98a',
-    headwear: 'leafCrown', back: 'shell', mouth: 'neutral', eyeShape: 'sleepy', personality: 'heavy' },
-  { id: 'v5', seed: 505, bodyType: 'tall', scale: 0.75, primary: '#4cc9f0', secondary: '#f0f0f0', accent: '#ff70a6', skin: '#ffd9b3',
-    headwear: 'coneHat', back: 'cape', mouth: 'o', personality: 'calm', headScale: 0.9 },
-  { id: 'v6', seed: 606, bodyType: 'slim', scale: 0.7, primary: '#e07a5f', secondary: '#2b2d42', accent: '#ffd24c', skin: '#f5cba7',
-    headwear: 'hair', faceGear: 'tintedVisor', back: 'jetpack', eyeShape: 'wide', personality: 'nervous', limbThickness: 0.9 },
-  { id: 'v7', seed: 707, bodyType: 'stocky', scale: 0.82, primary: '#3fa871', secondary: '#f0e6d2', accent: '#e63946', skin: '#d9a066',
-    headwear: 'hood', neck: 'turtleneck', mouth: 'grin', brows: true, personality: 'heavy', limbThickness: 1.2 },
-  { id: 'v8', seed: 808, bodyType: 'tall', scale: 0.7, primary: '#ff8fa3', secondary: '#8e5ce8', accent: '#4cc9f0', skin: '#ffe4c9',
-    headwear: 'hair', neck: 'glowNecklace', eyeShape: 'oval', mouth: 'smile', personality: 'bouncy', headScale: 1.15 },
-];

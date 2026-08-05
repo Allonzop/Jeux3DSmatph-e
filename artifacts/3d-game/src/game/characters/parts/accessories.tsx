@@ -1,119 +1,136 @@
 import React, { useMemo } from 'react';
-import * as THREE from 'three';
 import { RoundedBox } from '@react-three/drei';
-import { PartProps } from '../types';
+import type { PartProps } from '../types';
 import { mulberry32 } from '../rng';
-import { sphereGeo, cylinderGeo, coneGeo, torusGeo, boxGeo } from '../geometry';
+import { toonMat, glowMat } from '../shared';
 
-// ---- Back parts (rendered behind the body, origin ≈ upper back) ----
+// Back parts render inside the body group (behind the torso, reference body
+// radius 0.22). Neck parts render at the base of the head.
+// Colors always come from the character palette.
 
-/**
- * The hero's backpack, migrated here. Note: drei's RoundedBox IS a mesh —
- * never nest it inside a <mesh> (that was a bug in the old Hero.tsx).
- */
-export function Satchel({ palette, gradientMap }: PartProps) {
+// ---------------- BACK ----------------
+
+// ---- Backpack (extracted from Hero.tsx) ----
+// Fixes the original bug: RoundedBox from drei is already a mesh and must
+// NOT be nested inside a <mesh> or used as a geometry.
+export function Backpack({ palette }: PartProps) {
   return (
-    <RoundedBox args={[0.3, 0.4, 0.15]} radius={0.05} castShadow>
-      <meshToonMaterial color={palette.secondary} gradientMap={gradientMap} />
-    </RoundedBox>
+    <RoundedBox args={[0.3, 0.4, 0.15]} radius={0.05} position={[0, 0.05, -0.2]} material={toonMat(palette.accent)} castShadow />
   );
 }
 
-export function Wings({ palette, gradientMap, seed }: PartProps) {
-  const spread = useMemo(() => 0.5 + mulberry32(seed)() * 0.3, [seed]);
+// ---- Small wings ----
+export function Wings({ palette, seed }: PartProps) {
+  const spread = useMemo(() => 0.3 + mulberry32(seed)() * 0.25, [seed]);
   return (
-    <group>
-      <mesh position={[-0.16, 0.06, -0.02]} rotation={[0, spread, 0.5]} scale={[1, 1.6, 0.35]} geometry={sphereGeo(0.14, 8)}>
-        <meshToonMaterial color={palette.secondary} gradientMap={gradientMap} />
+    <group position={[0, 0.12, -0.2]}>
+      <mesh position={[-0.14, 0, 0]} rotation={[0, spread, 0.5]} scale={[0.35, 1, 1]} material={toonMat(palette.secondary)}>
+        <coneGeometry args={[0.16, 0.34, 4]} />
       </mesh>
-      <mesh position={[0.16, 0.06, -0.02]} rotation={[0, -spread, -0.5]} scale={[1, 1.6, 0.35]} geometry={sphereGeo(0.14, 8)}>
-        <meshToonMaterial color={palette.secondary} gradientMap={gradientMap} />
+      <mesh position={[0.14, 0, 0]} rotation={[0, -spread, -0.5]} scale={[0.35, 1, 1]} material={toonMat(palette.secondary)}>
+        <coneGeometry args={[0.16, 0.34, 4]} />
       </mesh>
     </group>
   );
 }
 
-export function Jetpack({ palette, gradientMap }: PartProps) {
+// ---- Jetpack / tank ----
+export function Jetpack({ palette }: PartProps) {
   return (
-    <group>
-      <mesh position={[-0.09, 0, 0]} geometry={cylinderGeo(0.07, 0.07, 0.34)}>
-        <meshToonMaterial color={palette.secondary} gradientMap={gradientMap} />
-      </mesh>
-      <mesh position={[0.09, 0, 0]} geometry={cylinderGeo(0.07, 0.07, 0.34)}>
-        <meshToonMaterial color={palette.secondary} gradientMap={gradientMap} />
-      </mesh>
-      <mesh position={[-0.09, -0.21, 0]} rotation={[Math.PI, 0, 0]} geometry={coneGeo(0.06, 0.08, 10)}>
-        <meshStandardMaterial color={palette.accent} emissive={palette.accent} emissiveIntensity={1.2} />
-      </mesh>
-      <mesh position={[0.09, -0.21, 0]} rotation={[Math.PI, 0, 0]} geometry={coneGeo(0.06, 0.08, 10)}>
-        <meshStandardMaterial color={palette.accent} emissive={palette.accent} emissiveIntensity={1.2} />
-      </mesh>
+    <group position={[0, 0.02, -0.24]}>
+      {[-0.09, 0.09].map((x) => (
+        <group key={x} position={[x, 0, 0]}>
+          <mesh material={toonMat(palette.accent)} castShadow>
+            <cylinderGeometry args={[0.07, 0.07, 0.34, 12]} />
+          </mesh>
+          <mesh position={[0, 0.19, 0]} material={toonMat(palette.secondary)}>
+            <sphereGeometry args={[0.07, 12, 12]} />
+          </mesh>
+          <mesh position={[0, -0.2, 0]} material={toonMat('#555555')}>
+            <coneGeometry args={[0.06, 0.08, 12]} />
+          </mesh>
+        </group>
+      ))}
     </group>
   );
 }
 
-export function Cape({ palette, gradientMap }: PartProps) {
+// ---- Cape (slightly curved plane via an open partial cylinder) ----
+export function Cape({ palette }: PartProps) {
   return (
-    <mesh position={[0, -0.14, 0.02]} rotation={[0.12, 0, 0]}>
-      {/* Half-open cylinder = lightly curved cloth plane */}
-      <cylinderGeometry args={[0.24, 0.34, 0.62, 12, 1, true, Math.PI, Math.PI]} />
-      <meshToonMaterial color={palette.accent} gradientMap={gradientMap} side={THREE.DoubleSide} />
+    <mesh
+      position={[0, -0.05, -0.24]}
+      rotation={[0.12, Math.PI, 0]}
+      scale={[1, 1, 0.35]}
+      material={toonMat(palette.accent)}
+    >
+      <cylinderGeometry args={[0.26, 0.34, 0.62, 12, 1, true, -Math.PI * 0.45, Math.PI * 0.9]} />
     </mesh>
   );
 }
 
-export function Shell({ palette, gradientMap }: PartProps) {
+// ---- Snail-like shell ----
+export function Shell({ palette, seed }: PartProps) {
+  const tilt = useMemo(() => 0.2 + mulberry32(seed)() * 0.3, [seed]);
   return (
-    <group rotation={[0.35, 0, 0]}>
-      <mesh scale={[1, 1, 0.62]} castShadow geometry={sphereGeo(0.26)}>
-        <meshToonMaterial color={palette.secondary} gradientMap={gradientMap} />
+    <group position={[0, 0.05, -0.26]} rotation={[tilt, 0, 0]}>
+      <mesh scale={[1, 1, 0.75]} material={toonMat(palette.accent)} castShadow>
+        <sphereGeometry args={[0.24, 18, 18]} />
       </mesh>
-      <mesh position={[0, 0, -0.13]} rotation={[Math.PI / 2, 0, 0]} scale={0.8} geometry={torusGeo(0.16, 0.035)}>
-        <meshToonMaterial color={palette.accent} gradientMap={gradientMap} />
+      <mesh position={[0, 0, 0.14]} rotation={[Math.PI / 2, 0, 0]} material={toonMat(palette.secondary)}>
+        <torusGeometry args={[0.13, 0.035, 10, 20]} />
       </mesh>
     </group>
   );
 }
 
-// ---- Neck parts (origin ≈ base of the head) ----
+// ---------------- NECK ----------------
 
-export function Scarf({ palette, gradientMap }: PartProps) {
+// ---- Scarf ----
+export function Scarf({ palette }: PartProps) {
   return (
     <group>
-      <mesh rotation={[Math.PI / 2, 0, 0]} geometry={torusGeo(0.2, 0.07)}>
-        <meshToonMaterial color={palette.accent} gradientMap={gradientMap} />
+      <mesh rotation={[Math.PI / 2, 0, 0]} material={toonMat(palette.accent)}>
+        <torusGeometry args={[0.22, 0.07, 12, 24]} />
       </mesh>
-      <mesh position={[0.1, -0.14, -0.16]} rotation={[0.25, 0, 0.1]} geometry={boxGeo(0.1, 0.22, 0.03)}>
-        <meshToonMaterial color={palette.accent} gradientMap={gradientMap} />
+      {/* Trailing tail */}
+      <mesh position={[0.1, -0.16, -0.18]} rotation={[0.25, 0, 0.15]} material={toonMat(palette.accent)}>
+        <boxGeometry args={[0.1, 0.26, 0.04]} />
       </mesh>
     </group>
   );
 }
 
-export function Turtleneck({ palette, gradientMap }: PartProps) {
+// ---- Turtleneck collar ----
+export function Turtleneck({ palette }: PartProps) {
   return (
-    <mesh rotation={[Math.PI / 2, 0, 0]} scale={[1, 1, 1.6]} geometry={torusGeo(0.19, 0.08)}>
-      <meshToonMaterial color={palette.secondary} gradientMap={gradientMap} />
+    <mesh material={toonMat(palette.secondary)}>
+      <cylinderGeometry args={[0.2, 0.24, 0.14, 16]} />
     </mesh>
   );
 }
 
-export function GlowNecklace({ palette, gradientMap, seed }: PartProps) {
+// ---- Glowing necklace ----
+export function GlowNecklace({ palette, seed }: PartProps) {
   const beads = useMemo(() => {
-    const rand = mulberry32(seed);
+    const rnd = mulberry32(seed);
     return Array.from({ length: 5 }).map((_, i) => ({
-      angle: Math.PI * (0.15 + (i / 4) * 0.7) + (rand() - 0.5) * 0.1,
-      size: 0.03 + rand() * 0.015,
+      angle: Math.PI * (0.25 + (i / 4) * 0.5) + (rnd() - 0.5) * 0.1,
+      key: i,
     }));
   }, [seed]);
   return (
-    <group>
-      <mesh rotation={[Math.PI / 2, 0, 0]} geometry={torusGeo(0.2, 0.015)}>
-        <meshToonMaterial color={palette.secondary} gradientMap={gradientMap} />
+    <group position={[0, -0.03, 0]}>
+      <mesh rotation={[Math.PI / 2.3, 0, 0]} material={toonMat('#555555')}>
+        <torusGeometry args={[0.2, 0.015, 8, 24]} />
       </mesh>
-      {beads.map((b, i) => (
-        <mesh key={i} position={[Math.cos(b.angle + Math.PI / 2) * 0.2, -0.03, Math.sin(b.angle + Math.PI / 2) * 0.2]} geometry={sphereGeo(b.size, 8)}>
-          <meshStandardMaterial color={palette.accent} emissive={palette.accent} emissiveIntensity={1.5} />
+      {beads.map((b) => (
+        <mesh
+          key={b.key}
+          position={[Math.cos(b.angle) * 0.2, -0.05, Math.sin(b.angle) * 0.2]}
+          material={glowMat(palette.glow)}
+        >
+          <sphereGeometry args={[0.035, 8, 8]} />
         </mesh>
       ))}
     </group>

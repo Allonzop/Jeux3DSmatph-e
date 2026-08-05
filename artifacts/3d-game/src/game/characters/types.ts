@@ -1,6 +1,6 @@
-import * as THREE from 'three';
+import type * as THREE from 'three';
 
-// ---- Registry keys (implementations live in parts/) ----
+// ---------- Registry keys (silhouette) ----------
 export type HeadwearKey =
   | 'mushroom'
   | 'beanie'
@@ -11,133 +11,135 @@ export type HeadwearKey =
   | 'leafCrown'
   | 'hair'
   | 'hornHelmet';
-export type BackKey = 'satchel' | 'wings' | 'jetpack' | 'cape' | 'shell';
+
+export type BackKey = 'backpack' | 'wings' | 'jetpack' | 'cape' | 'shell';
+
 export type NeckKey = 'scarf' | 'turtleneck' | 'glowNecklace';
+
 export type FaceGearKey = 'roundGlasses' | 'tintedVisor' | 'mask';
 
+// ---------- Enums ----------
 export type BodyType = 'slim' | 'round' | 'stocky' | 'tall';
 export type EyeShape = 'round' | 'oval' | 'wide' | 'sleepy';
 export type MouthShape = 'smile' | 'grin' | 'neutral' | 'o';
 export type Personality = 'bouncy' | 'calm' | 'heavy' | 'nervous';
 
-export type Palette = {
-  primary: string;
-  secondary: string;
-  accent: string;
-  skin: string;
-};
+// ---------- Palette ----------
+export interface Palette {
+  primary: string;   // body / limbs
+  secondary: string; // clothing accents (hood, beanie, collar, hair…)
+  accent: string;    // accessories (backpack, hat, scarf…)
+  skin: string;      // head / face
+  glow: string;      // emissive bits (antenna bulb, necklace…)
+}
 
-/** Props received by every registered part (hat, backpack, scarf...). */
-export type PartProps = {
-  palette: Palette;
-  gradientMap: THREE.Texture;
-  seed: number;
-};
-
-/**
- * A character is pure data. Only `id`, `seed` and `primary` are mandatory —
- * everything else has a sensible default (see resolveCharacter).
- */
+// ---------- Character definition (data-only) ----------
+// Everything except id/seed/primary is optional with sensible defaults:
+// `{ id, seed, primary }` already renders a correct character.
 export interface CharacterDef {
   // Identity
   id: string;
   seed: number;
-  // Proportions
-  bodyType?: BodyType;
-  headScale?: number;
-  limbThickness?: number;
-  scale?: number;
+
   // Palette
   primary: string;
   secondary?: string;
   accent?: string;
   skin?: string;
-  // Silhouette (registry keys, or null for none)
+  glow?: string;
+
+  // Proportions
+  bodyType?: BodyType;
+  headScale?: number;      // multiplier on the head group (default 1)
+  limbThickness?: number;  // multiplier on arm/leg radii (default 1)
+  scale?: number;          // whole-character scale (default 1)
+
+  // Silhouette — registry keys (or null/omitted for none)
   headwear?: HeadwearKey | null;
   back?: BackKey | null;
   neck?: NeckKey | null;
   faceGear?: FaceGearKey | null;
+
   // Face
   eyeShape?: EyeShape;
   mouth?: MouthShape;
   brows?: boolean;
-  // Animation
+
+  // Animation flavour
   personality?: Personality;
-  /** animation phase offset in seconds; defaults to a seed-derived value (0 = legacy hero timing) */
-  phase?: number;
 }
 
-export type ResolvedCharacter = Required<CharacterDef>;
+export interface ResolvedCharacterDef {
+  id: string;
+  seed: number;
+  palette: Palette;
+  bodyType: BodyType;
+  headScale: number;
+  limbThickness: number;
+  scale: number;
+  headwear: HeadwearKey | null;
+  back: BackKey | null;
+  neck: NeckKey | null;
+  faceGear: FaceGearKey | null;
+  eyeShape: EyeShape;
+  mouth: MouthShape;
+  brows: boolean;
+  personality: Personality;
+}
 
-export function resolveCharacter(def: CharacterDef): ResolvedCharacter {
+export function resolveDef(def: CharacterDef): ResolvedCharacterDef {
   return {
-    bodyType: 'round',
-    headScale: 1,
-    limbThickness: 1,
-    scale: 1,
-    secondary: '#f0f0f0',
-    accent: '#ffd24c',
-    skin: '#ffd9b3',
-    headwear: null,
-    back: null,
-    neck: null,
-    faceGear: null,
-    eyeShape: 'round',
-    mouth: 'smile',
-    brows: false,
-    personality: 'bouncy',
-    phase: (def.seed % 97) * 0.37,
-    ...def,
+    id: def.id,
+    seed: def.seed,
+    palette: {
+      primary: def.primary,
+      secondary: def.secondary ?? '#f0f0f0',
+      accent: def.accent ?? '#e63946',
+      skin: def.skin ?? '#ffd9b3',
+      glow: def.glow ?? '#ffd24c',
+    },
+    bodyType: def.bodyType ?? 'round',
+    headScale: def.headScale ?? 1,
+    limbThickness: def.limbThickness ?? 1,
+    scale: def.scale ?? 1,
+    headwear: def.headwear ?? null,
+    back: def.back ?? null,
+    neck: def.neck ?? null,
+    faceGear: def.faceGear ?? null,
+    eyeShape: def.eyeShape ?? 'round',
+    mouth: def.mouth ?? 'smile',
+    brows: def.brows ?? false,
+    personality: def.personality ?? 'bouncy',
   };
 }
 
-export function paletteOf(r: ResolvedCharacter): Palette {
-  return { primary: r.primary, secondary: r.secondary, accent: r.accent, skin: r.skin };
+// ---------- Part contract ----------
+// Every registered part receives the character palette, the shared toon
+// gradient and the character seed (for deterministic micro-variation).
+export interface PartProps {
+  palette: Palette;
+  gradientMap: THREE.Texture;
+  seed: number;
 }
 
-// ---- Body proportions per bodyType ----
-// 'round' reproduces the historical hero body exactly (capsule 0.22/0.30,
-// arms at ±0.28, arm capsule 0.07/0.22, legs ±0.12 capsule 0.08/0.16,
-// head at y=0.35 radius 0.34) so the hero looks identical after migration.
-export type BodyProportions = {
-  bodyR: number;
-  bodyL: number;
-  armX: number;
-  armR: number;
-  armL: number;
-  legX: number;
-  legR: number;
-  legL: number;
-  headY: number;
-  headR: number;
-};
+// ---------- Animation personalities ----------
+// 'bouncy' is the exact original Hero maths (walk cycle sin/cos(t*15),
+// bounce 0.15, arm swing 0.8, head tilt 0.1…) — the hero must not change.
+export interface PersonalityParams {
+  walkFreq: number;      // walk cycle frequency
+  bounceAmp: number;     // vertical bounce amplitude
+  squash: number;        // squash/stretch multiplier (1 = original)
+  armAmp: number;        // arm/leg swing amplitude
+  headTilt: number;      // forward head tilt while walking
+  headBob: number;       // side-to-side head bob amplitude
+  idleFreq: number;      // idle breathing frequency
+  idleAmp: number;       // idle bounce amplitude
+  blinkInterval: number; // seconds between blinks
+}
 
-export const BODY_TYPES: Record<BodyType, BodyProportions> = {
-  round: { bodyR: 0.22, bodyL: 0.30, armX: 0.28, armR: 0.07, armL: 0.22, legX: 0.12, legR: 0.08, legL: 0.16, headY: 0.35, headR: 0.34 },
-  slim: { bodyR: 0.16, bodyL: 0.36, armX: 0.22, armR: 0.05, armL: 0.26, legX: 0.10, legR: 0.06, legL: 0.22, headY: 0.38, headR: 0.30 },
-  stocky: { bodyR: 0.28, bodyL: 0.18, armX: 0.34, armR: 0.09, armL: 0.18, legX: 0.15, legR: 0.10, legL: 0.10, headY: 0.32, headR: 0.36 },
-  tall: { bodyR: 0.18, bodyL: 0.50, armX: 0.24, armR: 0.06, armL: 0.32, legX: 0.11, legR: 0.07, legL: 0.26, headY: 0.47, headR: 0.29 },
-};
-
-// ---- Animation parameters per personality ----
-// 'bouncy' is exactly the historical hero animation constants.
-export type AnimParams = {
-  cycleSpeed: number;
-  bounceAmp: number;
-  squashX: number;
-  squashY: number;
-  armAmp: number;
-  headTilt: number;
-  headBob: number;
-  idleSpeed: number;
-  idleAmp: number;
-  idleArmAmp: number;
-  blinkPeriod: number;
-};
-
-export const PERSONALITIES: Record<Personality, AnimParams> = {
-  bouncy: { cycleSpeed: 15, bounceAmp: 0.15, squashX: 0.1, squashY: 0.2, armAmp: 0.8, headTilt: 0.1, headBob: 0.05, idleSpeed: 2, idleAmp: 0.03, idleArmAmp: 0.05, blinkPeriod: 3 },
-  calm: { cycleSpeed: 11, bounceAmp: 0.09, squashX: 0.06, squashY: 0.12, armAmp: 0.55, headTilt: 0.06, headBob: 0.03, idleSpeed: 1.4, idleAmp: 0.02, idleArmAmp: 0.03, blinkPeriod: 4.2 },
-  heavy: { cycleSpeed: 9, bounceAmp: 0.06, squashX: 0.05, squashY: 0.08, armAmp: 0.45, headTilt: 0.05, headBob: 0.02, idleSpeed: 1.1, idleAmp: 0.015, idleArmAmp: 0.02, blinkPeriod: 4.8 },
-  nervous: { cycleSpeed: 19, bounceAmp: 0.12, squashX: 0.08, squashY: 0.16, armAmp: 0.95, headTilt: 0.13, headBob: 0.07, idleSpeed: 3.4, idleAmp: 0.045, idleArmAmp: 0.08, blinkPeriod: 1.6 },
+export const PERSONALITIES: Record<Personality, PersonalityParams> = {
+  bouncy: { walkFreq: 15, bounceAmp: 0.15, squash: 1, armAmp: 0.8, headTilt: 0.1, headBob: 0.05, idleFreq: 2, idleAmp: 0.03, blinkInterval: 3 },
+  calm: { walkFreq: 11, bounceAmp: 0.09, squash: 0.6, armAmp: 0.55, headTilt: 0.06, headBob: 0.03, idleFreq: 1.4, idleAmp: 0.02, blinkInterval: 4.2 },
+  heavy: { walkFreq: 9, bounceAmp: 0.07, squash: 1.4, armAmp: 0.45, headTilt: 0.14, headBob: 0.02, idleFreq: 1, idleAmp: 0.015, blinkInterval: 5 },
+  nervous: { walkFreq: 19, bounceAmp: 0.12, squash: 0.8, armAmp: 1, headTilt: 0.08, headBob: 0.08, idleFreq: 4, idleAmp: 0.05, blinkInterval: 1.6 },
 };

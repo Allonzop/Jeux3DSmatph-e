@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore, Enemy } from '../store';
@@ -55,7 +55,7 @@ function EnemyNode({ enemy }: { enemy: Enemy }) {
       // Direction toward the core at the origin, ignoring height.
       _dir.set(-pos.x, 0, -pos.z);
       const dist = _dir.length();
-      
+
       if (dist < 1) {
         damageCore(10);
         removeEnemy(enemy.id);
@@ -84,11 +84,17 @@ function EnemyNode({ enemy }: { enemy: Enemy }) {
 
   const hpPercent = enemy.hp / enemy.maxHp;
 
+  // Stable per-enemy def (seed varies per instance for micro-variation).
+  const def = useMemo(
+    () => ({ ...enemyDef, id: enemy.id, seed: enemy.id.charCodeAt(0) * 31 + enemy.id.length }),
+    [enemy.id],
+  );
+
   return (
     <group ref={ref} position={enemy.pos}>
-      <group position={[0, 0.5, 0]}>
-        {/* Per-instance seed keeps imps subtly different from each other */}
-        <ToonHumanoid def={{ ...enemyDef, id: enemy.id, seed: enemy.id.charCodeAt(6) * 31 + enemy.id.length }} moving />
+      {/* Lift so the imp's feet touch the ground (body center is above the legs). */}
+      <group position={[0, 0.35, 0]}>
+        <ToonHumanoid def={def} moving />
       </group>
 
       <pointLight color="#ff4d6d" intensity={0.5} distance={3} position={[0, 0.5, 0]} />

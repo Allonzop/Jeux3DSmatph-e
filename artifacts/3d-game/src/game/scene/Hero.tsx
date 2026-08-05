@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from '../store';
@@ -10,8 +10,11 @@ import { mulberry32 } from '../characters/rng';
 const SPEED = 4;
 const DUST_COUNT = 8;
 
-// Deterministic offsets for dust puffs (no Math.random in useFrame).
-const dustRand = mulberry32(4242);
+// Reads movement state without React re-renders (ToonHumanoid accepts a getter).
+const isHeroMoving = () => {
+  const [dx, dz] = useGameStore.getState().heroDir;
+  return dx !== 0 || dz !== 0;
+};
 
 export function Hero() {
   const groupRef = useRef<THREE.Group>(null);
@@ -21,8 +24,8 @@ export function Hero() {
   const tutorialMoveDist = useRef(0);
   const dustData = useRef(Array.from({ length: DUST_COUNT }).map(() => ({ active: false, time: 0, pos: new THREE.Vector3() })));
   const lastDustTime = useRef(0);
-  const movingRef = useRef(false);
-  const [moving, setMoving] = React.useState(false);
+  // Deterministic rng for dust jitter — no Math.random() in useFrame.
+  const dustRng = useMemo(() => mulberry32(0xd057), []);
 
   useFrame((state, delta) => {
     const { heroPos, heroDir } = useGameStore.getState();
@@ -32,11 +35,6 @@ export function Hero() {
     const dx = heroDir[0];
     const dz = heroDir[1];
     const isMoving = dx !== 0 || dz !== 0;
-    // Throttled React state: only flips when the value actually changes.
-    if (isMoving !== movingRef.current) {
-      movingRef.current = isMoving;
-      setMoving(isMoving);
-    }
 
     if (isMoving) {
       let nx = heroPos[0] + dx * SPEED * delta;
@@ -71,21 +69,21 @@ export function Hero() {
         while (diff > Math.PI) diff -= Math.PI * 2;
         groupRef.current.rotation.y += diff * 0.2;
       }
-    }
 
-    // Dust emission while walking (synced to the walk cycle bounce)
-    if (isMoving) {
-      const bounce = Math.abs(Math.sin(time * 15));
-      if (time > lastDustTime.current + 0.15 && bounce < 0.1) {
-        lastDustTime.current = time;
-        const inactiveDust = dustData.current.find(d => !d.active);
-        if (inactiveDust && groupRef.current) {
-          inactiveDust.active = true;
-          inactiveDust.time = 0;
-          groupRef.current.getWorldPosition(inactiveDust.pos);
-          inactiveDust.pos.y = -0.4;
-          inactiveDust.pos.x += (dustRand() - 0.5) * 0.3;
-          inactiveDust.pos.z += (dustRand() - 0.5) * 0.3;
+      // Dust emission (synced with the walk bounce cycle)
+      if (isMoving) {
+        const bounce = Math.abs(Math.sin(time * 15));
+        if (time > lastDustTime.current + 0.15 && bounce < 0.1) {
+          lastDustTime.current = time;
+          const inactiveDust = dustData.current.find((d) => !d.active);
+          if (inactiveDust) {
+            inactiveDust.active = true;
+            inactiveDust.time = 0;
+            groupRef.current.getWorldPosition(inactiveDust.pos);
+            inactiveDust.pos.y = -0.4;
+            inactiveDust.pos.x += (dustRng() - 0.5) * 0.3;
+            inactiveDust.pos.z += (dustRng() - 0.5) * 0.3;
+          }
         }
       }
     }
@@ -125,7 +123,7 @@ export function Hero() {
         ))}
       </group>
 
-      <ToonHumanoid def={heroDef} moving={moving} />
+      <ToonHumanoid def={heroDef} moving={isHeroMoving} />
     </group>
   );
 }

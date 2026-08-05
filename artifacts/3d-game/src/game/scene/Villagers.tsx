@@ -1,22 +1,23 @@
-import React, { useRef, useMemo, useState } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { ToonHumanoid } from '../characters/ToonHumanoid';
 import { villagerDefs } from '../characters/defs';
 import { mulberry32 } from '../characters/rng';
-import { CharacterDef } from '../characters/types';
+import type { CharacterDef } from '../characters/types';
 
-// Spawn spots spread around the village (indexed by villager order).
-const STARTS: [number, number, number][] = [
-  [-3, 0, 3], [4, 0, -2], [0, 0, -5], [-5, 0, -2],
-  [6, 0, 4], [-2, 0, 6], [7, 0, -5], [3, 0, 7],
-];
+// Deterministic spawn spots spread around the crystal.
+function spawnFor(index: number): [number, number, number] {
+  const angle = (index / villagerDefs.length) * Math.PI * 2 + 0.7;
+  const radius = 3.5 + (index % 3);
+  return [Math.cos(angle) * radius, 0, Math.sin(angle) * radius];
+}
 
 export function Villagers() {
   return (
     <group>
       {villagerDefs.map((def, i) => (
-        <Villager key={def.id} def={def} start={STARTS[i % STARTS.length]} />
+        <Villager key={def.id} def={def} start={spawnFor(i)} />
       ))}
     </group>
   );
@@ -25,36 +26,35 @@ export function Villagers() {
 function Villager({ def, start }: { def: CharacterDef; start: [number, number, number] }) {
   const groupRef = useRef<THREE.Group>(null);
 
-  // Deterministic AI randomness — no Math.random in useFrame.
-  const rand = useMemo(() => mulberry32(def.seed * 7 + 13), [def.seed]);
-
-  // AI state (refs only; `walking` is a low-frequency React state for the rig)
+  // AI state — refs only, never React state (per-frame data).
   const pos = useRef(new THREE.Vector3(...start));
   const target = useRef(new THREE.Vector3(...start));
-  const state = useRef<'idle' | 'walk'>('idle');
-  const timer = useRef(rand() * 2);
-  const [walking, setWalking] = useState(false);
+  const aiState = useRef<'idle' | 'walk'>('idle');
+  // Seeded rng for AI decisions — no Math.random() in useFrame.
+  const rng = useMemo(() => mulberry32(def.seed ^ 0xa11ce), [def.seed]);
+  const timer = useRef(rng() * 2);
 
   const pickTarget = () => {
     const newTarget = new THREE.Vector3();
     let valid = false;
     let attempts = 0;
     while (!valid && attempts < 10) {
-      const angle = rand() * Math.PI * 2;
-      const radius = 3 + rand() * 4; // Between 3 and 7
+      const angle = rng() * Math.PI * 2;
+      const radius = 3 + rng() * 4; // Between 3 and 7
       newTarget.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
       // Avoid center (crystal)
       if (newTarget.length() > 2.5) valid = true;
       attempts++;
     }
     target.current.copy(newTarget);
-    state.current = 'walk';
-    setWalking(true);
+    aiState.current = 'walk';
   };
+
+  const isMoving = () => aiState.current === 'walk';
 
   useFrame((_, delta) => {
     // AI Logic
-    if (state.current === 'idle') {
+    if (aiState.current === 'idle') {
       timer.current -= delta;
       if (timer.current <= 0) pickTarget();
     } else {
@@ -63,9 +63,8 @@ function Villager({ def, start }: { def: CharacterDef; start: [number, number, n
       const dist = dir.length();
 
       if (dist < 0.1) {
-        state.current = 'idle';
-        setWalking(false);
-        timer.current = 2 + rand() * 2;
+        aiState.current = 'idle';
+        timer.current = 2 + rng() * 2;
       } else {
         dir.normalize();
         pos.current.addScaledVector(dir, 1.2 * delta);
@@ -89,7 +88,7 @@ function Villager({ def, start }: { def: CharacterDef; start: [number, number, n
 
   return (
     <group ref={groupRef}>
-      <ToonHumanoid def={def} moving={walking} />
+      <ToonHumanoid def={def} moving={isMoving} />
     </group>
   );
 }

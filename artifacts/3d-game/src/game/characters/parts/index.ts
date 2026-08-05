@@ -1,30 +1,15 @@
-import React from 'react';
-import { PartProps, HeadwearKey, BackKey, NeckKey, FaceGearKey } from '../types';
+import type React from 'react';
+import type { PartProps, HeadwearKey, BackKey, NeckKey, FaceGearKey } from '../types';
 import {
-  MushroomCap,
-  Beanie,
-  AntennaDome,
-  VisorHelmet,
-  Hood,
-  ConeHat,
-  LeafCrown,
-  Hair,
-  HornHelmet,
+  MushroomCap, Beanie, AntennaDome, VisorHelmet, Hood, ConeHat, LeafCrown, Hair, HornHelmet,
 } from './heads';
 import {
-  Satchel,
-  Wings,
-  Jetpack,
-  Cape,
-  Shell,
-  Scarf,
-  Turtleneck,
-  GlowNecklace,
+  Backpack, Wings, Jetpack, Cape, Shell, Scarf, Turtleneck, GlowNecklace,
 } from './accessories';
 import { RoundGlasses, TintedVisor, Mask } from './faces';
 
-// Adding an accessory = add a component + one registry entry.
-// ToonHumanoid never needs to change.
+// Typed part registries. Adding an accessory = adding a component + one
+// entry here, without touching ToonHumanoid.
 
 export const headwearRegistry = {
   mushroom: MushroomCap,
@@ -39,7 +24,7 @@ export const headwearRegistry = {
 } satisfies Record<HeadwearKey, React.FC<PartProps>>;
 
 export const backRegistry = {
-  satchel: Satchel,
+  backpack: Backpack,
   wings: Wings,
   jetpack: Jetpack,
   cape: Cape,
