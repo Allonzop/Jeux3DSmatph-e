@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from '../store';
 import { useToonGradient } from './utils';
+import { WORLD_RADIUS } from '../world';
 import { RoundedBox } from '@react-three/drei';
 
 const SPEED = 4;
@@ -40,9 +41,9 @@ export function Hero() {
       let nz = heroPos[2] + dz * SPEED * delta;
       
       const dist = Math.sqrt(nx * nx + nz * nz);
-      if (dist > 8.5) {
-        nx = (nx / dist) * 8.5;
-        nz = (nz / dist) * 8.5;
+      if (dist > WORLD_RADIUS) {
+        nx = (nx / dist) * WORLD_RADIUS;
+        nz = (nz / dist) * WORLD_RADIUS;
       }
       setHeroPos([nx, heroPos[1], nz]);
     }

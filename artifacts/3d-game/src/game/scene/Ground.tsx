@@ -1,62 +1,28 @@
 import React, { useMemo } from 'react';
 import { Float } from '@react-three/drei';
 import { useToonGradient } from './utils';
+import { SCATTER, WORLD_RADIUS } from '../world';
 import * as THREE from 'three';
 
 export function Ground() {
   const gradientMap = useToonGradient();
 
-  // Organic plateau profile
+  // Organic plateau profile — radius driven by WORLD_RADIUS
   const plateauProfile = useMemo(() => {
+    const r = WORLD_RADIUS;
     return [
       new THREE.Vector2(0, 0.5),
-      new THREE.Vector2(8.5, 0.5),
-      new THREE.Vector2(9.0, 0.3),
-      new THREE.Vector2(9.2, 0.0),
-      new THREE.Vector2(9.0, -0.3),
-      new THREE.Vector2(8.5, -0.5),
+      new THREE.Vector2(r, 0.5),
+      new THREE.Vector2(r + 0.5, 0.3),
+      new THREE.Vector2(r + 0.7, 0.0),
+      new THREE.Vector2(r + 0.5, -0.3),
+      new THREE.Vector2(r, -0.5),
       new THREE.Vector2(0, -0.5),
     ];
   }, []);
 
-  // Scatter positions
-  const { trees, bushes, flowers, rocks, pond } = useMemo(() => {
-    const randomPos = (minR: number, maxR: number) => {
-      let valid = false;
-      let pos = new THREE.Vector3();
-      let attempts = 0;
-      // Hardcoded building positions to avoid
-      const buildingSpots = [
-        new THREE.Vector3(0,0,-6), new THREE.Vector3(6,0,-3), 
-        new THREE.Vector3(-6,0,-3), new THREE.Vector3(0,0,6),
-        new THREE.Vector3(6,0,3), new THREE.Vector3(-6,0,3)
-      ];
-      while (!valid && attempts < 50) {
-        const angle = Math.random() * Math.PI * 2;
-        const radius = minR + Math.random() * (maxR - minR);
-        pos.set(Math.cos(angle) * radius, 0.5, Math.sin(angle) * radius);
-        
-        let overlap = false;
-        // Avoid center crystal area
-        if (pos.length() < 3) overlap = true;
-        // Avoid buildings
-        for (let b of buildingSpots) {
-          if (pos.distanceTo(new THREE.Vector3(b.x, 0.5, b.z)) < 2.5) overlap = true;
-        }
-        if (!overlap) valid = true;
-        attempts++;
-      }
-      return pos;
-    };
-
-    return {
-      trees: Array.from({length: 5}).map(() => ({ pos: randomPos(4, 8), scale: 0.8 + Math.random()*0.4, rot: Math.random()*Math.PI })),
-      bushes: Array.from({length: 6}).map(() => ({ pos: randomPos(3, 8.5), scale: 0.7 + Math.random()*0.6 })),
-      flowers: Array.from({length: 8}).map(() => ({ pos: randomPos(3, 8.5), scale: 0.8 + Math.random()*0.4, type: Math.random() > 0.5 ? 0 : 1, rot: Math.random()*Math.PI })),
-      rocks: Array.from({length: 4}).map(() => ({ pos: randomPos(5, 8.5), scale: 0.5 + Math.random()*0.5, rot: Math.random()*Math.PI })),
-      pond: { pos: randomPos(4, 7) }
-    };
-  }, []);
+  // Deterministic scatter shared with placement validation (world.ts)
+  const { trees, bushes, flowers, rocks, pond } = SCATTER;
 
   return (
     <group position={[0, -0.5, 0]}>
@@ -68,22 +34,22 @@ export function Ground() {
       
       {/* Rocky Cone Underbelly */}
       <group position={[0, -0.4, 0]}>
-        <mesh rotation={[0.7, 1.3, 0.4]} scale={[8.5, 2, 8.5]} receiveShadow>
+        <mesh rotation={[0.7, 1.3, 0.4]} scale={[14, 2.8, 14]} receiveShadow>
           <icosahedronGeometry args={[1, 0]} />
           <meshStandardMaterial color="#7a5c47" flatShading roughness={1} />
         </mesh>
-        <mesh position={[0, -1.5, 0]} rotation={[1.1, 2.2, 0.9]} scale={[6, 2.5, 6]} receiveShadow>
+        <mesh position={[0, -2, 0]} rotation={[1.1, 2.2, 0.9]} scale={[10, 3.5, 10]} receiveShadow>
           <icosahedronGeometry args={[1, 0]} />
           <meshStandardMaterial color="#664d5c" flatShading roughness={1} />
         </mesh>
-        <mesh position={[0, -3, 0]} rotation={[0.3, 0.8, 1.6]} scale={[3.5, 3, 3.5]} receiveShadow>
+        <mesh position={[0, -4.2, 0]} rotation={[0.3, 0.8, 1.6]} scale={[5.5, 4, 5.5]} receiveShadow>
           <icosahedronGeometry args={[1, 0]} />
           <meshStandardMaterial color="#4a3d5c" flatShading roughness={1} />
         </mesh>
       </group>
 
       {/* Floating Shards */}
-      <Float speed={1.5} rotationIntensity={0.5} floatIntensity={1} position={[10, -2, -6]}>
+      <Float speed={1.5} rotationIntensity={0.5} floatIntensity={1} position={[18, -2, -10]}>
         <mesh scale={[1.5, 2, 1.5]} castShadow receiveShadow>
           <icosahedronGeometry args={[1, 0]} />
           <meshStandardMaterial color="#7a5c47" flatShading roughness={1} />
@@ -94,7 +60,7 @@ export function Ground() {
         </mesh>
       </Float>
       
-      <Float speed={1.2} rotationIntensity={0.8} floatIntensity={1.5} position={[-9, -4, 8]}>
+      <Float speed={1.2} rotationIntensity={0.8} floatIntensity={1.5} position={[-16, -5, 13]}>
         <mesh scale={[2, 2.5, 2]} rotation={[0.4, 0.2, 0]} castShadow receiveShadow>
           <icosahedronGeometry args={[1, 0]} />
           <meshStandardMaterial color="#4a3d5c" flatShading roughness={1} />
@@ -106,7 +72,7 @@ export function Ground() {
       </Float>
 
       {/* Scatter: Pond */}
-      <group position={[pond.pos.x, pond.pos.y + 0.02, pond.pos.z]}>
+      <group position={[pond.pos[0], pond.pos[1] + 0.02, pond.pos[2]]}>
         <mesh rotation={[-Math.PI/2, 0, 0]} receiveShadow>
           <circleGeometry args={[1.5, 32]} />
           <meshStandardMaterial color="#4cc9f0" roughness={0.1} emissive="#4cc9f0" emissiveIntensity={0.2} />

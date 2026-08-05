@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { LEGACY_BUILDING_POSITIONS, ENEMY_SPAWN_RADIUS } from './world';
 
 export type ResourceType = 'boulons' | 'matiere_floue' | 'energie_rire';
 
@@ -35,6 +36,10 @@ export interface GameState {
   enemies: Enemy[];
   particles: Particle[];
   selectedBuilding: string | null;
+  /** world position of each placed building (absent = not placed yet) */
+  buildingPositions: Record<string, [number, number, number]>;
+  /** building id currently being placed by tapping the ground */
+  placingBuilding: string | null;
 
   addResources: (res: Partial<Resources>) => void;
   spendResources: (res: Partial<Resources>) => boolean;
@@ -42,6 +47,9 @@ export interface GameState {
   setHeroPos: (pos: [number, number, number]) => void;
   setHeroDir: (dir: [number, number]) => void;
   selectBuilding: (id: string | null) => void;
+  startPlacing: (id: string) => void;
+  cancelPlacing: () => void;
+  placeBuilding: (id: string, pos: [number, number, number]) => void;
   startWave: () => void;
   damageCore: (amount: number) => void;
   damageEnemy: (id: string, amount: number) => void;
@@ -67,6 +75,8 @@ export const useGameStore = create<GameState>()(
       enemies: [],
       particles: [],
       selectedBuilding: null,
+      buildingPositions: {},
+      placingBuilding: null,
 
       addResources: (res) =>
         set((state) => ({
@@ -113,6 +123,16 @@ export const useGameStore = create<GameState>()(
       setHeroDir: (dir) => set({ heroDir: dir }),
       selectBuilding: (id) => set({ selectedBuilding: id }),
 
+      startPlacing: (id) => set({ placingBuilding: id, selectedBuilding: null }),
+      cancelPlacing: () => set({ placingBuilding: null }),
+      placeBuilding: (id, pos) =>
+        set((state) => ({
+          buildingPositions: { ...state.buildingPositions, [id]: pos },
+          placingBuilding: null,
+          // Open the build popup right away so the player can construct it.
+          selectedBuilding: id,
+        })),
+
       startWave: () => {
         const state = get();
         if (state.waveActive) return;
@@ -123,7 +143,7 @@ export const useGameStore = create<GameState>()(
         const newEnemies: Enemy[] = [];
         for (let i = 0; i < enemyCount; i++) {
           const angle = Math.random() * Math.PI * 2;
-          const radius = 9;
+          const radius = ENEMY_SPAWN_RADIUS;
           newEnemies.push({
             id: `enemy_${nextWave}_${i}_${Math.random()}`,
             pos: [Math.cos(angle) * radius, 0.5, Math.sin(angle) * radius],
@@ -208,10 +228,27 @@ export const useGameStore = create<GameState>()(
     }),
     {
       name: 'village-spatial-storage',
+      version: 2,
       partialize: (state) => ({
         resources: state.resources,
         buildingLevels: state.buildingLevels,
+        buildingPositions: state.buildingPositions,
       }),
+      migrate: (persisted: any, version) => {
+        if (version < 2 && persisted) {
+          // Old saves had fixed building spots: keep already-built buildings
+          // at their legacy positions; unbuilt ones become freely placeable.
+          const positions: Record<string, [number, number, number]> = {};
+          const levels: Record<string, number> = persisted.buildingLevels || {};
+          for (const [id, level] of Object.entries(levels)) {
+            if ((level as number) > 0 && LEGACY_BUILDING_POSITIONS[id]) {
+              positions[id] = LEGACY_BUILDING_POSITIONS[id];
+            }
+          }
+          persisted.buildingPositions = positions;
+        }
+        return persisted;
+      },
     }
   )
 );

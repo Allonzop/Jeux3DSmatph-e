@@ -13,6 +13,10 @@ export function HUD() {
   const startWave = useGameStore(state => state.startWave);
   const selectBuilding = useGameStore(state => state.selectBuilding);
   const buildingLevels = useGameStore(state => state.buildingLevels);
+  const buildingPositions = useGameStore(state => state.buildingPositions);
+  const placingBuilding = useGameStore(state => state.placingBuilding);
+  const startPlacing = useGameStore(state => state.startPlacing);
+  const cancelPlacing = useGameStore(state => state.cancelPlacing);
 
   return (
     <div className="fixed inset-0 pointer-events-none z-[100] flex flex-col justify-between overflow-hidden">
@@ -29,6 +33,29 @@ export function HUD() {
         <ResourcePill type="matiere_floue" color="#8e5ce8" />
         <ResourcePill type="energie_rire" color="#ffd24c" />
       </div>
+
+      {/* Placement mode banner */}
+      <AnimatePresence>
+        {placingBuilding && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none"
+            style={{ top: 'calc(4.5rem + var(--safe-top))' }}
+          >
+            <div className="bg-black/70 backdrop-blur-md border border-white/15 rounded-xl px-4 py-2 text-white text-[clamp(0.75rem,3vw,0.875rem)] font-bold text-center whitespace-nowrap">
+              Touchez le sol pour placer&nbsp;: {BUILDINGS[placingBuilding]?.name}
+            </div>
+            <button
+              onClick={cancelPlacing}
+              className="pointer-events-auto bg-red-500/80 hover:bg-red-500 text-white font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-xl border border-red-300/30"
+            >
+              Annuler
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Bottom Area — wave button above, build chips below, everything inside safe areas */}
       <div
@@ -83,7 +110,15 @@ export function HUD() {
           {Object.values(BUILDINGS).map(b => (
             <button
               key={b.id}
-              onClick={() => selectBuilding(b.id)}
+              onClick={() => {
+                if (buildingPositions[b.id]) {
+                  selectBuilding(b.id);
+                } else if (placingBuilding === b.id) {
+                  cancelPlacing();
+                } else {
+                  startPlacing(b.id);
+                }
+              }}
               className="w-[clamp(2.5rem,12vw,3rem)] aspect-square rounded-xl flex flex-col items-center justify-center gap-0.5 bg-white/5 hover:bg-white/10 active:scale-95 transition-all border border-white/5 relative shrink-0"
             >
               <BuildingIcon id={b.id} className="w-[58%] h-[58%] drop-shadow-md" />

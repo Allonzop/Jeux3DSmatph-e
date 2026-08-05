@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore, ResourceType } from '../store';
 import { useToonGradient } from './utils';
+import { RESOURCE_NODE_POSITIONS } from '../world';
 import { Html, Float } from '@react-three/drei';
 
 // Scratch vectors reused across frames — never allocate inside useFrame.
@@ -21,9 +22,9 @@ type NodeDef = {
 };
 
 const NODES: NodeDef[] = [
-  { id: 'boulons', pos: [-4, 0.5, -4], color: '#c9c9c9', amount: 10 },
-  { id: 'matiere_floue', pos: [4, 0.5, 0], color: '#8e5ce8', amount: 3 },
-  { id: 'energie_rire', pos: [0, 0.5, 4], color: '#ffd24c', amount: 2 },
+  { id: 'boulons', pos: RESOURCE_NODE_POSITIONS.boulons, color: '#c9c9c9', amount: 10 },
+  { id: 'matiere_floue', pos: RESOURCE_NODE_POSITIONS.matiere_floue, color: '#8e5ce8', amount: 3 },
+  { id: 'energie_rire', pos: RESOURCE_NODE_POSITIONS.energie_rire, color: '#ffd24c', amount: 2 },
 ];
 
 export function ResourceNodes() {

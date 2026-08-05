@@ -1,8 +1,10 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from '../store';
+import { BUILDINGS } from '../gamedata';
 import { useToonGradient, enemyPositions } from './utils';
+import { WORLD_RADIUS, checkPlacement } from '../world';
 import { Html, RoundedBox } from '@react-three/drei';
 
 // Scratch vector reused across frames — never allocate inside useFrame.
@@ -14,15 +16,98 @@ type BuildingProps = {
   color: string;
 };
 
+const BUILDING_COMPONENTS: Record<string, React.ComponentType<BuildingProps>> = {
+  hutte: BuildingHutte,
+  ferme: BuildingFerme,
+  bar: BuildingBar,
+  antenne: BuildingAntenne,
+  marche: BuildingMarche,
+  tourelle: BuildingTourelle,
+};
+
 export function Buildings() {
+  const positions = useGameStore(state => state.buildingPositions);
   return (
     <group>
-      <BuildingHutte id="hutte" pos={[0, 0, -6]} color="#f4a261" />
-      <BuildingFerme id="ferme" pos={[6, 0, -3]} color="#57cc99" />
-      <BuildingBar id="bar" pos={[-6, 0, -3]} color="#e07a5f" />
-      <BuildingAntenne id="antenne" pos={[0, 0, 6]} color="#e63946" />
-      <BuildingMarche id="marche" pos={[6, 0, 3]} color="#ffd24c" />
-      <BuildingTourelle id="tourelle" pos={[-6, 0, 3]} color="#4cc9f0" />
+      {Object.entries(positions).map(([id, pos]) => {
+        const Comp = BUILDING_COMPONENTS[id];
+        const data = BUILDINGS[id];
+        if (!Comp || !data) return null;
+        return <Comp key={id} id={id} pos={pos} color={data.color} />;
+      })}
+      <PlacementController />
+    </group>
+  );
+}
+
+// ---- Free placement: tap the ground to place the selected building ----
+function PlacementController() {
+  const placingBuilding = useGameStore(state => state.placingBuilding);
+  const placeBuilding = useGameStore(state => state.placeBuilding);
+  const ghostRef = useRef<THREE.Group>(null);
+  const ringMatRef = useRef<THREE.MeshBasicMaterial>(null);
+  const validRef = useRef(false);
+  const hasPointRef = useRef(false);
+
+  // Reset ghost when entering/leaving placement mode
+  useEffect(() => {
+    hasPointRef.current = false;
+    if (ghostRef.current) ghostRef.current.visible = false;
+  }, [placingBuilding]);
+
+  if (!placingBuilding) return null;
+
+  const color = BUILDINGS[placingBuilding]?.color || '#ffffff';
+
+  const updateGhost = (e: ThreeEvent<PointerEvent>) => {
+    const x = e.point.x;
+    const z = e.point.z;
+    const others = Object.entries(useGameStore.getState().buildingPositions)
+      .filter(([id]) => id !== placingBuilding)
+      .map(([, p]) => p);
+    const check = checkPlacement(x, z, others);
+    validRef.current = check.valid;
+    hasPointRef.current = true;
+    if (ghostRef.current) {
+      ghostRef.current.visible = true;
+      ghostRef.current.position.set(x, 0.02, z);
+    }
+    if (ringMatRef.current) {
+      ringMatRef.current.color.set(check.valid ? '#4ade80' : '#ef4444');
+    }
+    return check.valid;
+  };
+
+  return (
+    <group>
+      {/* Invisible tap-catcher covering the whole island */}
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 0.01, 0]}
+        onPointerMove={updateGhost}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          const valid = updateGhost(e);
+          if (valid) {
+            placeBuilding(placingBuilding, [e.point.x, 0, e.point.z]);
+          }
+        }}
+      >
+        <circleGeometry args={[WORLD_RADIUS + 0.5, 48]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+
+      {/* Ghost marker: colored ring + center disc, green/red for validity */}
+      <group ref={ghostRef} visible={false}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[1.1, 1.35, 40]} />
+          <meshBasicMaterial ref={ringMatRef} color="#4ade80" transparent opacity={0.85} depthWrite={false} />
+        </mesh>
+        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[1.1, 40]} />
+          <meshBasicMaterial color={color} transparent opacity={0.25} depthWrite={false} />
+        </mesh>
+      </group>
     </group>
   );
 }
@@ -67,6 +152,12 @@ function BuildingWrapper({ id, pos, color, children }: BuildingProps & { childre
             <sphereGeometry args={[1.2, 24, 24]} />
             <meshToonMaterial color="#6b4c3a" gradientMap={gradientMap} />
           </mesh>
+          {/* Glowing ground ring in the building's color for readability */}
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
+            <ringGeometry args={[1.25, 1.5, 40]} />
+            <meshBasicMaterial color={color} transparent opacity={0.7} depthWrite={false} />
+          </mesh>
+          <pointLight position={[0, 1, 0]} color={color} intensity={0.8} distance={4} />
           {/* Wooden Sign */}
           <group position={[0, 0.4, 0]}>
             <mesh castShadow>
@@ -78,9 +169,12 @@ function BuildingWrapper({ id, pos, color, children }: BuildingProps & { childre
               <meshToonMaterial color="#c29d72" gradientMap={gradientMap} />
             </mesh>
           </group>
-          <Html position={[0, 0.6, 0.1]} center transform style={{ pointerEvents: 'none' }}>
-            <div className="px-2 py-1 bg-black/60 rounded backdrop-blur text-white text-xs font-bold uppercase tracking-wider" style={{ color }}>
-              Build
+          <Html position={[0, 0.9, 0.1]} center transform style={{ pointerEvents: 'none' }}>
+            <div
+              className="px-2 py-1 rounded-lg backdrop-blur text-xs font-bold uppercase tracking-wider whitespace-nowrap border"
+              style={{ color, backgroundColor: 'rgba(0,0,0,0.7)', borderColor: `${color}88`, boxShadow: `0 0 10px ${color}55` }}
+            >
+              Construire
             </div>
           </Html>
         </group>

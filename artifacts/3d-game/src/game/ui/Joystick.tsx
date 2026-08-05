@@ -20,6 +20,9 @@ export function Joystick() {
   const baseRef = useRef<HTMLDivElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
   const setHeroDir = useGameStore(state => state.setHeroDir);
+  // While placing a building, the overlay lets every pointer event through so
+  // the 3D ground receives genuine down/move events (ghost preview + tap-to-place).
+  const placing = useGameStore(state => state.placingBuilding !== null);
 
   const pointerId = useRef<number | null>(null);
   const origin = useRef({ x: 0, y: 0 });
@@ -102,7 +105,7 @@ export function Joystick() {
   return (
     <div
       className="fixed inset-0 z-40"
-      style={{ touchAction: 'none', pointerEvents: 'auto' }}
+      style={{ touchAction: 'none', pointerEvents: placing ? 'none' : 'auto' }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={e => endGesture(e, false)}
