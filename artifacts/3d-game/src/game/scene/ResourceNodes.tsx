@@ -21,10 +21,14 @@ type NodeDef = {
   amount: number;
 };
 
+// Early-game pacing: shorter cooldown + bigger yields so the first buildings
+// come quickly (first Hutte ~immediate, second building within ~1-2 min).
+const HARVEST_COOLDOWN = 3;
+
 const NODES: NodeDef[] = [
-  { id: 'boulons', pos: RESOURCE_NODE_POSITIONS.boulons, color: '#c9c9c9', amount: 10 },
-  { id: 'matiere_floue', pos: RESOURCE_NODE_POSITIONS.matiere_floue, color: '#8e5ce8', amount: 3 },
-  { id: 'energie_rire', pos: RESOURCE_NODE_POSITIONS.energie_rire, color: '#ffd24c', amount: 2 },
+  { id: 'boulons', pos: RESOURCE_NODE_POSITIONS.boulons, color: '#c9c9c9', amount: 15 },
+  { id: 'matiere_floue', pos: RESOURCE_NODE_POSITIONS.matiere_floue, color: '#8e5ce8', amount: 4 },
+  { id: 'energie_rire', pos: RESOURCE_NODE_POSITIONS.energie_rire, color: '#ffd24c', amount: 3 },
 ];
 
 export function ResourceNodes() {
@@ -80,10 +84,11 @@ function ResourceNode({ def }: { def: NodeDef }) {
       
       if (dist < 2) {
         setActive(false);
-        cooldownRef.current = 5;
+        cooldownRef.current = HARVEST_COOLDOWN;
         displayAccum.current = 0;
-        setCooldownTime(5);
+        setCooldownTime(HARVEST_COOLDOWN);
         addResources({ [def.id]: def.amount });
+        useGameStore.getState().notifyTutorial('harvest');
         
         for (let i = 0; i < 5; i++) {
           addParticle({
@@ -142,7 +147,7 @@ function ResourceNode({ def }: { def: NodeDef }) {
           <div className="w-8 h-2 bg-black/50 rounded overflow-hidden border border-black/50">
             <div 
               className="h-full bg-white/80 transition-all duration-100 ease-linear"
-              style={{ width: `${(1 - cooldownTime / 5) * 100}%` }}
+              style={{ width: `${(1 - cooldownTime / HARVEST_COOLDOWN) * 100}%` }}
             />
           </div>
         </Html>

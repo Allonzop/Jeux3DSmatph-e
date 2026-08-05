@@ -23,6 +23,7 @@ export function Hero() {
   const setHeroPos = useGameStore((state) => state.setHeroPos);
 
   const dustGroupRef = useRef<THREE.Group>(null);
+  const tutorialMoveDist = useRef(0);
   const dustData = useRef(Array.from({ length: DUST_COUNT }).map(() => ({ active: false, time: 0, pos: new THREE.Vector3() })));
   const lastDustTime = useRef(0);
   const blinkTimer = useRef(0);
@@ -46,6 +47,13 @@ export function Hero() {
         nz = (nz / dist) * WORLD_RADIUS;
       }
       setHeroPos([nx, heroPos[1], nz]);
+
+      // Tutorial step 0: completed after walking ~3 units total.
+      const gs = useGameStore.getState();
+      if (gs.tutorialStep === 0) {
+        tutorialMoveDist.current += SPEED * delta;
+        if (tutorialMoveDist.current > 3) gs.notifyTutorial('move');
+      }
     }
 
     // Visual Interpolation

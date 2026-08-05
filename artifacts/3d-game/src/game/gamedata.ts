@@ -18,8 +18,8 @@ export const BUILDINGS: Record<string, BuildingData> = {
     color: '#f4a261',
     maxLevel: 5,
     levels: [
-      { cost: { boulons: 50 }, passive: { boulons: 1 } },
-      { cost: { boulons: 150 }, passive: { boulons: 2 } },
+      { cost: { boulons: 50 }, passive: { boulons: 2 } },
+      { cost: { boulons: 120 }, passive: { boulons: 3 } },
       { cost: { boulons: 400 }, passive: { boulons: 4 } },
       { cost: { boulons: 900, matiere_floue: 10 }, passive: { boulons: 7 } },
       { cost: { boulons: 2000, matiere_floue: 30 }, passive: { boulons: 12 } }
@@ -31,8 +31,8 @@ export const BUILDINGS: Record<string, BuildingData> = {
     color: '#57cc99',
     maxLevel: 4,
     levels: [
-      { cost: { boulons: 200 }, passive: {} },
-      { cost: { boulons: 500, matiere_floue: 5 }, passive: { matiere_floue: 0.2 } },
+      { cost: { boulons: 150 }, passive: {} },
+      { cost: { boulons: 450, matiere_floue: 5 }, passive: { matiere_floue: 0.2 } },
       { cost: { boulons: 1200, matiere_floue: 15 }, passive: { matiere_floue: 0.5 } },
       { cost: { boulons: 3000, matiere_floue: 40 }, passive: { matiere_floue: 1 } }
     ]
@@ -43,8 +43,8 @@ export const BUILDINGS: Record<string, BuildingData> = {
     color: '#e07a5f',
     maxLevel: 4,
     levels: [
-      { cost: { boulons: 300 }, passive: {} },
-      { cost: { boulons: 800, matiere_floue: 10 }, passive: {} },
+      { cost: { boulons: 250 }, passive: {} },
+      { cost: { boulons: 700, matiere_floue: 10 }, passive: {} },
       { cost: { boulons: 2000, matiere_floue: 30 }, passive: {} },
       { cost: { boulons: 4500, matiere_floue: 60 }, passive: {} }
     ]
@@ -78,8 +78,8 @@ export const BUILDINGS: Record<string, BuildingData> = {
     color: '#4cc9f0',
     maxLevel: 5,
     levels: [
-      { cost: { boulons: 400 }, passive: {} },
-      { cost: { boulons: 900, matiere_floue: 10 }, passive: {} },
+      { cost: { boulons: 300 }, passive: {} },
+      { cost: { boulons: 800, matiere_floue: 10 }, passive: {} },
       { cost: { boulons: 2000, matiere_floue: 25 }, passive: {} },
       { cost: { boulons: 4000, matiere_floue: 50 }, passive: {} },
       { cost: { boulons: 8000, matiere_floue: 100 }, passive: {} }

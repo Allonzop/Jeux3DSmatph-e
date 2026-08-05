@@ -40,6 +40,8 @@ export interface GameState {
   buildingPositions: Record<string, [number, number, number]>;
   /** building id currently being placed by tapping the ground */
   placingBuilding: string | null;
+  /** guided tutorial step: 0 move, 1 harvest, 2 build, 3 wave, 4 finished toast, 5 done */
+  tutorialStep: number;
 
   addResources: (res: Partial<Resources>) => void;
   spendResources: (res: Partial<Resources>) => boolean;
@@ -59,7 +61,20 @@ export interface GameState {
   removeParticle: (id: string) => void;
   updateParticles: (delta: number) => void;
   tickPassive: (amounts: Partial<Resources>) => void;
+  /** advance the tutorial when the matching player action happens */
+  notifyTutorial: (event: 'move' | 'harvest' | 'build' | 'waveEnd') => void;
+  advanceTutorial: () => void;
+  skipTutorial: () => void;
 }
+
+export const TUTORIAL_DONE = 5;
+// Which player event completes each tutorial step.
+const TUTORIAL_EVENTS: Record<number, 'move' | 'harvest' | 'build' | 'waveEnd'> = {
+  0: 'move',
+  1: 'harvest',
+  2: 'build',
+  3: 'waveEnd',
+};
 
 export const useGameStore = create<GameState>()(
   persist(
@@ -77,6 +92,7 @@ export const useGameStore = create<GameState>()(
       selectedBuilding: null,
       buildingPositions: {},
       placingBuilding: null,
+      tutorialStep: 0,
 
       addResources: (res) =>
         set((state) => ({
@@ -116,6 +132,7 @@ export const useGameStore = create<GameState>()(
               [id]: (state.buildingLevels[id] || 0) + 1,
             },
           }));
+          get().notifyTutorial('build');
         }
       },
 
@@ -163,6 +180,7 @@ export const useGameStore = create<GameState>()(
           }
           return { coreHp: newHp };
         });
+        if (get().coreHp === 0) get().notifyTutorial('waveEnd');
       },
 
       damageEnemy: (id, amount) => {
@@ -180,6 +198,7 @@ export const useGameStore = create<GameState>()(
             waveActive: state.waveActive ? waveActive : false,
           };
         });
+        if (!get().waveActive) get().notifyTutorial('waveEnd');
       },
 
       removeEnemy: (id) => {
@@ -188,6 +207,7 @@ export const useGameStore = create<GameState>()(
           const waveActive = enemies.length > 0;
           return { enemies, waveActive: state.waveActive ? waveActive : false };
         });
+        if (!get().waveActive) get().notifyTutorial('waveEnd');
       },
 
       setEnemyPos: (id, pos) => {
@@ -225,6 +245,21 @@ export const useGameStore = create<GameState>()(
       tickPassive: (amounts) => {
         get().addResources(amounts);
       },
+
+      notifyTutorial: (event) => {
+        const step = get().tutorialStep;
+        if (step >= TUTORIAL_DONE) return;
+        // Never count a wave end before any wave has actually been launched.
+        if (event === 'waveEnd' && get().waveNumber === 0) return;
+        if (TUTORIAL_EVENTS[step] === event) {
+          set({ tutorialStep: step + 1 });
+        }
+      },
+      advanceTutorial: () => {
+        const step = get().tutorialStep;
+        if (step < TUTORIAL_DONE) set({ tutorialStep: step + 1 });
+      },
+      skipTutorial: () => set({ tutorialStep: TUTORIAL_DONE }),
     }),
     {
       name: 'village-spatial-storage',
@@ -233,6 +268,7 @@ export const useGameStore = create<GameState>()(
         resources: state.resources,
         buildingLevels: state.buildingLevels,
         buildingPositions: state.buildingPositions,
+        tutorialStep: state.tutorialStep,
       }),
       migrate: (persisted: any, version) => {
         if (version < 2 && persisted) {

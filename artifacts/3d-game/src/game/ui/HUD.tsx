@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useGameStore, ResourceType } from '../store';
 import { BUILDINGS } from '../gamedata';
 import { BuildingPopup } from './BuildingPopup';
+import { Tutorial } from './Tutorial';
 import { ResourceIcon, BuildingIcon } from './icons';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -17,6 +18,7 @@ export function HUD() {
   const placingBuilding = useGameStore(state => state.placingBuilding);
   const startPlacing = useGameStore(state => state.startPlacing);
   const cancelPlacing = useGameStore(state => state.cancelPlacing);
+  const tutorialStep = useGameStore(state => state.tutorialStep);
 
   return (
     <div className="fixed inset-0 pointer-events-none z-[100] flex flex-col justify-between overflow-hidden">
@@ -78,7 +80,7 @@ export function HUD() {
                 onClick={startWave}
                 className="pointer-events-auto bg-gradient-to-r from-amber-400 to-orange-500 text-black font-bold py-2.5 px-4 rounded-xl shadow-[0_4px_0_#b45309,0_0_20px_rgba(245,158,11,0.5)] active:translate-y-1 active:shadow-[0_0px_0_#b45309,0_0_10px_rgba(245,158,11,0.5)] transition-all uppercase tracking-wider text-[clamp(0.7rem,3vw,0.875rem)] whitespace-nowrap"
               >
-                Launch Wave
+                Lancer la vague
               </motion.button>
             ) : (
               <motion.div
@@ -119,7 +121,11 @@ export function HUD() {
                   startPlacing(b.id);
                 }
               }}
-              className="w-[clamp(2.5rem,12vw,3rem)] aspect-square rounded-xl flex flex-col items-center justify-center gap-0.5 bg-white/5 hover:bg-white/10 active:scale-95 transition-all border border-white/5 relative shrink-0"
+              className={`w-[clamp(2.5rem,12vw,3rem)] aspect-square rounded-xl flex flex-col items-center justify-center gap-0.5 bg-white/5 hover:bg-white/10 active:scale-95 transition-all border relative shrink-0 ${
+                tutorialStep === 2 && b.id === 'hutte'
+                  ? 'border-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.8)] animate-pulse'
+                  : 'border-white/5'
+              }`}
             >
               <BuildingIcon id={b.id} className="w-[58%] h-[58%] drop-shadow-md" />
               <div className="flex gap-[2px]">
@@ -134,6 +140,9 @@ export function HUD() {
           ))}
         </div>
       </div>
+
+      {/* Tutorial overlay (hidden while placing a building so banners don't overlap) */}
+      {!placingBuilding && <Tutorial />}
 
       <BuildingPopup />
     </div>

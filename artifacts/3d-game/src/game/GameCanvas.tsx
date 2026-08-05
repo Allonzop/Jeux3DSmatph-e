@@ -10,6 +10,7 @@ import { Enemies } from './scene/Enemies';
 import { CrystalCore } from './scene/CrystalCore';
 import { Stars } from './scene/Stars';
 import { Camera } from './scene/Camera';
+import { TutorialHighlight } from './scene/TutorialHighlight';
 import { useGameStore } from './store';
 import { BUILDINGS } from './gamedata';
 
@@ -69,6 +70,7 @@ export function GameCanvas() {
         <Buildings />
         <CrystalCore />
         <Enemies />
+        <TutorialHighlight />
 
         {/* Enhanced bloom for glowing emissive materials */}
         <EffectComposer>
