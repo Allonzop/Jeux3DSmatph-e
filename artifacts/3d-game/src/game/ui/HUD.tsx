@@ -35,6 +35,7 @@ export function HUD() {
         <ResourcePill type="boulons" color="#c9c9c9" />
         <ResourcePill type="matiere_floue" color="#8e5ce8" />
         <ResourcePill type="energie_rire" color="#ffd24c" />
+        <ResetButton />
       </div>
 
       {/* Placement mode banner */}
@@ -149,6 +150,43 @@ export function HUD() {
 
       <BuildingPopup />
     </div>
+  );
+}
+
+/** Bouton de test : réinitialise stats, bâtiments, tutoriel et sauvegarde. */
+function ResetButton() {
+  const resetGame = useGameStore(state => state.resetGame);
+  const [confirming, setConfirming] = useState(false);
+
+  useEffect(() => {
+    if (!confirming) return undefined;
+    const timer = setTimeout(() => setConfirming(false), 3000);
+    return () => clearTimeout(timer);
+  }, [confirming]);
+
+  return (
+    <button
+      onClick={() => {
+        if (confirming) {
+          resetGame();
+          setConfirming(false);
+        } else {
+          setConfirming(true);
+        }
+      }}
+      className={`pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md border transition-all active:scale-95 text-[clamp(0.7rem,3vw,0.8rem)] font-bold ${
+        confirming
+          ? 'bg-red-600/80 border-red-300/50 text-white animate-pulse'
+          : 'bg-[#1a1f3599] border-white/10 text-white/70 hover:text-white'
+      }`}
+      title="Réinitialiser la partie"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
+        <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+        <path d="M3 3v5h5" />
+      </svg>
+      {confirming ? 'Sûr ?' : 'Reset'}
+    </button>
   );
 }
 

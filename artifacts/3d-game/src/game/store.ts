@@ -78,6 +78,8 @@ export interface GameState {
   advanceTutorial: () => void;
   skipTutorial: () => void;
   clearWaveOutcome: () => void;
+  /** Dev/test helper: wipes the save and restarts the whole game from zero. */
+  resetGame: () => void;
 }
 
 export const TUTORIAL_DONE = 5;
@@ -107,24 +109,30 @@ function rewardVictory(
   }));
 }
 
+// Fresh-game snapshot, reused by resetGame. Functions return new arrays/objects
+// so a reset never shares references with the previous session.
+const initialGameState = () => ({
+  resources: { boulons: 50, matiere_floue: 0, energie_rire: 0 },
+  buildingLevels: { hutte: 0, ferme: 0, bar: 0, antenne: 0, marche: 0, tourelle: 0 },
+  heroPos: [0, 0, 0] as [number, number, number],
+  heroDir: [0, 0] as [number, number],
+  coreHp: 100,
+  coreMaxHp: 100,
+  waveActive: false,
+  waveNumber: 0,
+  enemies: [] as Enemy[],
+  particles: [] as GameState['particles'],
+  selectedBuilding: null,
+  buildingPositions: {} as Record<string, [number, number, number]>,
+  placingBuilding: null,
+  tutorialStep: 0,
+  lastWaveOutcome: null,
+});
+
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
-      resources: { boulons: 50, matiere_floue: 0, energie_rire: 0 },
-      buildingLevels: { hutte: 0, ferme: 0, bar: 0, antenne: 0, marche: 0, tourelle: 0 },
-      heroPos: [0, 0, 0],
-      heroDir: [0, 0],
-      coreHp: 100,
-      coreMaxHp: 100,
-      waveActive: false,
-      waveNumber: 0,
-      enemies: [],
-      particles: [],
-      selectedBuilding: null,
-      buildingPositions: {},
-      placingBuilding: null,
-      tutorialStep: 0,
-      lastWaveOutcome: null,
+      ...initialGameState(),
 
       addResources: (res) =>
         set((state) => ({
@@ -321,6 +329,11 @@ export const useGameStore = create<GameState>()(
       },
       skipTutorial: () => set({ tutorialStep: TUTORIAL_DONE }),
       clearWaveOutcome: () => set({ lastWaveOutcome: null }),
+      resetGame: () => {
+        set(initialGameState());
+        // Wipe the save so a page reload also starts fresh.
+        useGameStore.persist.clearStorage();
+      },
     }),
     {
       name: 'village-spatial-storage',
