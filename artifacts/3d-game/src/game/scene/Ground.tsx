@@ -32,17 +32,19 @@ export function Ground() {
         <meshToonMaterial color="#6ede8a" gradientMap={gradientMap} />
       </mesh>
       
-      {/* Rocky Cone Underbelly */}
+      {/* Rocky Cone Underbelly — Y-only rotation and kept below the plateau:
+          X/Z rotations mixed the 10-14x horizontal scale into the vertical
+          axis, poking a giant "mountain" through the middle of the map. */}
       <group position={[0, -0.4, 0]}>
-        <mesh rotation={[0.7, 1.3, 0.4]} scale={[14, 2.8, 14]} receiveShadow>
+        <mesh position={[0, -3, 0]} rotation={[0, 1.3, 0]} scale={[14, 2.8, 14]} receiveShadow>
           <icosahedronGeometry args={[1, 0]} />
           <meshStandardMaterial color="#7a5c47" flatShading roughness={1} />
         </mesh>
-        <mesh position={[0, -2, 0]} rotation={[1.1, 2.2, 0.9]} scale={[10, 3.5, 10]} receiveShadow>
+        <mesh position={[0, -4.5, 0]} rotation={[0, 2.2, 0]} scale={[10, 3.5, 10]} receiveShadow>
           <icosahedronGeometry args={[1, 0]} />
           <meshStandardMaterial color="#664d5c" flatShading roughness={1} />
         </mesh>
-        <mesh position={[0, -4.2, 0]} rotation={[0.3, 0.8, 1.6]} scale={[5.5, 4, 5.5]} receiveShadow>
+        <mesh position={[0, -7, 0]} rotation={[0, 0.8, 0]} scale={[5.5, 4, 5.5]} receiveShadow>
           <icosahedronGeometry args={[1, 0]} />
           <meshStandardMaterial color="#4a3d5c" flatShading roughness={1} />
         </mesh>

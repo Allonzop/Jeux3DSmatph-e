@@ -1,0 +1,135 @@
+# Tâche : remplacer les personnages codés en dur par un système de personnages paramétrique
+
+## Contexte
+
+Dans `artifacts/3d-game`, les personnages (`src/game/scene/Hero.tsx`, `Villagers.tsx`, `Enemies.tsx`) sont construits à la main en JSX avec des primitives Three.js (capsule, sphere, torus, lathe) et `meshToonMaterial`.
+
+Deux problèmes :
+
+1. **Duplication massive.** `Hero.tsx` et `Villagers.tsx` contiennent la même hiérarchie corps/tête/bras/jambes et le *même* cycle d'animation de marche (bounce + squash/stretch + rotation des membres), recopiés presque ligne pour ligne. Toute modification doit être faite deux fois.
+2. **Variété faible et non extensible.** Les accessoires sont gérés par une chaîne de conditions `def.hat === 'mushroom' | 'beanie' | 'antenna'` dans `Villagers.tsx`. Les personnages ne diffèrent que par une couleur, un chapeau et une échelle globale — toutes les silhouettes sont identiques.
+
+**Objectif :** un système unique, data-driven, où créer un nouveau personnage = écrire un objet de données de ~10 lignes, avec une variété visuelle nettement supérieure à l'existant.
+
+Ne pas ajouter de dépendance, ne pas télécharger d'assets externes (pas de `.glb`, `.fbx`, pas de textures) : tout reste procédural, pour garder le build léger en vue du portage `artifacts/village-mobile` (Expo).
+
+## Architecture demandée
+
+Créer `src/game/characters/` :
+
+```
+src/game/characters/
+  types.ts            # le schéma CharacterDef
+  ToonHumanoid.tsx    # le rig partagé + animations
+  rng.ts              # PRNG déterministe (mulberry32) pour la variation
+  parts/
+    index.ts          # registres (accessoires, coiffes, visages)
+    heads.tsx
+    accessories.tsx
+    faces.tsx
+  defs.ts             # les définitions de personnages
+```
+
+### 1. `types.ts` — le schéma
+
+`CharacterDef` doit couvrir au minimum :
+
+- **Identité** : `id: string`, `seed: number`
+- **Proportions** : `bodyType: 'slim' | 'round' | 'stocky' | 'tall'`, `headScale`, `limbThickness`, `scale`
+- **Palette** : `primary`, `secondary`, `accent`, `skin` (couleurs hex)
+- **Silhouette** : `headwear`, `back`, `neck`, `faceGear` — chacun étant une clé de registre ou `null` (voir §3)
+- **Visage** : `eyeShape: 'round' | 'oval' | 'wide' | 'sleepy'`, `mouth: 'smile' | 'grin' | 'neutral' | 'o'`, `brows?`
+- **Animation** : `personality: 'bouncy' | 'calm' | 'heavy' | 'nervous'` qui module amplitude du bounce, vitesse du cycle de marche, amplitude des bras, fréquence de clignement et micro-mouvements d'idle
+
+Tout champ optionnel doit avoir une valeur par défaut sensée, pour qu'une déf minimale (`{ id, seed, primary }`) produise déjà un personnage correct.
+
+### 2. `ToonHumanoid.tsx` — le rig partagé
+
+Un composant unique, contrôlé par props :
+
+```tsx
+<ToonHumanoid def={def} moving={isMoving} />
+```
+
+- Reprendre **exactement** la hiérarchie et les maths d'animation actuelles de `Hero.tsx` (walk cycle `Math.sin/cos(time * 15)`, bounce, squash/stretch, rotation des membres, tilt de tête, clignement des yeux) comme base de référence — le héros ne doit pas changer d'allure de façon perceptible après migration.
+- Puis moduler ces constantes par `personality` et par les proportions, au lieu de les laisser en dur.
+- Exposer des refs internes ; l'animation se fait **uniquement** par mutation de `ref.current` dans `useFrame`.
+- Le composant ne contient **aucune** logique de déplacement, d'IA ou de gameplay — uniquement le corps et son animation. Le déplacement reste chez l'appelant.
+
+### 3. Registres de parties (`parts/`)
+
+Remplacer la chaîne `if (def.hat === ...)` par des registres typés :
+
+```ts
+export const headwearRegistry = {
+  mushroom: MushroomCap,
+  beanie: Beanie,
+  antennaDome: AntennaDome,
+  // ...
+} satisfies Record<string, React.FC<PartProps>>;
+```
+
+Chaque partie reçoit `PartProps` (palette + gradientMap + seed) et rend un petit sous-arbre JSX. Ajouter un accessoire = ajouter un composant + une entrée dans le registre, sans toucher à `ToonHumanoid`.
+
+Fournir au minimum, en plus des trois existants (`mushroom`, `beanie`, `antennaDome`) :
+
+- **headwear** : casque à visière (comme celui du héros, extrait et généralisé), capuche, chapeau conique, couronne de feuilles, cheveux touffus (2–3 sphères aplaties), casque à cornes
+- **back** : sac à dos (extrait du héros), petites ailes, réservoir/jetpack, cape (plan légèrement incurvé), coquille
+- **neck** : écharpe, col roulé, collier lumineux
+- **faceGear** : lunettes rondes, visière teintée, masque respiratoire
+
+Ces parties doivent utiliser les mêmes couleurs de palette du `def` (pas de couleurs codées en dur), afin qu'un même accessoire s'harmonise avec n'importe quel personnage.
+
+### 4. `rng.ts` — variation déterministe
+
+Implémenter un `mulberry32(seed)`. Il sert à ajouter les micro-variations (légers offsets de position d'accessoire, taille des taches, angle des cornes, etc.).
+
+**Impératif :** aucun `Math.random()` dans le JSX ni dans `useFrame`. Toute valeur aléatoire est tirée une seule fois dans un `useMemo` dépendant de `def.seed`. C'est une régression déjà constatée sur ce projet (les props sautaient au re-render).
+
+### 5. `defs.ts` — les données
+
+Les personnages deviennent de la donnée pure :
+
+```ts
+export const villagerDefs: CharacterDef[] = [
+  { id: 'v1', seed: 101, bodyType: 'round',  primary: '#57cc99', accent: '#e63946',
+    headwear: 'mushroom', back: 'satchel',  personality: 'bouncy' },
+  { id: 'v2', seed: 202, bodyType: 'slim',   primary: '#b388eb', accent: '#ffd24c',
+    headwear: 'beanie',   neck: 'scarf',    personality: 'calm'   },
+  // ...
+];
+```
+
+Produire **au moins 8 villageois visuellement distincts** (silhouettes différentes, pas seulement des teintes différentes), plus la déf du héros et celles des ennemis.
+
+## Migration des fichiers existants
+
+- **`Hero.tsx`** : conserve intégralement mouvement, contraintes `WORLD_RADIUS`, `setHeroPos`, système de poussière, et le hook du tutoriel (`notifyTutorial('move')`). Il ne garde plus de JSX de corps : il rend `<ToonHumanoid def={heroDef} moving={isMoving} />`.
+- **`Villagers.tsx`** : conserve la logique d'IA (idle/walk, `pickTarget`, rotation). Le corps est délégué. La map itère sur `villagerDefs`.
+- **`Enemies.tsx`** : même délégation, en conservant **impérativement** l'écriture des positions dans le registre module-level `enemyPositions` de `scene/utils.ts`.
+
+## Contraintes techniques (déjà documentées dans `.agents/memory/`)
+
+Ces points ont chacun coûté un aller-retour de correction sur ce projet :
+
+- **Jamais de données spatiales par frame via Zustand ou `useState`.** Mutation de refs dans `useFrame`, registre module-level pour les lectures inter-composants. Tout `setState` inévitable est throttlé à ≤10 Hz.
+- **Pas de `flatShading` sur `meshToonMaterial`** — les types TS de `MeshToonMaterial` ne l'ont pas. Pour du low-poly facetté, utiliser `meshStandardMaterial flatShading roughness={1}`.
+- **Pas de `disableNormalPass` sur `<EffectComposer>`** — la prop n'existe plus dans `@react-three/postprocessing`.
+- **Pas de `Math.random()` hors `useMemo`.**
+- **Bug existant à corriger au passage :** dans `Hero.tsx`, le sac à dos est écrit `<mesh><RoundedBox .../></mesh>`. `RoundedBox` de drei est déjà un mesh, il ne doit pas être imbriqué dans un `<mesh>` ni utilisé comme géométrie. À corriger en migrant cette partie vers `parts/accessories.tsx`.
+- Réutiliser le hook `useToonGradient` existant (`scene/utils.ts`) ; ne pas recréer de gradient map par personnage.
+- Mutualiser géométries et matériaux identiques via `useMemo` au niveau module quand plusieurs instances les partagent — il y aura beaucoup plus d'instances qu'avant.
+
+## Critères d'acceptation
+
+1. `pnpm --filter @workspace/3d-game run typecheck` passe sans erreur.
+2. Le héros est visuellement inchangé (même silhouette, même animation) après migration.
+3. Aucune duplication du cycle d'animation : il n'existe qu'à un seul endroit dans la codebase.
+4. Ajouter un nouveau personnage ne nécessite que l'ajout d'un objet dans `defs.ts` (sauf accessoire inédit).
+5. Au moins 8 villageois aux silhouettes nettement distinctes.
+6. Aucun `Math.random()` dans du JSX ou dans un `useFrame`.
+7. Le framerate mobile ne régresse pas malgré la variété accrue.
+
+## Livrable final
+
+Terminer par un court récapitulatif : la liste des clés disponibles dans chaque registre (`headwear`, `back`, `neck`, `faceGear`) et un exemple commenté de `CharacterDef` complet, pour que la création de personnages suivants se fasse sans relire le code du rig.

@@ -2,8 +2,10 @@ import React, { useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore, Enemy } from '../store';
-import { useToonGradient, enemyPositions } from './utils';
+import { enemyPositions } from './utils';
 import { Html } from '@react-three/drei';
+import { ToonHumanoid } from '../characters/ToonHumanoid';
+import { enemyDef } from '../characters/defs';
 
 // Scratch vector reused across frames — never allocate inside useFrame.
 const _dir = new THREE.Vector3();
@@ -21,12 +23,7 @@ export function Enemies() {
 
 function EnemyNode({ enemy }: { enemy: Enemy }) {
   const ref = useRef<THREE.Group>(null);
-  const bodyRef = useRef<THREE.Mesh>(null);
-  const wingLRef = useRef<THREE.Mesh>(null);
-  const wingRRef = useRef<THREE.Mesh>(null);
 
-  const gradientMap = useToonGradient();
-  
   const damageCore = useGameStore(state => state.damageCore);
   const removeEnemy = useGameStore(state => state.removeEnemy);
 
@@ -44,9 +41,7 @@ function EnemyNode({ enemy }: { enemy: Enemy }) {
   const deathScale = useRef(1);
   const deathSquash = useRef(1);
 
-  useFrame((state, delta) => {
-    const time = state.clock.elapsedTime;
-    
+  useFrame((_, delta) => {
     if (isDead.current) return;
 
     const currentEnemy = useGameStore.getState().enemies.find(e => e.id === enemy.id);
@@ -72,16 +67,6 @@ function EnemyNode({ enemy }: { enemy: Enemy }) {
         // Publish position imperatively — no store write, no React re-render.
         enemyPositions.get(enemy.id)?.copy(pos);
       }
-
-      // Hover animation
-      if (bodyRef.current) {
-        bodyRef.current.position.y = 0.5 + Math.sin(time * 5 + enemy.id.charCodeAt(0)) * 0.1;
-      }
-      if (wingLRef.current && wingRRef.current) {
-        const flap = Math.sin(time * 20) * 0.5;
-        wingLRef.current.rotation.z = flap;
-        wingRRef.current.rotation.z = -flap;
-      }
     }
   });
 
@@ -101,42 +86,11 @@ function EnemyNode({ enemy }: { enemy: Enemy }) {
 
   return (
     <group ref={ref} position={enemy.pos}>
-      <mesh ref={bodyRef} position={[0, 0.5, 0]} castShadow>
-        {/* Blob body */}
-        <sphereGeometry args={[0.35, 24, 24]} />
-        <meshToonMaterial color="#ff4d6d" gradientMap={gradientMap} />
-        
-        {/* Big menacing eye */}
-        <mesh position={[0, 0.05, 0.3]} scale={[1, 1, 0.5]}>
-          <sphereGeometry args={[0.15, 16, 16]} />
-          <meshBasicMaterial color="#ffffff" />
-          <mesh position={[0, 0, 0.12]} scale={[0.4, 0.8, 1]}>
-            <sphereGeometry args={[0.15, 16, 16]} />
-            <meshBasicMaterial color="#111111" />
-          </mesh>
-        </mesh>
+      <group position={[0, 0.5, 0]}>
+        {/* Per-instance seed keeps imps subtly different from each other */}
+        <ToonHumanoid def={{ ...enemyDef, id: enemy.id, seed: enemy.id.charCodeAt(6) * 31 + enemy.id.length }} moving />
+      </group>
 
-        {/* Arms */}
-        <mesh position={[-0.35, -0.1, 0]} rotation={[0, 0, -0.4]}>
-          <capsuleGeometry args={[0.05, 0.15, 8, 8]} />
-          <meshToonMaterial color="#ff4d6d" gradientMap={gradientMap} />
-        </mesh>
-        <mesh position={[0.35, -0.1, 0]} rotation={[0, 0, 0.4]}>
-          <capsuleGeometry args={[0.05, 0.15, 8, 8]} />
-          <meshToonMaterial color="#ff4d6d" gradientMap={gradientMap} />
-        </mesh>
-
-        {/* Wings */}
-        <mesh ref={wingLRef} position={[-0.3, 0.2, -0.1]} rotation={[0, 0.3, 0]}>
-          <coneGeometry args={[0.15, 0.3, 3]} />
-          <meshToonMaterial color="#590d22" gradientMap={gradientMap} />
-        </mesh>
-        <mesh ref={wingRRef} position={[0.3, 0.2, -0.1]} rotation={[0, -0.3, 0]}>
-          <coneGeometry args={[0.15, 0.3, 3]} />
-          <meshToonMaterial color="#590d22" gradientMap={gradientMap} />
-        </mesh>
-      </mesh>
-      
       <pointLight color="#ff4d6d" intensity={0.5} distance={3} position={[0, 0.5, 0]} />
 
       {hpPercent < 1 && (
