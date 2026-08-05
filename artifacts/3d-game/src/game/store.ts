@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { LEGACY_BUILDING_POSITIONS, ENEMY_SPAWN_RADIUS } from './world';
+import { waveVictoryReward, waveDefeatLoss } from './gamedata';
 
 export type ResourceType = 'boulons' | 'matiere_floue' | 'energie_rire';
 
@@ -15,6 +16,15 @@ export type Enemy = {
   pos: [number, number, number];
   hp: number;
   maxHp: number;
+};
+
+export type WaveOutcome = {
+  type: 'victory' | 'defeat';
+  wave: number;
+  /** resources gained (victory) */
+  gains?: Partial<Resources>;
+  /** resources lost (defeat) */
+  losses?: Partial<Resources>;
 };
 
 export type Particle = {
@@ -42,6 +52,8 @@ export interface GameState {
   placingBuilding: string | null;
   /** guided tutorial step: 0 move, 1 harvest, 2 build, 3 wave, 4 finished toast, 5 done */
   tutorialStep: number;
+  /** result of the last finished wave, shown as an outcome toast then cleared */
+  lastWaveOutcome: WaveOutcome | null;
 
   addResources: (res: Partial<Resources>) => void;
   spendResources: (res: Partial<Resources>) => boolean;
@@ -65,6 +77,7 @@ export interface GameState {
   notifyTutorial: (event: 'move' | 'harvest' | 'build' | 'waveEnd') => void;
   advanceTutorial: () => void;
   skipTutorial: () => void;
+  clearWaveOutcome: () => void;
 }
 
 export const TUTORIAL_DONE = 5;
@@ -75,6 +88,24 @@ const TUTORIAL_EVENTS: Record<number, 'move' | 'harvest' | 'build' | 'waveEnd'> 
   2: 'build',
   3: 'waveEnd',
 };
+
+// Grant the victory reward when a wave just ended with the core still alive.
+function rewardVictory(
+  set: (partial: Partial<GameState> | ((s: GameState) => Partial<GameState>)) => void,
+  get: () => GameState,
+) {
+  const state = get();
+  if (state.coreHp <= 0 || state.waveNumber === 0) return;
+  const gains = waveVictoryReward(state.waveNumber);
+  set((s) => ({
+    resources: {
+      boulons: s.resources.boulons + (gains.boulons || 0),
+      matiere_floue: s.resources.matiere_floue + (gains.matiere_floue || 0),
+      energie_rire: s.resources.energie_rire + (gains.energie_rire || 0),
+    },
+    lastWaveOutcome: { type: 'victory', wave: s.waveNumber, gains },
+  }));
+}
 
 export const useGameStore = create<GameState>()(
   persist(
@@ -93,6 +124,7 @@ export const useGameStore = create<GameState>()(
       buildingPositions: {},
       placingBuilding: null,
       tutorialStep: 0,
+      lastWaveOutcome: null,
 
       addResources: (res) =>
         set((state) => ({
@@ -169,21 +201,42 @@ export const useGameStore = create<GameState>()(
           });
         }
 
-        set({ waveActive: true, waveNumber: nextWave, enemies: newEnemies, coreHp: state.coreMaxHp });
+        // The core is fully repaired before each wave (rule shown in the HUD).
+        set({
+          waveActive: true,
+          waveNumber: nextWave,
+          enemies: newEnemies,
+          coreHp: state.coreMaxHp,
+          lastWaveOutcome: null,
+        });
       },
 
       damageCore: (amount) => {
+        const wasActive = get().waveActive;
         set((state) => {
           const newHp = Math.max(0, state.coreHp - amount);
-          if (newHp === 0) {
-            return { coreHp: 0, waveActive: false, enemies: [] }; // Wave failed
+          if (newHp === 0 && state.waveActive) {
+            // Wave failed: lose a share of current resources.
+            const losses = waveDefeatLoss(state.resources);
+            return {
+              coreHp: 0,
+              waveActive: false,
+              enemies: [],
+              resources: {
+                boulons: state.resources.boulons - (losses.boulons || 0),
+                matiere_floue: state.resources.matiere_floue - (losses.matiere_floue || 0),
+                energie_rire: state.resources.energie_rire - (losses.energie_rire || 0),
+              },
+              lastWaveOutcome: { type: 'defeat', wave: state.waveNumber, losses },
+            };
           }
           return { coreHp: newHp };
         });
-        if (get().coreHp === 0) get().notifyTutorial('waveEnd');
+        if (wasActive && !get().waveActive) get().notifyTutorial('waveEnd');
       },
 
       damageEnemy: (id, amount) => {
+        const wasActive = get().waveActive;
         set((state) => {
           const enemies = state.enemies.map(e => {
             if (e.id === id) {
@@ -198,16 +251,23 @@ export const useGameStore = create<GameState>()(
             waveActive: state.waveActive ? waveActive : false,
           };
         });
-        if (!get().waveActive) get().notifyTutorial('waveEnd');
+        if (wasActive && !get().waveActive) {
+          get().notifyTutorial('waveEnd');
+          rewardVictory(set, get);
+        }
       },
 
       removeEnemy: (id) => {
+        const wasActive = get().waveActive;
         set((state) => {
           const enemies = state.enemies.filter((e) => e.id !== id);
           const waveActive = enemies.length > 0;
           return { enemies, waveActive: state.waveActive ? waveActive : false };
         });
-        if (!get().waveActive) get().notifyTutorial('waveEnd');
+        if (wasActive && !get().waveActive) {
+          get().notifyTutorial('waveEnd');
+          rewardVictory(set, get);
+        }
       },
 
       setEnemyPos: (id, pos) => {
@@ -260,6 +320,7 @@ export const useGameStore = create<GameState>()(
         if (step < TUTORIAL_DONE) set({ tutorialStep: step + 1 });
       },
       skipTutorial: () => set({ tutorialStep: TUTORIAL_DONE }),
+      clearWaveOutcome: () => set({ lastWaveOutcome: null }),
     }),
     {
       name: 'village-spatial-storage',

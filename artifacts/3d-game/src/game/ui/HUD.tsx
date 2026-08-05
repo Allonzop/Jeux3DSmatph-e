@@ -3,6 +3,7 @@ import { useGameStore, ResourceType } from '../store';
 import { BUILDINGS } from '../gamedata';
 import { BuildingPopup } from './BuildingPopup';
 import { Tutorial } from './Tutorial';
+import { WaveOutcome } from './WaveOutcome';
 import { ResourceIcon, BuildingIcon } from './icons';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -143,6 +144,8 @@ export function HUD() {
 
       {/* Tutorial overlay (hidden while placing a building so banners don't overlap) */}
       {!placingBuilding && <Tutorial />}
+
+      <WaveOutcome />
 
       <BuildingPopup />
     </div>

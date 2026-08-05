@@ -11,6 +11,26 @@ export type BuildingData = {
   }[];
 };
 
+// ---- Wave stakes ----
+// Victory: resource bonus growing with the wave number.
+export function waveVictoryReward(wave: number): Partial<Resources> {
+  const reward: Partial<Resources> = { boulons: 40 + wave * 30 };
+  if (wave >= 2) reward.matiere_floue = (wave - 1) * 3;
+  if (wave >= 4) reward.energie_rire = wave - 3;
+  return reward;
+}
+
+// Defeat: lose a fraction of current resources — tangible but never blocking.
+export const DEFEAT_LOSS_RATIO = 0.2;
+
+export function waveDefeatLoss(resources: Resources): Partial<Resources> {
+  return {
+    boulons: Math.floor(resources.boulons * DEFEAT_LOSS_RATIO),
+    matiere_floue: Math.floor(resources.matiere_floue * DEFEAT_LOSS_RATIO),
+    energie_rire: Math.floor(resources.energie_rire * DEFEAT_LOSS_RATIO),
+  };
+}
+
 export const BUILDINGS: Record<string, BuildingData> = {
   hutte: {
     id: 'hutte',
