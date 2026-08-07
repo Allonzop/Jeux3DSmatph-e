@@ -1,0 +1,9 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "_Dwqu1zkukggoNXHqEUlt"
+uri = "file://artifacts/3d-game/characters-kit-v1.0.0.zip"
+type = "unspecified"
+title = "characters-kit v1.0.0"
+description = "Tous les fichiers src/game/characters/ : types, rig ToonHumanoid, rng, shared, parts (heads/accessories/faces/index), KIT_VERSION."
