@@ -1,0 +1,9 @@
+{
+  // Config « solution » : ne contient aucun fichier, agrège les deux projets.
+  // `npm run typecheck` -> `tsc -b` construit les deux dans l'ordre.
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.kit.json" },
+    { "path": "./tsconfig.studio.json" }
+  ]
+}
