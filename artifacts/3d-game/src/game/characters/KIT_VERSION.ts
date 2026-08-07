@@ -3,4 +3,4 @@
  * À incrémenter (semver) à chaque changement du rig (ToonHumanoid),
  * des types (CharacterDef, BODY_TYPES, PERSONALITIES) ou des registres de pièces.
  */
-export const KIT_VERSION = '1.0.0';
+export const KIT_VERSION = '1.0.1';

@@ -1,7 +1,7 @@
 import React, { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { useToonGradient } from '../scene/utils';
+import { getToonGradient } from './toonGradient';
 import {
   CharacterDef, resolveDef, PERSONALITIES, BodyType,
 } from './types';
@@ -67,7 +67,7 @@ export function ToonHumanoid({ def, moving = false }: ToonHumanoidProps) {
   const r = useMemo(() => resolveDef(def), [def]);
   const dims = BODY_DIMS[r.bodyType];
   const geoms = bodyGeoms(r.bodyType, r.limbThickness);
-  const gradientMap = useToonGradient();
+  const gradientMap = getToonGradient();
   const p = PERSONALITIES[r.personality];
 
   const bodyGroupRef = useRef<THREE.Group>(null);

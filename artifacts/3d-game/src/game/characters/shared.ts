@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { useToonGradient } from '../scene/utils';
+import { getToonGradient } from './toonGradient';
 
 // ---------- Module-level shared geometry cache ----------
 // Many humanoids share identical geometries (4 body types × a handful of
@@ -21,7 +21,7 @@ const toonMatCache = new Map<string, THREE.MeshToonMaterial>();
 export function toonMat(color: string): THREE.MeshToonMaterial {
   let m = toonMatCache.get(color);
   if (!m) {
-    m = new THREE.MeshToonMaterial({ color, gradientMap: useToonGradient() });
+    m = new THREE.MeshToonMaterial({ color, gradientMap: getToonGradient() });
     toonMatCache.set(color, m);
   }
   return m;

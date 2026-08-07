@@ -5,7 +5,7 @@ import * as THREE from 'three';
 // nothing to dispose per component instance.
 let sharedGradient: THREE.DataTexture | null = null;
 
-function getToonGradient(): THREE.DataTexture {
+export function getToonGradient(): THREE.DataTexture {
   if (!sharedGradient) {
     const data = new Uint8Array([
       80, 80, 80, 255,
@@ -20,6 +20,7 @@ function getToonGradient(): THREE.DataTexture {
   return sharedGradient;
 }
 
+/** @deprecated Utiliser getToonGradient() — ce n'est pas un hook React. */
 export function useToonGradient() {
   return getToonGradient();
 }

@@ -7,3 +7,10 @@ uri = "file://artifacts/3d-game/characters-kit-v1.0.0.zip"
 type = "unspecified"
 title = "characters-kit v1.0.0"
 description = "Tous les fichiers src/game/characters/ : types, rig ToonHumanoid, rng, shared, parts (heads/accessories/faces/index), KIT_VERSION."
+
+[[outputs]]
+id = "BuSDWp6240NPfOV0x4tpZ"
+uri = "file://artifacts/3d-game/characters-kit-v1.0.1.zip"
+type = "unspecified"
+title = "characters-kit v1.0.1"
+description = "Kit mis à jour : getToonGradient autonome dans toonGradient.ts, plus d'appel de hook hors composant, KIT_VERSION 1.0.1."
