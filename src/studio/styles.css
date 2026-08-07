@@ -189,10 +189,11 @@ select.control { cursor: pointer; }
 }
 .tile.selected { border-color: var(--accent); }
 
-/* La zone suivie par `<View>`. Le canvas de la grille peint dedans, par-dessus. */
+/* La zone suivie par `<View>`. Le canvas de la grille peint dedans, par-dessus.
+   Le fond vient de `LIGHTING.background` en style inline, pour que la vignette
+   soit sur le même fond que le jeu. */
 .tile-slot {
   height: 175px;
-  background: linear-gradient(180deg, #22262f 0%, #1a1d24 100%);
   border-bottom: 1px solid var(--line-soft);
 }
 

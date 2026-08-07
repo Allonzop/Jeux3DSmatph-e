@@ -5,7 +5,7 @@ import { OrbitControls } from '@react-three/drei';
 import type { PerspectiveCamera } from 'three';
 import { clearCompare, openEditor, toggleCompare, useStudio } from '../store';
 import { CharacterView } from '../three/CharacterView';
-import { Ground, PlaybackSpeed, StudioLights } from '../three/Stage';
+import { Ground, LIGHTING, PlaybackSpeed, StudioLights, StudioPostFX } from '../three/Stage';
 import type { LibraryEntry } from '../types';
 
 /** Écart entre deux personnages, en unités monde. */
@@ -93,7 +93,7 @@ export function Compare() {
         <>
           <div className="compare-canvas">
             <Canvas shadows camera={{ position: [0, 0.9, 2 + span], fov: 32 }} gl={{ antialias: true }}>
-              <color attach="background" args={['#2a2d34']} />
+              <color attach="background" args={[LIGHTING.background]} />
               <PlaybackSpeed speed={speed} />
               <StudioLights shadows />
               <Ground />
@@ -103,6 +103,7 @@ export function Compare() {
                 </group>
               ))}
               <OrbitControls ref={controlsRef} target={[0, 0.62, 0]} enablePan={false} minDistance={1.5} maxDistance={14} maxPolarAngle={Math.PI * 0.52} />
+              <StudioPostFX />
             </Canvas>
           </div>
 

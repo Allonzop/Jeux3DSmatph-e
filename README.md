@@ -97,6 +97,29 @@ qu'on ait à le retoucher. `npm run typecheck` construit les deux.
 
 ---
 
+## Fidélité au rendu du jeu
+
+L'éclairage et le post-traitement du studio sont recopiés à l'identique de
+`GameCanvas.tsx` du jeu, et regroupés dans les constantes `LIGHTING` et `POST`
+de `src/studio/three/Stage.tsx` — **si le jeu change son rendu, c'est là, et
+nulle part ailleurs, qu'il faut le répercuter.**
+
+Trois boutons de la barre de l'éditeur servent à juger cette fidélité :
+
+- **`bloom`** — le bloom et la vignette du jeu. À laisser allumé pour régler le
+  champ `glow` : c'est le bloom qui rend les parties émissives visibles, sans
+  lui on règle à l'aveugle. À éteindre pour juger une silhouette au détail près.
+- **`taille jeu`** — recule à la distance où le personnage occupe la même part
+  d'écran qu'en jeu (~6 % de la hauteur). Le bloom étant un effet écran, sa
+  force apparente dépend de cette taille ; c'est aussi le seul moyen de voir si
+  une silhouette se lit à l'échelle où le joueur la verra.
+- **`recadrer`** — revient au cadrage d'édition.
+
+La grille de la bibliothèque n'a pas de post-traitement : `<View>` et
+`<EffectComposer>` ne composent pas (détail dans `RAPPORT.md`).
+
+---
+
 ## Format d'export
 
 ```json

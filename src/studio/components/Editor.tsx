@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import type { ComponentRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import type { PerspectiveCamera } from 'three';
 import type { CharacterDef } from '../../kit/types';
 
 /** `three-stdlib` n'est qu'une dépendance transitive de drei : on lit le type
@@ -15,7 +16,7 @@ import { randomSeed, surpriseDef } from '../generate';
 import { copyToClipboard, defToJson } from '../exchange';
 import { openEditor, replaceDef, updateDef, updateEntry, useStudio } from '../store';
 import { CharacterView } from '../three/CharacterView';
-import { Ground, PlaybackSpeed, StudioLights } from '../three/Stage';
+import { Ground, LIGHTING, PlaybackSpeed, StudioLights, StudioPostFX } from '../three/Stage';
 import {
   ColorField, Field, NullableSelect, SeedField, Select, Slider, TagField, TextField, Toggle,
 } from './controls';
@@ -27,14 +28,32 @@ import {
  */
 const FRAME = { targetY: 0.5, cameraY: 0.5, distance: 2.5 };
 
+/**
+ * Hauteur de monde visible par la caméra du jeu, en unités.
+ *
+ * `scene/Camera.tsx` place la caméra à `héros + (0, 14, 10)`, soit une distance
+ * de √(14² + 10²) ≈ 17,2 ; le `<Canvas>` du jeu ne passe pas de `camera`, donc
+ * le fov est celui par défaut de R3F, 75°. D'où 2 × 17,2 × tan(37,5°) ≈ 26,4.
+ *
+ * Un personnage d'1,5 unité n'occupe donc que ~6 % de la hauteur de l'écran en
+ * jeu. C'est ce qui rend ce cadrage utile : le bloom et la vignette sont des
+ * effets *écran*, leur force apparente dépend de la taille du sujet à l'image.
+ * À réglages identiques, un halo discret en jeu devient énorme sur un
+ * personnage qui remplit le cadre. Ce bouton répond à « à quoi ça ressemblera
+ * vraiment », et accessoirement à « cette silhouette se lit-elle à la taille
+ * du jeu ».
+ */
+const GAME_VIEW_HEIGHT = 26.4;
+
 interface PreviewProps {
   def: CharacterDef;
   moving: boolean;
   speed: number;
+  postfx: boolean;
   onMeasure: (height: number) => void;
 }
 
-function Preview({ def, moving, speed, onMeasure }: PreviewProps) {
+function Preview({ def, moving, speed, postfx, onMeasure }: PreviewProps) {
   return (
     <>
       {/* Monté avant le personnage : son `useFrame` s'exécute donc avant, et la
@@ -43,6 +62,9 @@ function Preview({ def, moving, speed, onMeasure }: PreviewProps) {
       <StudioLights shadows />
       <Ground />
       <CharacterView def={def} moving={moving} onMeasure={onMeasure} />
+      {/* Bloom + vignette du jeu. Désactivable : le bloom mange du détail, et
+          on veut parfois juger une silhouette sans lui. */}
+      {postfx && <StudioPostFX />}
     </>
   );
 }
@@ -52,6 +74,7 @@ export function Editor() {
   const entry = useStudio((s) => s.entries.find((e) => e.uid === s.editingUid));
   const [moving, setMoving] = useState(false);
   const [speed, setSpeed] = useState(1);
+  const [postfx, setPostfx] = useState(true);
   const [copied, setCopied] = useState(false);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const heightRef = useRef(1.4);
@@ -65,6 +88,18 @@ export function Editor() {
     controls.object.position.set(0, h * FRAME.cameraY, h * FRAME.distance);
     controls.update();
     return true;
+  }, []);
+
+  /** Recule jusqu'à ce que le sujet occupe la même part d'écran qu'en jeu. */
+  const frameLikeGame = useCallback(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    const camera = controls.object as PerspectiveCamera;
+    const h = heightRef.current;
+    const distance = GAME_VIEW_HEIGHT / (2 * Math.tan((camera.fov * Math.PI) / 180 / 2));
+    controls.target.set(0, h * FRAME.targetY, 0);
+    camera.position.set(0, h * FRAME.targetY, distance);
+    controls.update();
   }, []);
 
   const onMeasure = useCallback((height: number) => {
@@ -114,14 +149,15 @@ export function Editor() {
           camera={{ position: [0, 0.85, 3.6], fov: 32 }}
           gl={{ antialias: true }}
         >
-          <color attach="background" args={['#2a2d34']} />
-          <Preview def={def} moving={moving} speed={speed} onMeasure={onMeasure} />
+          <color attach="background" args={[LIGHTING.background]} />
+          <Preview def={def} moving={moving} speed={speed} postfx={postfx} onMeasure={onMeasure} />
           <OrbitControls
             ref={controlsRef}
             target={[0, 0.7, 0]}
             enablePan={false}
             minDistance={1.2}
-            maxDistance={7}
+            /* Assez large pour laisser atteindre le cadrage « taille jeu ». */
+            maxDistance={60}
             maxPolarAngle={Math.PI * 0.52}
           />
         </Canvas>
@@ -159,7 +195,23 @@ export function Editor() {
             />
             <output>{speed.toFixed(1)}×</output>
           </label>
+          <button
+            type="button"
+            className={`btn ${postfx ? 'active' : ''}`}
+            onClick={() => setPostfx((p) => !p)}
+            title="Bloom + vignette, aux réglages du jeu — c'est ce qui rend le champ glow lisible"
+          >
+            bloom
+          </button>
           <button type="button" className="btn" onClick={reframe}>recadrer</button>
+          <button
+            type="button"
+            className="btn"
+            onClick={frameLikeGame}
+            title="Recule à la distance où le personnage occupe la même part d'écran qu'en jeu"
+          >
+            taille jeu
+          </button>
         </div>
       </div>
 

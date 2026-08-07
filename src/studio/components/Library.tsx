@@ -6,7 +6,7 @@ import {
   duplicateEntry, openEditor, removeEntry, toggleCompare, updateEntry, useStudio,
 } from '../store';
 import { CharacterView } from '../three/CharacterView';
-import { StudioLights, Turntable } from '../three/Stage';
+import { LIGHTING, StudioLights, Turntable } from '../three/Stage';
 
 interface TileProps {
   entry: LibraryEntry;
@@ -24,8 +24,14 @@ function Tile({ entry, moving, spinning, selected }: TileProps) {
     <article className={`tile ${selected ? 'selected' : ''}`}>
       {/* `View` rend cette div et téléporte son contenu 3D dans le canvas
           unique de la bibliothèque : un seul contexte WebGL pour toute la
-          grille, et drei saute le rendu des vignettes hors écran. */}
-      <View className="tile-slot">
+          grille, et drei saute le rendu des vignettes hors écran.
+
+          Pas de post-traitement ici : `<View>` peint chaque vignette au
+          ciseau dans le canvas partagé, alors qu'`<EffectComposer>` reprend
+          la boucle de rendu pour toute la cible. Les deux ne composent pas.
+          Le bloom se juge dans l'éditeur ; la grille sert à juger la variété
+          des silhouettes. */}
+      <View className="tile-slot" style={{ background: LIGHTING.background }}>
         <StudioLights />
         {spinning ? <Turntable>{character}</Turntable> : character}
       </View>
