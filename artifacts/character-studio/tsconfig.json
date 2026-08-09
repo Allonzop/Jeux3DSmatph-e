@@ -3,7 +3,7 @@
   // `npm run typecheck` -> `tsc -b` construit les deux dans l'ordre.
   "files": [],
   "references": [
-    { "path": "./tsconfig.kit.json" },
+    { "path": "./tsconfig.game-characters.json" },
     { "path": "./tsconfig.studio.json" }
   ]
 }

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { KIT_VERSION } from '../../kit/KIT_VERSION';
+import { KIT_VERSION } from '@game/characters/KIT_VERSION';
 import { agentNote, buildExportBundle, buildLibraryFile, parseImport } from '../exchange';
 import { copyToClipboard, downloadJson } from '../browser';
 import { mergeEntries, setEntries, useStudio } from '../store';

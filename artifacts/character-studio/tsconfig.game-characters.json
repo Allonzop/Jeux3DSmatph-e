@@ -1,0 +1,39 @@
+{
+  // Projet séparé pour le système de personnages du jeu
+  // (`artifacts/3d-game/src/game/characters/`).
+  //
+  // Ce code appartient au jeu, pas au studio : le studio le *lit*, il ne le
+  // possède pas. Il est donc compilé sous ses propres règles. En particulier,
+  // ses fichiers `.tsx` importent React à l'ancienne (`import React from
+  // 'react'`) alors que la transformation JSX moderne ne l'exige plus, ce qui
+  // est incompatible avec `noUnusedLocals` — désactivé ici, et nulle part
+  // ailleurs. Le code du studio, lui, reste vérifié au maximum.
+  //
+  // Un projet référencé n'a pas le droit de désactiver l'émission : il n'émet
+  // que ses déclarations, dans `.tsbuild/` (ignoré par git). C'est ce qui
+  // garde les sources du jeu hors du programme du studio.
+  "compilerOptions": {
+    "composite": true,
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "declarationMap": true,
+    "rootDir": "../3d-game/src/game/characters",
+    "outDir": ".tsbuild/game-characters",
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "types": []
+  },
+  "include": ["../3d-game/src/game/characters"]
+}

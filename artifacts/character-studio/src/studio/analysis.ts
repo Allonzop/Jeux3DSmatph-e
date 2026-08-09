@@ -1,5 +1,5 @@
-import { resolveDef } from '../kit/types';
-import type { CharacterDef } from '../kit/types';
+import { resolveDef } from '@game/characters/types';
+import type { CharacterDef } from '@game/characters/types';
 import {
   BACK_KEYS, BODY_TYPES, FACE_GEAR_KEYS, HEADWEAR_KEYS, NECK_KEYS,
   PERSONALITY_KEYS, RANGES,

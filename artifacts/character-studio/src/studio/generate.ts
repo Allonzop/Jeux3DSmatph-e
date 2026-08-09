@@ -1,7 +1,7 @@
-import { mulberry32 } from '../kit/rng';
+import { mulberry32 } from '@game/characters/rng';
 import type {
   BackKey, CharacterDef, FaceGearKey, HeadwearKey, NeckKey, Personality,
-} from '../kit/types';
+} from '@game/characters/types';
 import {
   BACK_KEYS, BODY_TYPES, EYE_SHAPES, FACE_GEAR_KEYS, HEADWEAR_KEYS,
   MOUTH_SHAPES, NECK_KEYS, PERSONALITY_KEYS, RANGES, round2,

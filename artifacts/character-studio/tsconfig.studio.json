@@ -19,8 +19,13 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["vite/client", "node"]
+    "types": ["vite/client", "node"],
+    // Le studio lit les personnages a leur source, dans le jeu.
+    // Plus de copie, donc plus de KIT_VERSION a resynchroniser.
+    "paths": {
+      "@game/characters/*": ["../3d-game/src/game/characters/*"]
+    }
   },
   "include": ["src/studio", "src/cli", "src/main.tsx", "src/App.tsx", "src/vite-env.d.ts"],
-  "references": [{ "path": "./tsconfig.kit.json" }]
+  "references": [{ "path": "./tsconfig.game-characters.json" }]
 }

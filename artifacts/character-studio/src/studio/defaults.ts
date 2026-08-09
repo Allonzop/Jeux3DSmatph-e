@@ -1,10 +1,10 @@
-import { resolveDef, PERSONALITIES } from '../kit/types';
+import { resolveDef, PERSONALITIES } from '@game/characters/types';
 import type {
   BodyType, CharacterDef, EyeShape, MouthShape, Palette, Personality, ResolvedCharacterDef,
-} from '../kit/types';
+} from '@game/characters/types';
 import {
   headwearRegistry, backRegistry, neckRegistry, faceGearRegistry,
-} from '../kit/parts';
+} from '@game/characters/parts';
 
 /**
  * Toutes les valeurs par défaut sont *dérivées du kit* via `resolveDef`, jamais

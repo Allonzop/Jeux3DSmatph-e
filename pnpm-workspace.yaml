@@ -41,6 +41,15 @@ packages:
   - scripts
 
 catalog:
+  # Pile 3D — partagee par le jeu et le studio de personnages.
+  # Elles DOIVENT rester sur une seule version : le studio importe le rig
+  # du jeu, et deux copies de `three` ou de `@react-three/fiber` dans un
+  # meme bundle cassent le reconciliateur R3F.
+  '@react-three/drei': ^10.7.7
+  '@react-three/fiber': ^9.6.1
+  '@react-three/postprocessing': ^3.0.4
+  three: ^0.185.1
+  '@types/three': ^0.185.1
   '@replit/vite-plugin-cartographer': ^0.5.21
   '@replit/vite-plugin-dev-banner': ^0.1.1
   '@replit/vite-plugin-runtime-error-modal': ^0.0.6

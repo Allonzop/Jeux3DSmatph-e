@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
-import type { CharacterDef } from '../kit/types';
-import { heroDef, villagerDefs, enemyDef } from '../kit/defs';
+import type { CharacterDef } from '@game/characters/types';
+import { heroDef, villagerDefs, enemyDef } from '@game/characters/defs';
 import type { LibraryEntry } from './types';
 
 const STORAGE_KEY = 'character-studio.library.v1';

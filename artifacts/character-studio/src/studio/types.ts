@@ -1,4 +1,4 @@
-import type { CharacterDef } from '../kit/types';
+import type { CharacterDef } from '@game/characters/types';
 
 /** Une entrée de la bibliothèque : un `CharacterDef` plus les métadonnées du studio. */
 export interface LibraryEntry {

@@ -12,9 +12,9 @@
  * Contrat détaillé dans AGENTS.md.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
-import { KIT_VERSION } from '../kit/KIT_VERSION';
-import type { CharacterDef } from '../kit/types';
-import { heroDef, villagerDefs, enemyDef } from '../kit/defs';
+import { KIT_VERSION } from '@game/characters/KIT_VERSION';
+import type { CharacterDef } from '@game/characters/types';
+import { heroDef, villagerDefs, enemyDef } from '@game/characters/defs';
 import {
   BACK_KEYS, BODY_TYPES, DEFAULTS, EYE_SHAPES, FACE_GEAR_KEYS, FIELD_ORDER,
   HEADWEAR_KEYS, MOUTH_SHAPES, NECK_KEYS, PERSONALITY_KEYS, RANGES, minimalDef,

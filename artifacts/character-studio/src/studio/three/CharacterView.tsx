@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { ToonHumanoid } from '../../kit/ToonHumanoid';
-import type { CharacterDef } from '../../kit/types';
+import { ToonHumanoid } from '@game/characters/ToonHumanoid';
+import type { CharacterDef } from '@game/characters/types';
 import { shapeSignature } from '../defaults';
 
 const box = new THREE.Box3();

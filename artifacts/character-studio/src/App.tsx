@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { KIT_VERSION } from './kit/KIT_VERSION';
+import { KIT_VERSION } from '@game/characters/KIT_VERSION';
 import { Library } from './studio/components/Library';
 import { Editor } from './studio/components/Editor';
 import { Compare } from './studio/components/Compare';

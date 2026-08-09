@@ -3,7 +3,7 @@ import type { ComponentRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import type { PerspectiveCamera } from 'three';
-import type { CharacterDef } from '../../kit/types';
+import type { CharacterDef } from '@game/characters/types';
 
 /** `three-stdlib` n'est qu'une dépendance transitive de drei : on lit le type
  *  du ref depuis le composant lui-même plutôt que de l'importer de là. */

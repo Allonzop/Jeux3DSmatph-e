@@ -1,5 +1,5 @@
-import { KIT_VERSION } from '../kit/KIT_VERSION';
-import type { CharacterDef } from '../kit/types';
+import { KIT_VERSION } from '@game/characters/KIT_VERSION';
+import type { CharacterDef } from '@game/characters/types';
 import {
   BACK_KEYS, BODY_TYPES, EYE_SHAPES, FACE_GEAR_KEYS, HEADWEAR_KEYS,
   MOUTH_SHAPES, NECK_KEYS, PERSONALITY_KEYS, minimalDef,
