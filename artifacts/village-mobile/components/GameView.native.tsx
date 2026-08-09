@@ -10,7 +10,23 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { useColors } from '@/hooks/useColors';
 
-const GAME_URL = `https://${process.env.EXPO_PUBLIC_DOMAIN}/`;
+// Où est hébergé le jeu. L'app mobile ne contient aucun code de jeu : elle
+// n'est qu'une WebView autour de cette adresse.
+//
+// Surchargeable par EXPO_PUBLIC_DOMAIN, qui accepte deux formes :
+//   allonzop.github.io/Jeux3DSmatph-e   → https:// est ajouté
+//   http://192.168.1.20:5000            → repris tel quel, pour tester le
+//                                         serveur de dev depuis le téléphone
+//
+// Sans valeur par défaut, l'app chargeait « https://undefined/ » et affichait
+// « Could not load game » — c'est ce que faisait Replit en fournissant la
+// variable, et plus rien ne la fournit depuis.
+const DEFAULT_DOMAIN = 'allonzop.github.io/Jeux3DSmatph-e';
+
+const rawDomain = (process.env.EXPO_PUBLIC_DOMAIN || DEFAULT_DOMAIN).trim();
+const GAME_URL = /^https?:\/\//i.test(rawDomain)
+  ? `${rawDomain.replace(/\/+$/, '')}/`
+  : `https://${rawDomain.replace(/\/+$/, '')}/`;
 
 export default function GameView() {
   const colors = useColors();

@@ -53,7 +53,14 @@ function stripProtocol(domain) {
     urlString = `https://${urlString}`;
   }
 
-  return new URL(urlString).host;
+  const url = new URL(urlString);
+
+  // Le sous-chemin doit survivre. Sur Replit le jeu etait a la racine d'un
+  // domaine, donc `.host` suffisait ; GitHub Pages le sert sous
+  // /<depot>/, et ne garder que l'hote renverrait a une tout autre page.
+  const basePath = url.pathname.replace(/\/+$/, '');
+
+  return `${url.host}${basePath}`;
 }
 
 function getDeploymentDomain() {
