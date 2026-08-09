@@ -5,25 +5,27 @@ import { defineConfig } from 'vite';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
+// PORT et BASE_PATH etaient injectes par Replit, et leur absence levait une
+// erreur. Replit n'etant plus utilise, plus rien ne les fournit : le throw
+// bloquait `pnpm run dev`, `pnpm run build`, et le build a la racine. On garde
+// la lecture de l'environnement — un deploiement sous un sous-chemin passe
+// toujours par BASE_PATH — mais avec un repli utilisable, signale sur stderr.
+const DEFAULT_PORT = 5000;
+const DEFAULT_BASE_PATH = '/';
+
 const rawPort = process.env.PORT;
-
-if (!rawPort) {
-  throw new Error(
-    'PORT environment variable is required but was not provided.',
-  );
-}
-
-const port = Number(rawPort);
+const port = rawPort ? Number(rawPort) : DEFAULT_PORT;
 
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-const basePath = process.env.BASE_PATH;
+const basePath = process.env.BASE_PATH || DEFAULT_BASE_PATH;
 
-if (!basePath) {
-  throw new Error(
-    'BASE_PATH environment variable is required but was not provided.',
+if (!rawPort || !process.env.BASE_PATH) {
+  console.warn(
+    `[3d-game] PORT/BASE_PATH absents de l'environnement, repli sur ` +
+      `${port} et "${basePath}". Definissez-les pour un deploiement.`,
   );
 }
 

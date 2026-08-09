@@ -23,15 +23,21 @@ pnpm run typecheck    # les 6 projets d'un coup
 
 ```bash
 pnpm --filter @workspace/3d-game run typecheck
-PORT=5000 BASE_PATH=/ pnpm --filter @workspace/3d-game run dev
-PORT=5000 BASE_PATH=/ pnpm --filter @workspace/3d-game run build
+pnpm --filter @workspace/3d-game run dev     # http://localhost:5000
+pnpm --filter @workspace/3d-game run build
 ```
 
-**`PORT` et `BASE_PATH` sont obligatoires** — sans eux, `vite.config.ts` lève
-`PORT environment variable is required but was not provided.` avant même de
-commencer. C'est un reste de Replit ; le typecheck, lui, n'en a pas besoin.
-Ces deux variables sont aussi la raison pour laquelle `pnpm run build` à la
-racine échoue sur le jeu.
+`PORT` et `BASE_PATH` étaient injectés par Replit et leur absence levait une
+erreur, ce qui bloquait tout en local. Ils ont désormais un repli — `5000` et
+`/` — annoncé sur stderr. Définissez-les pour déployer ailleurs ou sous un
+sous-chemin.
+
+**`pnpm run build` à la racine échoue toujours, sur `village-mobile`** :
+`ERROR: No deployment domain found`. Ce n'est pas un reste à nettoyer — l'app
+Expo enveloppe le jeu *déployé* dans une WebView, elle a donc besoin de l'URL
+d'hébergement, que Replit fournissait. Tant que le jeu n'est pas hébergé
+ailleurs, cette cible ne peut pas se construire. Le jeu et le studio, eux, se
+construisent séparément sans rien exiger.
 
 Structure : `src/game/scene/` (monde, héros, villageois, ennemis),
 `src/game/characters/` (le système de personnages), `src/game/ui/`,
@@ -60,8 +66,13 @@ pnpm --silent run studio gen --count 8 --archetype creature --out /tmp/neufs.jso
 pnpm --silent run studio audit /tmp/neufs.json      # variété, doublons, palettes
 pnpm --silent run studio validate /tmp/neufs.json   # sort en 2 si problème
 pnpm --silent run studio emit /tmp/neufs.json --array enemyDefs
+pnpm --silent run studio selftest   # à lancer après avoir touché au rig ou aux défauts
 pnpm run dev                  # l'interface, pour juger à l'œil
 ```
+
+`selftest` rejoue les invariants du format d'échange. **Toucher au rig, aux
+registres ou aux défauts du jeu peut le casser en silence** — le JSON reste
+valide, les personnages changent. C'est la seule commande qui le voit.
 
 Le studio lit `artifacts/3d-game/src/game/characters/` **à la source**, via
 l'alias `@game/characters/*`. Il n'en garde aucune copie : ce qu'il affiche est

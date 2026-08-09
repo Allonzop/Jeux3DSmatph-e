@@ -4,12 +4,20 @@ A mobile-first 3D village-builder / auto-clicker game built with React Three Fib
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/3d-game run dev` — run the 3D game (port 24982, preview at `/`)
+- `pnpm --filter @workspace/3d-game run dev` — run the 3D game (port 5000, preview at `/`)
+- `pnpm --filter @workspace/character-studio run dev` — run the character studio (port 5173)
 - `pnpm --filter @workspace/village-mobile run dev` — run the Expo mobile app (preview at `/village-mobile/`)
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas
+
+`PORT` and `BASE_PATH` used to be injected by Replit and were mandatory; they
+now fall back to `5000` / `/` so the commands above work as written. Set them
+explicitly to deploy under another port or sub-path.
+
+**Development happens in Claude Code, not Replit.** `AGENTS.md` at the repo root
+is the entry point for an agent; this file is kept for its architecture notes.
 
 ## Stack
 
@@ -28,6 +36,8 @@ A mobile-first 3D village-builder / auto-clicker game built with React Three Fib
   - `GameCanvas.tsx` — root R3F Canvas with all scene components
   - `scene/` — 3D scene components (Ground, Hero, Buildings, ResourceNodes, Enemies, CrystalCore, Stars, Camera)
   - `ui/` — HTML overlay components (HUD, Joystick, BuildingPopup, icons.tsx — custom SVG icons, no emojis)
+  - `characters/` — the character system: `ToonHumanoid` rig, part registries, `defs.ts` (every villager/enemy is a data object, no 3D models)
+- `artifacts/character-studio/` — tool for authoring those characters, web UI + CLI. Reads `3d-game/src/game/characters/` at the source, keeps no copy. See its `AGENTS.md`.
 - `artifacts/3d-game/src/lib/safeArea.ts` — safe-area inset wiring (browser env() + native WebView)
 - `artifacts/village-mobile/` — Expo app: a WebView wrapper around the web game (no native game code)
 - `artifacts/api-server/` — shared Express API (currently unused by game)
@@ -63,7 +73,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 - THREE.RGBFormat is deprecated in Three.js 0.185 — always use THREE.RGBAFormat with 4-channel Uint8Array data for DataTexture.
 - THREE.Clock is deprecated — use THREE.Timer instead (or just use R3F's built-in clock via useFrame delta).
 - bufferAttribute in R3F requires the `args` prop pattern: `<bufferAttribute args={[array, itemSize]} attach="..." />`.
-- The WebGL error in the Replit preview screenshot tool is expected (headless Chrome, no GPU) — it works fine in real browsers.
+- ~~The WebGL error in the Replit preview screenshot tool is expected (headless Chrome, no GPU).~~ **Outdated.** That was the Replit sandbox, not headless Chrome in general: Chromium with `--use-angle=swiftshader --enable-unsafe-swiftshader` renders this project's R3F scenes, shadows and bloom included. Recipe in `.agents/memory/webgl-screenshot-limit.md` — do not skip screenshots on the strength of this line.
 - All workspace packages must keep `@types/react` / `@types/react-dom` on `catalog:` — a hardcoded pin (e.g. from a merged task-agent branch) splits the types into two copies and breaks every R3F JSX element type in the web game (see `.agents/memory/post-merge-type-dedup.md`).
 
 ## Pointers
