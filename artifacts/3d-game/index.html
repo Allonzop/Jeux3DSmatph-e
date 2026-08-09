@@ -4,15 +4,34 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover" />
     <title>Village Spatial 3D</title>
-    <meta name="description" content="Village Spatial 3D — built on Replit. Update this description to reflect the app." />
+    <meta name="description" content="Jeu de village spatial en 3D : récoltez des ressources, bâtissez votre village et défendez le cristal." />
     <meta name="robots" content="index, follow" />
     <meta property="og:title" content="Village Spatial 3D" />
-    <meta property="og:description" content="Village Spatial 3D — built on Replit. Update this description to reflect the app." />
+    <meta property="og:description" content="Jeu de village spatial en 3D : récoltez des ressources, bâtissez votre village et défendez le cristal." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Village Spatial 3D" />
-    <meta name="twitter:description" content="Village Spatial 3D — built on Replit. Update this description to reflect the app." />
+    <meta name="twitter:description" content="Jeu de village spatial en 3D : récoltez des ressources, bâtissez votre village et défendez le cristal." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!--
+      Installation depuis le navigateur : « Ajouter à l'écran d'accueil » pose
+      une icône et lance le jeu en plein écran, sans barres de navigateur.
+      C'est le moyen le plus court d'avoir le jeu sur un téléphone — pas de
+      magasin d'applications, pas d'outil à installer, et la mise à jour se
+      fait toute seule puisque c'est la page web.
+
+      Les chemins du manifeste sont relatifs à lui-même : le jeu est servi à
+      la racine en local et sous /<dépôt>/ sur GitHub Pages, et des chemins
+      absolus casseraient l'un des deux.
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0d1117" />
+    <!-- iOS ignore le manifeste et exige ses propres balises. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Village 3D" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
