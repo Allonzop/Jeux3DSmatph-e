@@ -1,0 +1,32 @@
+{
+  "name": "character-studio",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Outil autonome de creation de personnages pour le jeu React Three Fiber",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b --force && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --force",
+    "build:cli": "vite build --config vite.cli.config.ts",
+    "studio": "vite build --config vite.cli.config.ts --logLevel error && node dist-cli/studio.mjs"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.6",
+    "@react-three/fiber": "^9.6.0",
+    "@react-three/postprocessing": "^3.0.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "three": "^0.185.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@types/three": "^0.185.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "^5.9.0",
+    "vite": "^7.1.0"
+  }
+}

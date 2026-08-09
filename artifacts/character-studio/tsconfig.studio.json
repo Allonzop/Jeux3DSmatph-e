@@ -1,0 +1,26 @@
+{
+  // Le code du studio — vérifié strictement, imports et paramètres inutilisés
+  // compris.
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "types": ["vite/client", "node"]
+  },
+  "include": ["src/studio", "src/cli", "src/main.tsx", "src/App.tsx", "src/vite-env.d.ts"],
+  "references": [{ "path": "./tsconfig.kit.json" }]
+}
