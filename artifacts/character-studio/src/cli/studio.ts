@@ -13,13 +13,14 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { KIT_VERSION } from '@game/characters/KIT_VERSION';
+import { resolveDef } from '@game/characters/types';
 import type { CharacterDef } from '@game/characters/types';
 import { heroDef, villagerDefs, enemyDef } from '@game/characters/defs';
 import {
   BACK_KEYS, BODY_TYPES, DEFAULTS, EYE_SHAPES, FACE_GEAR_KEYS, FIELD_ORDER,
   HEADWEAR_KEYS, MOUTH_SHAPES, NECK_KEYS, PERSONALITY_KEYS, RANGES, minimalDef,
 } from '../studio/defaults';
-import { ARCHETYPE_NAMES, surpriseDef } from '../studio/generate';
+import { ARCHETYPE_NAMES, surpriseBatch } from '../studio/generate';
 import { auditDefs, defDistance, paletteIssues } from '../studio/analysis';
 import { buildExportBundle, parseImport } from '../studio/exchange';
 import { LIGHTING, POST } from '../studio/three/constants';
@@ -140,14 +141,16 @@ function cmdGen(args: Args) {
     fail(`archétype « ${archetype} » inconnu. Disponibles : ${ARCHETYPE_NAMES.join(', ')}.`);
   }
 
-  const entries: LibraryEntry[] = [];
-  // Les seeds sont espacés pour que deux appels voisins ne produisent pas des
-  // personnages presque identiques.
-  for (let i = 0; i < count; i += 1) {
-    const seed = baseSeed + i * 7919;
-    const def = surpriseDef({ seed, id: `${prefix}${i + 1}`, archetype });
-    entries.push({ uid: `cli_${seed}`, name: `${prefix} ${i + 1}`, tags, def });
-  }
+  // `surpriseBatch` rejette les candidats trop proches de ceux déjà retenus :
+  // espacer les seeds ne suffisait pas à éviter les quasi-doublons dans un
+  // même lot. Voir le commentaire de la fonction.
+  const defs = surpriseBatch({ count, seed: baseSeed, prefix, archetype });
+  const entries: LibraryEntry[] = defs.map((def, i) => ({
+    uid: `cli_${def.seed}`,
+    name: `${prefix} ${i + 1}`,
+    tags,
+    def,
+  }));
 
   const bundle = buildExportBundle(entries);
   const target = str(args.flags.out);
@@ -303,6 +306,86 @@ function cmdKit() {
 }
 
 // --------------------------------------------------------------------------
+// selftest — les invariants sur lesquels tout le reste repose
+// --------------------------------------------------------------------------
+
+/**
+ * Le format d'échange tient sur une promesse : un `def` réduit puis relu rend
+ * exactement le même personnage. Rien ne la vérifiait — elle avait été
+ * contrôlée une fois, à la main, dans un script jeté. Toute modification de
+ * `minimalDef`, de `FIELD_ORDER`, des défauts du jeu ou du générateur peut la
+ * casser en silence : le JSON reste valide, les personnages changent.
+ *
+ * Cette commande la rejoue sur les personnages du jeu et sur un lot généré.
+ * Sort en 1 au premier écart.
+ */
+function cmdSelftest() {
+  const failures: string[] = [];
+  const check = (ok: boolean, label: string) => {
+    if (!ok) failures.push(label);
+    return ok;
+  };
+
+  const kitDefs = [heroDef, ...villagerDefs, enemyDef];
+  const generated = surpriseBatch({ count: 60, seed: 20260809, prefix: 'st' });
+  const all = [...kitDefs, ...generated];
+
+  // 1. Aller-retour sans perte, en passant par JSON comme le fait un export.
+  for (const def of all) {
+    const minimal = minimalDef(def);
+    const reread = JSON.parse(JSON.stringify(minimal)) as CharacterDef;
+    const same = JSON.stringify(resolveDef(reread)) === JSON.stringify(resolveDef(def));
+    if (!check(same, `aller-retour altère « ${def.id} »`)) break;
+  }
+
+  // 2. Aucun champ égal à son défaut ne doit survivre à la réduction.
+  for (const def of all) {
+    const minimal = minimalDef(def) as unknown as Record<string, unknown>;
+    const defaults = DEFAULTS as unknown as Record<string, unknown>;
+    const redundant = Object.keys(minimal).filter(
+      (k) => k !== 'id' && k !== 'seed' && k in defaults
+        && JSON.stringify(minimal[k]) === JSON.stringify(defaults[k]),
+    );
+    if (!check(redundant.length === 0,
+      `« ${def.id} » exporte des champs déjà par défaut : ${redundant.join(', ')}`)) break;
+  }
+
+  // 3. Un lot réimporté par le chemin d'import réel doit revenir intact.
+  const bundle = buildExportBundle(
+    generated.map((def, i) => ({ uid: `st${i}`, name: def.id, tags: [], def })),
+  );
+  const parsed = parseImport(JSON.stringify(bundle));
+  check(parsed.entries.length === generated.length,
+    `réimport : ${parsed.entries.length} personnages au lieu de ${generated.length}`);
+  check(parsed.warnings.length === 0,
+    `réimport : avertissements inattendus — ${parsed.warnings.join(' ; ')}`);
+
+  // 4. Déterminisme du générateur.
+  const again = surpriseBatch({ count: 60, seed: 20260809, prefix: 'st' });
+  check(JSON.stringify(again) === JSON.stringify(generated),
+    'le générateur n\'est plus déterministe : même seed, résultat différent');
+
+  // 5. Le générateur ne doit pas produire ce que son propre audit reproche.
+  const report = auditDefs(generated);
+  const duplicates = report.nearDuplicates.length;
+  check(duplicates === 0, `le générateur produit ${duplicates} quasi-doublon(s) dans un lot`);
+  const warnings = report.issues.filter((i) => i.severity !== 'note');
+  check(warnings.length === 0,
+    `palettes générées en avertissement : ${warnings.map((w) => w.code).join(', ')}`);
+
+  const total = 5;
+  if (failures.length > 0) {
+    process.stderr.write(`selftest : ÉCHEC (${failures.length} sur ${total})\n`);
+    for (const f of failures) process.stderr.write(`  - ${f}\n`);
+    return process.exit(1);
+  }
+  process.stdout.write(
+    `selftest : ${total}/${total} invariants tenus `
+    + `(kit ${KIT_VERSION}, ${kitDefs.length} personnages du jeu + ${generated.length} générés)\n`,
+  );
+}
+
+// --------------------------------------------------------------------------
 
 const USAGE = `Character Studio — surface sans interface (kit ${KIT_VERSION})
 
@@ -322,6 +405,10 @@ const USAGE = `Character Studio — surface sans interface (kit ${KIT_VERSION})
   diff <fichier> <idA> <idB>   Distance détaillée entre deux personnages.
   emit <fichier> [--array N]   Littéraux TypeScript prêts à coller dans defs.ts.
       --out FICHIER            écrire au lieu de sortir sur stdout
+  selftest                     Rejoue les invariants du studio (aller-retour
+                               d'export, déterminisme, qualité du générateur).
+                               Sort en 1 en cas d'écart. À lancer après toute
+                               modification du kit ou du générateur.
 
 Le fichier d'entrée peut être un characters-export.json, une bibliothèque
 sauvegardée, un tableau de defs, ou un CharacterDef seul. « - » lit stdin.
@@ -340,6 +427,7 @@ function main() {
     case 'audit': return cmdAudit(args);
     case 'diff': return cmdDiff(args);
     case 'emit': return cmdEmit(args);
+    case 'selftest': return cmdSelftest();
     case 'help': case '--help': case '-h': return process.stdout.write(USAGE);
     default:
       process.stderr.write(`commande inconnue : ${args.command}\n\n${USAGE}`);

@@ -78,6 +78,28 @@ pnpm --silent run studio emit /tmp/neufs.json --array enemyDefs
 `gen` est **déterministe** : même `--seed`, même résultat. Notez le seed d'une
 série réussie, elle est reproductible.
 
+`gen` compare aussi chaque candidat à ceux déjà retenus dans le lot et re-tire
+tant qu'il est trop proche. Espacer les seeds ne suffisait pas : deux tirages
+indépendants retombent sur le même archétype et les mêmes accessoires, les
+pools étant petits. Un lot de 60 contenait 11 quasi-doublons, il n'en contient
+plus. Le re-tirage se voit dans le champ `seed`, qui n'est alors plus
+`seed + rang × 7919`.
+
+## `selftest` — après toute modification
+
+```bash
+pnpm --silent run studio selftest     # sort en 1 au premier écart
+```
+
+Rejoue cinq invariants sur les personnages du jeu et sur un lot généré :
+aller-retour d'export sans perte, aucun champ par défaut exporté, réimport par
+le vrai chemin d'import, déterminisme du générateur, et absence de ce que
+l'audit reproche à ses propres sorties.
+
+**Lancez-le après avoir touché au rig, aux registres, aux défauts du jeu, à
+`minimalDef`, à `FIELD_ORDER` ou au générateur.** Ces changements peuvent casser
+le format d'échange en silence : le JSON reste valide, les personnages changent.
+
 ---
 
 ## Lire un `audit`
@@ -122,7 +144,8 @@ un personnage correct. Tout le reste a un défaut, listé par `schema`.
 **N'écrivez que ce qui diffère du défaut.** `minimalDef` le fait
 automatiquement dans `gen` et `emit` — un champ qui vaut son défaut est retiré
 de la sortie. Un `def` exporté puis remis dans `resolveDef` donne exactement le
-même personnage : vérifié sur 70 cas, l'aller-retour est sans perte.
+même personnage : c'est ce que `selftest` vérifie à chaque fois, sur les
+70 personnages du jeu et d'un lot généré.
 
 Le `seed` ne change pas les couleurs ni la silhouette : il pilote les
 micro-variations déterministes des pièces (taches du champignon, inclinaison du

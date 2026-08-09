@@ -114,6 +114,7 @@ pnpm --silent run studio gen --count 8 --archetype creature --out /tmp/neufs.jso
 pnpm --silent run studio audit /tmp/neufs.json     # variété, doublons, palettes
 pnpm --silent run studio validate /tmp/neufs.json  # sort en 2 si problème
 pnpm --silent run studio emit /tmp/neufs.json --array enemyDefs
+pnpm --silent run studio selftest                  # invariants du studio, sort en 1 si écart
 ```
 
 Les deux partagent le même cœur : mêmes défauts lus dans le jeu, même réduction

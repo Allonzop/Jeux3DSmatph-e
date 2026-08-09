@@ -6,7 +6,7 @@ import {
   BACK_KEYS, BODY_TYPES, EYE_SHAPES, FACE_GEAR_KEYS, HEADWEAR_KEYS,
   MOUTH_SHAPES, NECK_KEYS, PERSONALITY_KEYS, RANGES, round2,
 } from './defaults';
-import { EMISSIVE_INTENSITY, luminance } from './analysis';
+import { EMISSIVE_INTENSITY, colorDistance, defDistance, luminance } from './analysis';
 import { POST } from './three/constants';
 
 // --------------------------------------------------------------------------
@@ -202,6 +202,62 @@ function bloomingGlow(hue: number, sat: number, startL: number): string {
   return hsl(hue, sat, 0.92);
 }
 
+/** Seuil de `paletteIssues` pour la paire primary/skin. */
+const SKIN_MIN_DISTANCE = 0.1;
+
+/**
+ * Peau de créature : même teinte que le corps — c'est ce qui fait la cohérence —
+ * mais pas au point de disparaître.
+ *
+ * La version précédente tirait la clarté dans 0,5–0,65 alors que `primary` la
+ * tirait dans 0,45–0,62, à teinte et saturation quasi identiques. Quand les deux
+ * tombaient vers 0,55, le rôle « skin » devenait invisible : `studio audit`
+ * signalait `couleurs-proches` sur 22 % des personnages générés.
+ *
+ * On écarte donc la clarté, du côté où il reste de la place, jusqu'à passer le
+ * seuil que l'audit applique. Déterministe : aucun tirage supplémentaire.
+ */
+function creatureSkin(hue: number, sat: number, startL: number, primary: string): string {
+  const away = startL >= 0.5 ? 1 : -1;
+  let l = startL;
+  for (let i = 0; i < 10; i += 1) {
+    const hex = hsl(hue, sat, l);
+    if (colorDistance(hex, primary) >= SKIN_MIN_DISTANCE) return hex;
+    l += away * 0.05;
+    if (l > 0.9 || l < 0.15) break;
+  }
+  // Butée atteinte : on repart dans l'autre sens plutôt que de rendre une
+  // couleur qu'on sait fautive.
+  return hsl(hue, sat, startL >= 0.5 ? 0.28 : 0.85);
+}
+
+/**
+ * Peau humaine : les tons sont fixes, on ne peut pas les décaler comme ceux
+ * d'une créature. On part du ton tiré et on parcourt la liste jusqu'à en
+ * trouver un qui se distingue de `primary`.
+ *
+ * Le cas fautif : un `primary` ocre ou terre cuite — fréquent sur les
+ * archétypes « village » et « forêt » — tombe pile sur `#c68642` ou `#e0ac69`.
+ * Le personnage paraît alors monochrome, sans que rien ne le signale.
+ *
+ * Déterministe : un seul tirage, celui du point de départ.
+ */
+function humanSkin(rnd: Rnd, primary: string): string {
+  const start = Math.floor(rnd() * SKIN_TONES.length);
+  let best = SKIN_TONES[start];
+  let bestDistance = -1;
+  for (let i = 0; i < SKIN_TONES.length; i += 1) {
+    const tone = SKIN_TONES[(start + i) % SKIN_TONES.length];
+    const d = colorDistance(tone, primary);
+    if (d >= SKIN_MIN_DISTANCE) return tone;
+    if (d > bestDistance) {
+      bestDistance = d;
+      best = tone;
+    }
+  }
+  return best;
+}
+
 /**
  * Génère un personnage aléatoire mais cohérent (PRD §4.2).
  * Entièrement déterministe : même `seed`, même personnage — on peut donc
@@ -231,8 +287,8 @@ export function surpriseDef({ seed, id, archetype: forced }: SurpriseOptions): C
     between(rnd, 0.6, 0.7),
   );
   const skin = archetype.creatureSkin
-    ? hsl(baseHue + harmony[0], baseSat * 0.9, between(rnd, 0.5, 0.65))
-    : pick(rnd, SKIN_TONES);
+    ? creatureSkin(baseHue + harmony[0], baseSat * 0.9, between(rnd, 0.5, 0.65), primary)
+    : humanSkin(rnd, primary);
 
   // --- Silhouette ---
   const bodyType = pick(rnd, archetype.bodyTypeBias ?? BODY_TYPES);
@@ -267,6 +323,75 @@ export function surpriseDef({ seed, id, archetype: forced }: SurpriseOptions): C
       ? pick(rnd, poolFor(archetype.personalities, PERSONALITY_KEYS))
       : pick(rnd, PERSONALITY_KEYS),
   };
+}
+
+export interface BatchOptions {
+  count: number;
+  seed: number;
+  /** `gen1`, `gen2`… */
+  prefix: string;
+  /** Force un archetype au lieu d'en tirer un. Ignoré s'il est inconnu. */
+  archetype?: string;
+  /** Seuil de rejet, aligné par défaut sur celui de `findNearDuplicates`. */
+  threshold?: number;
+}
+
+/** Écart entre deux seeds successifs — premier, pour décorréler les flux. */
+const SEED_STRIDE = 7919;
+/** Nombre de re-tirages avant d'accepter le moins mauvais candidat. */
+const MAX_RETRIES = 24;
+
+/**
+ * Génère un lot sans quasi-doublons internes.
+ *
+ * Espacer les seeds ne suffit pas, contrairement à ce que la boucle d'origine
+ * supposait : cela décorrèle le flux aléatoire, mais deux tirages indépendants
+ * retombent tout de même sur le même archétype, la même morphologie et les
+ * mêmes accessoires — les pools sont petits. Mesuré sur 60 personnages :
+ * 11 quasi-doublons, dont deux à silhouette identique (distance 0,00).
+ *
+ * On compare donc chaque candidat à ceux déjà retenus et on re-tire tant qu'il
+ * est trop proche. Reste déterministe : les seeds de repli sont dérivés, pas
+ * tirés au hasard. Si aucun candidat ne passe, on garde le plus éloigné trouvé
+ * plutôt que d'échouer — un lot légèrement redondant vaut mieux qu'un lot
+ * absent, et `audit` le signalera.
+ */
+export function surpriseBatch({
+  count, seed, prefix, archetype, threshold = 0.22,
+}: BatchOptions): CharacterDef[] {
+  const accepted: CharacterDef[] = [];
+
+  const minDistance = (def: CharacterDef) => accepted.reduce(
+    (min, other) => Math.min(min, defDistance(def, other).total),
+    Number.POSITIVE_INFINITY,
+  );
+
+  for (let i = 0; i < count; i += 1) {
+    const id = `${prefix}${i + 1}`;
+    let best: CharacterDef | null = null;
+    let bestDistance = -1;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
+      // Le seed du personnage reste celui de son rang : une série reste
+      // reproductible, et un re-tirage n'est visible que dans le champ `seed`.
+      const candidateSeed = seed + i * SEED_STRIDE + attempt * 104729;
+      const def = surpriseDef({ seed: candidateSeed, id, archetype });
+      const distance = minDistance(def);
+      if (distance >= threshold) {
+        best = def;
+        break;
+      }
+      if (distance > bestDistance) {
+        bestDistance = distance;
+        best = def;
+      }
+    }
+
+    // `best` est toujours défini : la boucle tourne au moins une fois.
+    accepted.push(best as CharacterDef);
+  }
+
+  return accepted;
 }
 
 /** Un personnage neuf, sobre : un point de départ, pas une surprise. */

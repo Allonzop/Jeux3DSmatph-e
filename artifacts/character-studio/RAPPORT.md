@@ -309,7 +309,8 @@ quelles côté jeu — c'est d'ailleurs pourquoi le studio ne recopie pas de tab
   `import React from 'react'` alors que la transformation JSX moderne ne l'exige
   plus, ce qui est incompatible avec `noUnusedLocals`. Plutôt que de retirer ces
   lignes, le kit est compilé comme un projet TypeScript séparé
-  (`tsconfig.kit.json`) qui désactive cette seule règle ; le code du studio reste
+  (aujourd'hui `tsconfig.game-characters.json`) qui désactive cette seule règle ;
+  le code du studio reste
   vérifié strictement. `pnpm run typecheck` construit les deux via `tsc -b`.
 
 ---

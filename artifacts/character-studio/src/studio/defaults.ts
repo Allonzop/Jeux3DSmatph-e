@@ -75,7 +75,7 @@ export const normHex = (c: string) => c.trim().toLowerCase();
 export const round2 = (n: number) => Math.round(n * 100) / 100;
 
 /**
- * Ordre canonique des champs, celui de l'exemple commenté de `src/kit/defs.ts`.
+ * Ordre canonique des champs, celui de l'exemple commenté de `defs.ts` du jeu.
  * Les `def` exportés se relisent ainsi exactement comme ceux déjà en jeu.
  */
 type DefKey = keyof CharacterDef;

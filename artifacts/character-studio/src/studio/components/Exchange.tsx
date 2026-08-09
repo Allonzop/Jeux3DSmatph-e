@@ -67,7 +67,9 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
       <div className="dialog-body">
         <div className="row">
           <span className="badge">kitVersion {KIT_VERSION}</span>
-          <span className="muted">lu depuis <code>src/kit/KIT_VERSION.ts</code></span>
+          <span className="muted">
+            lu depuis <code>3d-game/src/game/characters/KIT_VERSION.ts</code>
+          </span>
         </div>
 
         <div className="row wrap">
