@@ -22,9 +22,16 @@ pnpm run typecheck    # les 6 projets d'un coup
 ## Le jeu
 
 ```bash
-pnpm --filter @workspace/3d-game run dev
 pnpm --filter @workspace/3d-game run typecheck
+PORT=5000 BASE_PATH=/ pnpm --filter @workspace/3d-game run dev
+PORT=5000 BASE_PATH=/ pnpm --filter @workspace/3d-game run build
 ```
+
+**`PORT` et `BASE_PATH` sont obligatoires** — sans eux, `vite.config.ts` lève
+`PORT environment variable is required but was not provided.` avant même de
+commencer. C'est un reste de Replit ; le typecheck, lui, n'en a pas besoin.
+Ces deux variables sont aussi la raison pour laquelle `pnpm run build` à la
+racine échoue sur le jeu.
 
 Structure : `src/game/scene/` (monde, héros, villageois, ennemis),
 `src/game/characters/` (le système de personnages), `src/game/ui/`,
