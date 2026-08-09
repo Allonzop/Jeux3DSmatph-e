@@ -19,8 +19,8 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["vite/client"]
+    "types": ["vite/client", "node"]
   },
-  "include": ["src/studio", "src/main.tsx", "src/App.tsx", "src/vite-env.d.ts"],
+  "include": ["src/studio", "src/cli", "src/main.tsx", "src/App.tsx", "src/vite-env.d.ts"],
   "references": [{ "path": "./tsconfig.kit.json" }]
 }

@@ -8,7 +8,9 @@
     "dev": "vite",
     "build": "tsc -b --force && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --force"
+    "typecheck": "tsc -b --force",
+    "build:cli": "vite build --config vite.cli.config.ts",
+    "studio": "vite build --config vite.cli.config.ts --logLevel error && node dist-cli/studio.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.6",
@@ -19,6 +21,7 @@
     "three": "^0.185.0"
   },
   "devDependencies": {
+    "@types/node": "^26.2.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@types/three": "^0.185.0",

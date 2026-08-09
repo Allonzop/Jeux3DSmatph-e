@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
 import { KIT_VERSION } from '../../kit/KIT_VERSION';
-import {
-  agentNote, buildExportBundle, buildLibraryFile, copyToClipboard, downloadJson, parseImport,
-} from '../exchange';
+import { agentNote, buildExportBundle, buildLibraryFile, parseImport } from '../exchange';
+import { copyToClipboard, downloadJson } from '../browser';
 import { mergeEntries, setEntries, useStudio } from '../store';
 import type { LibraryEntry } from '../types';
 

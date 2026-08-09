@@ -13,10 +13,12 @@ import {
   MOUTH_SHAPES, NECK_KEYS, PERSONALITY_KEYS, RANGES, minimalDef, toFullDef,
 } from '../defaults';
 import { randomSeed, surpriseDef } from '../generate';
-import { copyToClipboard, defToJson } from '../exchange';
+import { defToJson } from '../exchange';
+import { copyToClipboard } from '../browser';
 import { openEditor, replaceDef, updateDef, updateEntry, useStudio } from '../store';
 import { CharacterView } from '../three/CharacterView';
 import { Ground, LIGHTING, PlaybackSpeed, StudioLights, StudioPostFX } from '../three/Stage';
+import { GAME_VIEW_HEIGHT } from '../three/constants';
 import {
   ColorField, Field, NullableSelect, SeedField, Select, Slider, TagField, TextField, Toggle,
 } from './controls';
@@ -28,22 +30,6 @@ import {
  */
 const FRAME = { targetY: 0.5, cameraY: 0.5, distance: 2.5 };
 
-/**
- * Hauteur de monde visible par la caméra du jeu, en unités.
- *
- * `scene/Camera.tsx` place la caméra à `héros + (0, 14, 10)`, soit une distance
- * de √(14² + 10²) ≈ 17,2 ; le `<Canvas>` du jeu ne passe pas de `camera`, donc
- * le fov est celui par défaut de R3F, 75°. D'où 2 × 17,2 × tan(37,5°) ≈ 26,4.
- *
- * Un personnage d'1,5 unité n'occupe donc que ~6 % de la hauteur de l'écran en
- * jeu. C'est ce qui rend ce cadrage utile : le bloom et la vignette sont des
- * effets *écran*, leur force apparente dépend de la taille du sujet à l'image.
- * À réglages identiques, un halo discret en jeu devient énorme sur un
- * personnage qui remplit le cadre. Ce bouton répond à « à quoi ça ressemblera
- * vraiment », et accessoirement à « cette silhouette se lit-elle à la taille
- * du jeu ».
- */
-const GAME_VIEW_HEIGHT = 26.4;
 
 interface PreviewProps {
   def: CharacterDef;

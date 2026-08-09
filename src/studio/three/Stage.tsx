@@ -2,40 +2,22 @@ import { useFrame } from '@react-three/fiber';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { useRef } from 'react';
 import type * as THREE from 'three';
+import { LIGHTING, POST } from './constants';
+
+export { LIGHTING, POST } from './constants';
 
 /**
- * Éclairage du studio — recopié à l'identique de `GameCanvas.tsx` du jeu
- * (Game-Visual-Revamp/artifacts/3d-game/src/game/GameCanvas.tsx).
+ * Éclairage et post-traitement du studio, recopiés à l'identique de
+ * `GameCanvas.tsx` du jeu. Les valeurs elles-mêmes vivent dans `constants.ts`,
+ * sans dépendance à React ni three, pour que la CLI puisse les lire aussi.
  *
- * Ce n'est pas cosmétique : les lumières du jeu sont *colorées* — ambiante
- * bleutée, clé chaude. Une lumière blanche neutre décale toutes les teintes
- * choisies dans le studio, ce qui est exactement le « les couleurs ne doivent
- * pas mentir » du PRD §4.2.
+ * Les lumières du jeu sont *colorées* — ambiante bleutée, clé chaude. Une
+ * lumière blanche neutre décalerait toutes les teintes choisies dans le studio,
+ * ce qui est exactement le « les couleurs ne doivent pas mentir » du PRD §4.2.
  *
- * Si le jeu change son éclairage, c'est ici et nulle part ailleurs qu'il faut
- * répercuter.
+ * Ne jamais ajouter `disableNormalPass` sur l'EffectComposer : la prop n'existe
+ * plus (PRD §5, et note interne du jeu `.agents/memory/r3f-game-perf.md`).
  */
-export const LIGHTING = {
-  background: '#0d1117',
-  ambient: { intensity: 0.45, color: '#b8c4ff' },
-  key: { intensity: 1.4, color: '#fff2dd', position: [10, 20, 10] as const },
-  point: { intensity: 0.3, color: '#ffebc8', position: [0, 5, 0] as const },
-  shadowMapSize: [1024, 1024] as [number, number],
-};
-
-/**
- * Post-traitement du jeu, aux mêmes réglages. Sans lui, le champ `glow` du
- * `CharacterDef` est illisible : `glowMat` produit un matériau émissif dont
- * tout l'effet vient du bloom. Régler `glow` sans bloom revient à régler à
- * l'aveugle.
- *
- * Ne jamais ajouter `disableNormalPass` : la prop n'existe plus
- * (PRD §5, et note interne du jeu `.agents/memory/r3f-game-perf.md`).
- */
-export const POST = {
-  bloom: { luminanceThreshold: 0.45, intensity: 1.6 },
-  vignette: { offset: 0.1, darkness: 1.1 },
-};
 
 export function StudioLights({ shadows = false }: { shadows?: boolean }) {
   return (

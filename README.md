@@ -82,13 +82,18 @@ src/
   kit/                      le système de personnages du jeu — NE PAS MODIFIER
   studio/
     defaults.ts             valeurs par défaut dérivées du kit, réduction des defs
-    store.ts                bibliothèque + persistance localStorage
     generate.ts             « Surprends-moi » : palettes harmonisées, archétypes
-    exchange.ts             import / export / presse-papier
+    analysis.ts             distances, couverture des registres, contrôles palette
+    exchange.ts             import / export — sans DOM, utilisable depuis Node
+    browser.ts              les seules fonctions qui touchent au DOM
+    store.ts                bibliothèque + persistance localStorage
     three/
+      constants.ts          lumières et bloom du jeu — source unique
       CharacterView.tsx     ToonHumanoid posé au sol, mesuré à l'exécution
-      Stage.tsx             éclairage, vitesse de lecture, sol, rotation
+      Stage.tsx             composants d'éclairage, post-traitement, sol
     components/             bibliothèque, éditeur, comparaison, contrôles
+  cli/
+    studio.ts               surface sans interface (voir AGENTS.md)
 ```
 
 Deux projets TypeScript séparés (`tsconfig.kit.json`, `tsconfig.studio.json`) :
@@ -97,12 +102,38 @@ qu'on ait à le retoucher. `npm run typecheck` construit les deux.
 
 ---
 
+## Deux surfaces : interface et ligne de commande
+
+L'interface web s'adresse à un humain qui juge à l'œil. Une seconde surface,
+sans interface, s'adresse à un agent de code — qui n'en a pas :
+
+```bash
+npm run studio -- help
+npm run studio -- schema                    # capacités du kit, en JSON
+npm run studio -- kit                       # les personnages actuellement en jeu
+npm run studio -- gen --count 8 --archetype creature --out /tmp/neufs.json
+npm run studio -- audit /tmp/neufs.json     # variété, doublons, palettes
+npm run studio -- validate /tmp/neufs.json  # sort en 2 si problème
+npm run studio -- emit /tmp/neufs.json --array enemyDefs
+```
+
+Les deux partagent le même cœur : mêmes défauts lus dans le kit, même réduction
+des `def`, même générateur, même validation. `audit` chiffre ce que la grille
+montre à l'œil — quasi-doublons, pièces du kit jamais employées, et palettes
+qui ne tiendront pas au rendu (un `glow` trop sombre ne déclenche pas le bloom
+du jeu).
+
+Le contrat complet est dans **`AGENTS.md`**.
+
+---
+
 ## Fidélité au rendu du jeu
 
 L'éclairage et le post-traitement du studio sont recopiés à l'identique de
 `GameCanvas.tsx` du jeu, et regroupés dans les constantes `LIGHTING` et `POST`
-de `src/studio/three/Stage.tsx` — **si le jeu change son rendu, c'est là, et
-nulle part ailleurs, qu'il faut le répercuter.**
+de `src/studio/three/constants.ts` — **si le jeu change son rendu, c'est là, et
+nulle part ailleurs, qu'il faut le répercuter.** La CLI lit le même fichier pour
+ses contrôles de palette.
 
 Trois boutons de la barre de l'éditeur servent à juger cette fidélité :
 

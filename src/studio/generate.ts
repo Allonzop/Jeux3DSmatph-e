@@ -6,6 +6,8 @@ import {
   BACK_KEYS, BODY_TYPES, EYE_SHAPES, FACE_GEAR_KEYS, HEADWEAR_KEYS,
   MOUTH_SHAPES, NECK_KEYS, PERSONALITY_KEYS, RANGES, round2,
 } from './defaults';
+import { EMISSIVE_INTENSITY, luminance } from './analysis';
+import { POST } from './three/constants';
 
 // --------------------------------------------------------------------------
 // Couleur
@@ -54,7 +56,8 @@ const SKIN_TONES = ['#ffd9b3', '#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#ffe
 // --------------------------------------------------------------------------
 
 interface Archetype {
-  label: string;
+  /** Cle ascii — sert aussi de valeur a `--archetype` en ligne de commande. */
+  key: string;
   /** Plage de teinte de base, en degrés. */
   hue: [number, number];
   saturation: [number, number];
@@ -71,7 +74,7 @@ interface Archetype {
 
 const ARCHETYPES: Archetype[] = [
   {
-    label: 'forêt',
+    key: 'foret',
     hue: [70, 160],
     saturation: [0.35, 0.6],
     headwear: ['mushroom', 'leafCrown', 'hood', 'coneHat'],
@@ -82,7 +85,7 @@ const ARCHETYPES: Archetype[] = [
     creatureSkin: false,
   },
   {
-    label: 'technique',
+    key: 'technique',
     hue: [180, 260],
     saturation: [0.55, 0.85],
     headwear: ['visorHelmet', 'antennaDome', 'beanie'],
@@ -94,7 +97,7 @@ const ARCHETYPES: Archetype[] = [
     bodyTypeBias: ['slim', 'tall', 'round', 'stocky'],
   },
   {
-    label: 'village',
+    key: 'village',
     hue: [20, 60],
     saturation: [0.4, 0.7],
     headwear: ['beanie', 'hair', 'hood', 'coneHat'],
@@ -105,7 +108,7 @@ const ARCHETYPES: Archetype[] = [
     creatureSkin: false,
   },
   {
-    label: 'créature',
+    key: 'creature',
     hue: [280, 400],
     saturation: [0.6, 0.9],
     headwear: ['hornHelmet', 'hair', 'leafCrown'],
@@ -117,7 +120,7 @@ const ARCHETYPES: Archetype[] = [
     bodyTypeBias: ['stocky', 'round', 'slim', 'tall'],
   },
   {
-    label: 'noble',
+    key: 'noble',
     hue: [230, 320],
     saturation: [0.45, 0.75],
     headwear: ['coneHat', 'hair', 'hornHelmet', 'leafCrown'],
@@ -167,9 +170,36 @@ function maybePart<T extends string>(
   return pick(rnd, pool);
 }
 
+/** Les archetypes disponibles, dans l'ordre. */
+export const ARCHETYPE_NAMES = ARCHETYPES.map((a) => a.key);
+
 export interface SurpriseOptions {
   seed: number;
   id: string;
+  /** Force un archetype au lieu d'en tirer un. Ignore s'il est inconnu. */
+  archetype?: string;
+}
+
+/**
+ * Choisit un `glow` qui déclenchera vraiment le bloom du jeu.
+ *
+ * La clarté HSL ne suffit pas : la luminance perçue dépend surtout de la
+ * teinte — le vert pèse 0,72 dans la formule, le bleu seulement 0,07. Un bleu
+ * à clarté 0,65 reste donc bien trop sombre pour passer le seuil, et son halo
+ * ne s'allume jamais. On éclaircit tant que la luminance émise estimée
+ * (`luminance × EMISSIVE_INTENSITY`) n'atteint pas le seuil du jeu.
+ *
+ * Défaut trouvé par `studio audit` sur les sorties du générateur lui-même.
+ */
+function bloomingGlow(hue: number, sat: number, startL: number): string {
+  let l = startL;
+  for (let i = 0; i < 12; i += 1) {
+    const hex = hsl(hue, sat, l);
+    if (luminance(hex) * EMISSIVE_INTENSITY >= POST.bloom.luminanceThreshold) return hex;
+    l += 0.04;
+    if (l > 0.92) break;
+  }
+  return hsl(hue, sat, 0.92);
 }
 
 /**
@@ -177,9 +207,12 @@ export interface SurpriseOptions {
  * Entièrement déterministe : même `seed`, même personnage — on peut donc
  * retomber sur une génération en notant son seed.
  */
-export function surpriseDef({ seed, id }: SurpriseOptions): CharacterDef {
+export function surpriseDef({ seed, id, archetype: forced }: SurpriseOptions): CharacterDef {
   const rnd = mulberry32(seed);
-  const archetype = pick(rnd, ARCHETYPES);
+  // Le tirage est consomme meme quand l'archetype est impose, pour que le
+  // reste de la sequence aleatoire ne depende pas de ce choix.
+  const drawn = pick(rnd, ARCHETYPES);
+  const archetype = forced ? ARCHETYPES.find((a) => a.key === forced) ?? drawn : drawn;
 
   // --- Palette harmonisée ---
   const harmony = HARMONIES[pick(rnd, HARMONY_NAMES)];
@@ -192,7 +225,11 @@ export function surpriseDef({ seed, id }: SurpriseOptions): CharacterDef {
   const secondary = hsl(baseHue + harmony[1], baseSat * between(rnd, 0.35, 0.7), between(rnd, 0.6, 0.82));
   const accent = hsl(baseHue + harmony[2], Math.min(0.95, baseSat * 1.2), between(rnd, 0.42, 0.58));
   // Le glow est toujours clair et saturé, sinon l'émissif ne se lit pas.
-  const glow = hsl(baseHue + harmony[2] + between(rnd, -20, 20), between(rnd, 0.75, 1), between(rnd, 0.6, 0.7));
+  const glow = bloomingGlow(
+    baseHue + harmony[2] + between(rnd, -20, 20),
+    between(rnd, 0.75, 1),
+    between(rnd, 0.6, 0.7),
+  );
   const skin = archetype.creatureSkin
     ? hsl(baseHue + harmony[0], baseSat * 0.9, between(rnd, 0.5, 0.65))
     : pick(rnd, SKIN_TONES);
