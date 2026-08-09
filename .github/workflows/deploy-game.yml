@@ -1,0 +1,73 @@
+# Publie le jeu sur GitHub Pages à chaque push sur main.
+#
+# Le jeu est une application entièrement statique : aucun serveur, aucun appel
+# réseau, l'état tient dans le localStorage. Le build produit
+# `artifacts/3d-game/dist/public/`, qui est exactement ce que Pages sert.
+#
+# BASE_PATH est indispensable : Pages sert le site sous
+# `https://<compte>.github.io/<dépôt>/`, et sans ce préfixe le navigateur
+# chercherait les assets à la racine du domaine et n'afficherait qu'une page
+# noire. Il vaut « / » en local, d'où la variable.
+name: Déployer le jeu sur GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un seul déploiement à la fois. On ne met pas `cancel-in-progress` : un
+# déploiement interrompu peut laisser Pages dans un état incohérent.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # Seulement le jeu et ses dépendances d'espace de travail. Une install
+      # complète tirerait Expo et React Native — près d'un gigaoctet dont le
+      # jeu n'a aucun besoin.
+      - name: Installer les dépendances du jeu
+        run: pnpm install --frozen-lockfile --filter "@workspace/3d-game..."
+
+      - name: Construire le jeu
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/
+        run: pnpm --filter @workspace/3d-game run build
+
+      - uses: actions/configure-pages@v5
+        with:
+          # Active Pages sur le dépôt au premier passage, pour n'avoir rien à
+          # cliquer dans les réglages.
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: artifacts/3d-game/dist/public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
