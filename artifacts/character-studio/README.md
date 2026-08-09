@@ -12,16 +12,17 @@ dépôt, et ne contient aucune logique de gameplay.
 ## Installation et lancement
 
 ```bash
-npm install
-npm run dev      # http://localhost:5173
+pnpm install          # à la racine du dépôt
+cd artifacts/character-studio
+pnpm run dev          # http://localhost:5173
 ```
 
 Aucun accès réseau n'est nécessaire à l'exécution : une fois les dépendances
 installées, le studio fonctionne hors ligne.
 
 ```bash
-npm run typecheck   # vérification TypeScript des deux projets
-npm run build       # build de production dans dist/
+pnpm run typecheck   # vérification TypeScript des deux projets
+pnpm run build       # build de production dans dist/
 ```
 
 ---
@@ -44,42 +45,39 @@ l'on peut ensuite glisser-déposer sur la fenêtre pour la recharger.
 
 ---
 
-## Mettre à jour le kit quand le jeu évolue
+## Le studio lit le jeu à la source
 
-`src/kit/` est une copie conforme de `src/game/characters/` du jeu. **Aucun de
-ses fichiers ne doit être modifié depuis le studio** : c'est cette identité qui
-garantit que l'aperçu correspond au rendu en jeu.
+Les personnages viennent de `artifacts/3d-game/src/game/characters/`, lus
+directement via l'alias `@game/characters/*`. **Il n'y a aucune copie et rien à
+synchroniser** : ajouter un accessoire au jeu le fait apparaître dans le studio
+au rechargement, sans autre geste.
 
-Quand le système de personnages change côté jeu :
+C'est un changement par rapport à la version précédente, où le studio embarquait
+une copie figée qu'il fallait recopier à la main en gardant `KIT_VERSION`
+aligné. Cette copie n'existait que parce que le studio vivait dans un dépôt
+séparé.
 
-1. Côté **jeu**, incrémenter `KIT_VERSION` dans
-   `src/game/characters/KIT_VERSION.ts` (semver : incrémenter à chaque
-   changement du rig `ToonHumanoid`, des types `CharacterDef` / `PERSONALITIES`,
-   ou des registres de pièces).
-2. Recopier le dossier entier par-dessus celui du studio :
+Deux conséquences :
 
-   ```bash
-   rm -rf src/kit
-   cp -r ../<jeu>/src/game/characters src/kit
-   ```
+- **Toucher au rig depuis le studio revient à modifier le jeu.** Le fichier est
+  le même. C'est légitime, mais ça change tous les personnages existants, pas
+  seulement l'aperçu.
+- Si le jeu gagne une valeur de `bodyType`, `eyeShape` ou `mouth`, le typecheck
+  échoue volontairement dans `src/studio/defaults.ts` tant qu'elle n'est pas
+  ajoutée au menu — voir `RAPPORT.md`. Les accessoires, eux, apparaissent tout
+  seuls : leurs listes sont dérivées des registres.
 
-3. Vérifier que les deux `KIT_VERSION` sont **identiques** — c'est ce que
-   l'export inscrit dans `kitVersion`, et ce qui permet à l'agent de détecter un
-   lot conçu avec une version différente de celle du jeu.
-4. `npm run typecheck`.
-
-Si le kit a gagné une valeur de `bodyType`, `eyeShape` ou `mouth`, le typecheck
-échouera dans `src/studio/defaults.ts` — c'est voulu, voir `RAPPORT.md`. Les
-accessoires, eux, apparaissent tout seuls : leurs menus sont dérivés des
-registres.
+`KIT_VERSION` reste utile : il est inscrit dans les lots exportés, ce qui permet
+de repérer un fichier produit avec une version antérieure du rig.
 
 ---
 
 ## Structure
 
 ```
+../3d-game/src/game/characters/   le système de personnages — lu, pas copié
+
 src/
-  kit/                      le système de personnages du jeu — NE PAS MODIFIER
   studio/
     defaults.ts             valeurs par défaut dérivées du kit, réduction des defs
     generate.ts             « Surprends-moi » : palettes harmonisées, archétypes
@@ -96,9 +94,10 @@ src/
     studio.ts               surface sans interface (voir AGENTS.md)
 ```
 
-Deux projets TypeScript séparés (`tsconfig.kit.json`, `tsconfig.studio.json`) :
-le code du studio est vérifié strictement, le kit sous ses propres règles, sans
-qu'on ait à le retoucher. `npm run typecheck` construit les deux.
+Deux projets TypeScript séparés (`tsconfig.game-characters.json`,
+`tsconfig.studio.json`) : le code du studio est vérifié strictement, celui du
+jeu sous ses propres règles — il appartient au jeu, le studio le lit sans le
+posséder. `pnpm run typecheck` construit les deux.
 
 ---
 
@@ -108,16 +107,16 @@ L'interface web s'adresse à un humain qui juge à l'œil. Une seconde surface,
 sans interface, s'adresse à un agent de code — qui n'en a pas :
 
 ```bash
-npm run studio -- help
-npm run studio -- schema                    # capacités du kit, en JSON
-npm run studio -- kit                       # les personnages actuellement en jeu
-npm run studio -- gen --count 8 --archetype creature --out /tmp/neufs.json
-npm run studio -- audit /tmp/neufs.json     # variété, doublons, palettes
-npm run studio -- validate /tmp/neufs.json  # sort en 2 si problème
-npm run studio -- emit /tmp/neufs.json --array enemyDefs
+pnpm --silent run studio help
+pnpm --silent run studio schema                    # capacités du kit, en JSON
+pnpm --silent run studio kit                       # les personnages actuellement en jeu
+pnpm --silent run studio gen --count 8 --archetype creature --out /tmp/neufs.json
+pnpm --silent run studio audit /tmp/neufs.json     # variété, doublons, palettes
+pnpm --silent run studio validate /tmp/neufs.json  # sort en 2 si problème
+pnpm --silent run studio emit /tmp/neufs.json --array enemyDefs
 ```
 
-Les deux partagent le même cœur : mêmes défauts lus dans le kit, même réduction
+Les deux partagent le même cœur : mêmes défauts lus dans le jeu, même réduction
 des `def`, même générateur, même validation. `audit` chiffre ce que la grille
 montre à l'œil — quasi-doublons, pièces du kit jamais employées, et palettes
 qui ne tiendront pas au rendu (un `glow` trop sombre ne déclenche pas le bloom
@@ -167,7 +166,8 @@ La grille de la bibliothèque n'a pas de post-traitement : `<View>` et
 }
 ```
 
-- `kitVersion` est lu depuis `src/kit/KIT_VERSION.ts`, jamais écrit en dur.
+- `kitVersion` est lu depuis `../3d-game/src/game/characters/KIT_VERSION.ts`,
+  jamais écrit en dur.
 - Les `def` ne contiennent **que les champs qui diffèrent du défaut** (comparaison
   via `resolveDef`), dans l'ordre canonique de `defs.ts`. Ils sont collables tels
   quels côté jeu.

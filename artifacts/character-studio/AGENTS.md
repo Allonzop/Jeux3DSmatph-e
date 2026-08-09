@@ -2,38 +2,46 @@
 
 Cet outil a deux surfaces sur le même cœur :
 
-- **l'interface web** (`npm run dev`) — pour un humain, qui juge à l'œil ;
-- **la ligne de commande** (`npm run studio`) — pour un agent, qui n'a pas d'œil.
+- **l'interface web** (`pnpm run dev`) — pour un humain, qui juge à l'œil ;
+- **la ligne de commande** (`pnpm --silent run studio`) — pour un agent, qui n'a pas d'œil.
 
-Les deux lisent les mêmes défauts dans `src/kit/`, appliquent la même réduction
+Les deux lisent les mêmes défauts dans les personnages du jeu, appliquent la même réduction
 des `def`, le même générateur et la même validation. Ce qui passe d'un côté
 passe de l'autre.
 
 ```bash
-npm install
-npm run studio -- help
+pnpm install          # à la racine du dépôt, jamais npm
+cd artifacts/character-studio
+pnpm --silent run studio help
 ```
+
+`--silent` n'est pas décoratif : sans lui, pnpm écrit sa bannière et la sortie
+du build sur *stdout*, et toute redirection en JSON devient inanalysable
+(`… schema > fichier.json` produirait un fichier cassé).
 
 ---
 
-## Règle absolue
+## Le studio lit le jeu, il ne le possède pas
 
-> **Ne jamais modifier `src/kit/`.**
+Les personnages viennent de `artifacts/3d-game/src/game/characters/`, lus **à
+la source** via l'alias `@game/characters/*`. Aucune copie, rien à
+synchroniser : ce que le studio affiche est littéralement le code que le jeu
+exécute.
 
-C'est la copie conforme de `src/game/characters/` du jeu ; c'est elle qui
-garantit que l'aperçu correspond au rendu réel. Si une limitation du kit gêne,
-la contourner côté studio et la consigner dans `RAPPORT.md`.
+Conséquence à garder en tête : toucher au rig ou aux registres depuis le studio
+revient à **modifier le jeu**. C'est légitime — c'est le même dépôt — mais ça
+change le rendu de tous les personnages existants, pas seulement l'aperçu.
+Faites-le sciemment, dans un commit qui le dit.
 
-Le studio **n'écrit jamais dans le dépôt du jeu**. `emit` produit du texte à
-coller ; l'intégration reste une étape explicite, décidée en connaissance de
-cause.
+Le studio **n'écrit jamais dans `defs.ts`**. `emit` produit du texte à coller ;
+l'intégration reste une étape explicite, décidée en connaissance de cause.
 
 ---
 
 ## Commencer par `schema`
 
 ```bash
-npm run studio -- schema
+pnpm --silent run studio schema
 ```
 
 Renvoie, dérivé du kit à l'exécution : les champs requis, tous les défauts, les
@@ -53,18 +61,18 @@ eux qui décident si un `glow` brillera.
 
 ```bash
 # 1. Partir de l'existant
-npm run studio -- kit > /tmp/actuel.json
-npm run studio -- audit /tmp/actuel.json
+pnpm --silent run studio kit > /tmp/actuel.json
+pnpm --silent run studio audit /tmp/actuel.json
 
 # 2. Produire, en visant ce qui manque
-npm run studio -- gen --count 8 --archetype creature --tags ennemi --out /tmp/neufs.json
+pnpm --silent run studio gen --count 8 --archetype creature --tags ennemi --out /tmp/neufs.json
 
 # 3. Contrôler
-npm run studio -- validate /tmp/neufs.json     # sort en 2 si problème
-npm run studio -- audit /tmp/neufs.json
+pnpm --silent run studio validate /tmp/neufs.json     # sort en 2 si problème
+pnpm --silent run studio audit /tmp/neufs.json
 
 # 4. Sortir le texte à coller
-npm run studio -- emit /tmp/neufs.json --array enemyDefs
+pnpm --silent run studio emit /tmp/neufs.json --array enemyDefs
 ```
 
 `gen` est **déterministe** : même `--seed`, même résultat. Notez le seed d'une
@@ -139,7 +147,7 @@ le seed est le moyen le moins cher de distinguer deux personnages proches.
 
 **Elle ne voit pas.** Elle mesure des écarts entre données ; elle ne juge pas si
 un personnage est réussi. Pour ça il faut des yeux — les vôtres via
-`npm run dev`, ou un humain.
+`pnpm run dev`, ou un humain.
 
 Conséquence pratique : `audit` peut donner un excellent score à un casting
 laid, et un score médiocre à un casting cohérent qui joue volontairement sur
@@ -161,9 +169,9 @@ encore.
 | Métriques d'analyse, contrôles de palette | `src/studio/analysis.ts` |
 | Réduction des `def`, listes dérivées du kit | `src/studio/defaults.ts` |
 | Commandes de la CLI | `src/cli/studio.ts` |
-| Le kit | **ne pas toucher** |
+| Le rig, les registres, les `defs` | `artifacts/3d-game/src/game/characters/` — **c'est le jeu** |
 
-Après toute modification : `npm run typecheck`. Les deux projets TypeScript
+Après toute modification : `pnpm run typecheck`. Les deux projets TypeScript
 (kit et studio) sont construits ensemble ; le code du studio est vérifié
 strictement, imports et paramètres inutilisés compris.
 

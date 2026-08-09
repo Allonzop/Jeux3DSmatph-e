@@ -1,5 +1,14 @@
 # Rapport final — limitations du kit rencontrées
 
+> **Document historique.** Il décrit la construction du studio à l'époque où
+> celui-ci vivait dans un dépôt séparé et embarquait `src/kit/`, copie figée du
+> système de personnages du jeu. Depuis la réunion des deux projets dans ce
+> dépôt, cette copie n'existe plus : le studio lit
+> `artifacts/3d-game/src/game/characters/` à la source. Les limitations
+> décrites ci-dessous restent valables — elles portent sur le code du kit
+> lui-même, pas sur la façon dont le studio y accède. Lire `src/kit/` comme
+> « le système de personnages du jeu ».
+
 Conformément au PRD §2, aucun fichier de `src/kit/` n'a été modifié. Vérifié
 deux fois — contre le zip livré, puis contre les sources du jeu elles-mêmes :
 
@@ -110,7 +119,7 @@ export const BODY_TYPES = keysOf<BodyType>({ slim: true, round: true, stocky: tr
 ```
 
 `Record<BodyType, true>` **exige** une clé par membre de l'union : si le kit
-ajoute une variante, `npm run typecheck` échoue ici tant qu'elle n'est pas
+ajoute une variante, `pnpm run typecheck` échoue ici tant qu'elle n'est pas
 ajoutée, au lieu de la laisser manquer discrètement dans le menu.
 
 **Correctif suggéré côté jeu :** exporter `BODY_DIMS` et `EYE_SCALES`, ou de
@@ -301,7 +310,7 @@ quelles côté jeu — c'est d'ailleurs pourquoi le studio ne recopie pas de tab
   plus, ce qui est incompatible avec `noUnusedLocals`. Plutôt que de retirer ces
   lignes, le kit est compilé comme un projet TypeScript séparé
   (`tsconfig.kit.json`) qui désactive cette seule règle ; le code du studio reste
-  vérifié strictement. `npm run typecheck` construit les deux via `tsc -b`.
+  vérifié strictement. `pnpm run typecheck` construit les deux via `tsc -b`.
 
 ---
 

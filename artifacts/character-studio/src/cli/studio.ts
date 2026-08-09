@@ -36,7 +36,11 @@ interface Args {
 }
 
 function parseArgs(argv: string[]): Args {
-  const [command = 'help', ...rest] = argv;
+  // `npm run studio -- schema` retire le `--`, `pnpm run studio -- schema` le
+  // transmet tel quel. On tolère les deux, sinon la commande documentée
+  // échoue selon le gestionnaire de paquets utilisé.
+  const args = argv[0] === '--' ? argv.slice(1) : argv;
+  const [command = 'help', ...rest] = args;
   const positional: string[] = [];
   const flags: Record<string, string | boolean> = {};
   for (let i = 0; i < rest.length; i += 1) {
