@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { LEGACY_BUILDING_POSITIONS, ENEMY_SPAWN_RADIUS } from './world';
-import { waveVictoryReward, waveDefeatLoss } from './gamedata';
+import { coreBreachDamage, waveVictoryReward, waveDefeatLoss } from './gamedata';
 
 export type ResourceType = 'boulons' | 'matiere_floue' | 'energie_rire';
 
@@ -54,6 +54,11 @@ export interface GameState {
   tutorialStep: number;
   /** result of the last finished wave, shown as an outcome toast then cleared */
   lastWaveOutcome: WaveOutcome | null;
+  /** dégâts au noyau par monstre qui l'atteint, fixés au lancement de la vague */
+  breachDamage: number;
+  /** taille de la vague en cours, et nombre de monstres réellement abattus */
+  waveEnemyCount: number;
+  waveKills: number;
 
   addResources: (res: Partial<Resources>) => void;
   spendResources: (res: Partial<Resources>) => boolean;
@@ -98,7 +103,8 @@ function rewardVictory(
 ) {
   const state = get();
   if (state.coreHp <= 0 || state.waveNumber === 0) return;
-  const gains = waveVictoryReward(state.waveNumber);
+  const ratio = state.waveEnemyCount > 0 ? state.waveKills / state.waveEnemyCount : 1;
+  const gains = waveVictoryReward(state.waveNumber, ratio);
   set((s) => ({
     resources: {
       boulons: s.resources.boulons + (gains.boulons || 0),
@@ -127,6 +133,9 @@ const initialGameState = () => ({
   placingBuilding: null,
   tutorialStep: 0,
   lastWaveOutcome: null,
+  breachDamage: 0,
+  waveEnemyCount: 0,
+  waveKills: 0,
 });
 
 export const useGameStore = create<GameState>()(
@@ -216,6 +225,9 @@ export const useGameStore = create<GameState>()(
           enemies: newEnemies,
           coreHp: state.coreMaxHp,
           lastWaveOutcome: null,
+          breachDamage: coreBreachDamage(enemyCount, state.coreMaxHp),
+          waveEnemyCount: enemyCount,
+          waveKills: 0,
         });
       },
 
@@ -254,9 +266,14 @@ export const useGameStore = create<GameState>()(
           });
           const livingEnemies = enemies.filter(e => e.hp > 0);
           const waveActive = livingEnemies.length > 0;
-          return { 
+          // Seuls les monstres abattus comptent. Ceux qui atteignent le noyau
+          // passent par `damageCore`/`removeEnemy` et ne sont pas des victoires :
+          // c'est cette distinction qui fait varier la récompense.
+          const killed = enemies.length - livingEnemies.length;
+          return {
             enemies: livingEnemies,
             waveActive: state.waveActive ? waveActive : false,
+            waveKills: state.waveKills + killed,
           };
         });
         if (wasActive && !get().waveActive) {

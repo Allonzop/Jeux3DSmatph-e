@@ -12,11 +12,36 @@ export type BuildingData = {
 };
 
 // ---- Wave stakes ----
-// Victory: resource bonus growing with the wave number.
-export function waveVictoryReward(wave: number): Partial<Resources> {
-  const reward: Partial<Resources> = { boulons: 40 + wave * 30 };
-  if (wave >= 2) reward.matiere_floue = (wave - 1) * 3;
-  if (wave >= 4) reward.energie_rire = wave - 3;
+
+/**
+ * Dégâts infligés au noyau par un monstre qui l'atteint.
+ *
+ * Calculé pour que la règle soit toujours la même quelle que soit la taille de
+ * la vague : **laisser passer plus de la moitié des monstres détruit le
+ * noyau**. C'est ce qui rend une vague perdable — auparavant chaque monstre
+ * retirait 10 points fixes sur 100, si bien que les deux premières vagues (3
+ * puis 5 monstres) étaient mathématiquement ingagnables par l'adversaire.
+ *
+ * Vague de 3  → 50 par monstre : on peut en laisser passer 1, il faut en tuer 2.
+ * Vague de 5  → 33 par monstre : on peut en laisser passer 2, il faut en tuer 3.
+ * Vague de 11 → 17 par monstre : on peut en laisser passer 5, il faut en tuer 6.
+ */
+export function coreBreachDamage(enemyCount: number, coreMaxHp: number): number {
+  const survivable = Math.floor(enemyCount / 2);
+  return coreMaxHp / (survivable + 1);
+}
+
+// Victory: resource bonus growing with the wave number, proportionnel à ce que
+// le joueur a réellement abattu. Survivre de justesse ne rapporte pas autant
+// que nettoyer la vague.
+export function waveVictoryReward(wave: number, killRatio = 1): Partial<Resources> {
+  // Un plancher : avoir tenu vaut toujours quelque chose.
+  const share = 0.4 + 0.6 * Math.min(1, Math.max(0, killRatio));
+  const scale = (n: number) => Math.max(1, Math.round(n * share));
+
+  const reward: Partial<Resources> = { boulons: scale(40 + wave * 30) };
+  if (wave >= 2) reward.matiere_floue = scale((wave - 1) * 3);
+  if (wave >= 4) reward.energie_rire = scale(wave - 3);
   return reward;
 }
 

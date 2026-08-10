@@ -57,7 +57,11 @@ function EnemyNode({ enemy }: { enemy: Enemy }) {
       const dist = _dir.length();
 
       if (dist < 1) {
-        damageCore(10);
+        // Les dégâts sont fixés au lancement de la vague, proportionnellement à
+        // sa taille : laisser passer plus de la moitié des monstres détruit le
+        // noyau, quelle que soit la vague. Le 10 fixe d'avant rendait les deux
+        // premières vagues impossibles à perdre.
+        damageCore(useGameStore.getState().breachDamage);
         removeEnemy(enemy.id);
       } else {
         _dir.normalize();

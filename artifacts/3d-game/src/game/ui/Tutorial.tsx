@@ -8,7 +8,7 @@ const STEPS: StepDef[] = [
   { title: 'Bienvenue !', text: 'Glissez votre pouce sur l\u2019écran pour déplacer votre héros avec le joystick.' },
   { title: 'Récoltez !', text: 'Approchez-vous des boulons brillants (gris) pour les récolter automatiquement.' },
   { title: 'Construisez !', text: 'Touchez l\u2019icône de la Hutte en bas, choisissez un emplacement au sol, puis payez 50 boulons.' },
-  { title: 'Défendez !', text: 'Lancez une vague avec le bouton \u00ab Lancer la vague \u00bb et protégez le cristal central.' },
+  { title: 'Défendez !', text: 'Lancez une vague, puis allez au contact : votre héros tire tout seul sur le monstre le plus proche. Chaque monstre qui atteint le cristal l\u2019entame \u2014 en laisser passer plus de la moiti\u00e9 le d\u00e9truit.' },
   { title: 'Tutoriel terminé !', text: 'Votre village est entre vos mains. Bonne chance, commandant !' },
 ];
 
