@@ -4,7 +4,10 @@
 export const WORLD_RADIUS = 14; // playable plateau radius (was 8.5)
 export const EDGE_MARGIN = 1; // keep buildings away from the cliff edge
 export const CORE_CLEAR_RADIUS = 4; // nothing scattered/built near the crystal core
-export const BUILDING_MIN_GAP = 2.6; // min distance between two buildings
+// Ecart minimal entre deux batiments. Releve avec BUILDING_SCALE (1,35) : a
+// 2,6 les batiments agrandis se chevauchaient visuellement, alors que le
+// placement les declarait valides.
+export const BUILDING_MIN_GAP = 3.4;
 export const ENEMY_SPAWN_RADIUS = WORLD_RADIUS + 1;
 
 // Legacy hardcoded building spots (pre free-placement saves migrate to these).

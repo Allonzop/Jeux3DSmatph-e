@@ -4,12 +4,30 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 type StepDef = { title: string; text: string };
 
+// Le tutoriel disait quoi faire, jamais pourquoi. On construisait une hutte
+// sans savoir ce qu'elle apportait, et on lancait une vague sans savoir ce
+// qu'on risquait. Chaque etape enonce desormais son enjeu.
 const STEPS: StepDef[] = [
-  { title: 'Bienvenue !', text: 'Glissez votre pouce sur l\u2019écran pour déplacer votre héros avec le joystick.' },
-  { title: 'Récoltez !', text: 'Approchez-vous des boulons brillants (gris) pour les récolter automatiquement.' },
-  { title: 'Construisez !', text: 'Touchez l\u2019icône de la Hutte en bas, choisissez un emplacement au sol, puis payez 50 boulons.' },
-  { title: 'Défendez !', text: 'Lancez une vague, puis allez au contact : votre héros tire tout seul sur le monstre le plus proche. Chaque monstre qui atteint le cristal l\u2019entame \u2014 en laisser passer plus de la moiti\u00e9 le d\u00e9truit.' },
-  { title: 'Tutoriel terminé !', text: 'Votre village est entre vos mains. Bonne chance, commandant !' },
+  {
+    title: 'Bienvenue, commandant !',
+    text: 'Ce cristal au centre est le c\u0153ur de votre village \u2014 s\u2019il tombe, vous perdez. Glissez votre pouce n\u2019importe o\u00f9 sur l\u2019\u00e9cran pour d\u00e9placer votre h\u00e9ros.',
+  },
+  {
+    title: 'R\u00e9coltez des boulons',
+    text: 'Approchez-vous des cristaux gris : la r\u00e9colte est automatique. Les boulons paient tout ce que vous b\u00e2tissez \u2014 c\u2019est votre seule monnaie au d\u00e9part.',
+  },
+  {
+    title: 'B\u00e2tissez votre premi\u00e8re hutte',
+    text: 'La hutte produit des boulons toute seule, en continu, m\u00eame quand vous ne jouez pas. C\u2019est ce qui vous \u00e9vite de tout r\u00e9colter \u00e0 la main \u2014 et un villageois vient s\u2019y installer. Touchez son ic\u00f4ne en bas, choisissez un emplacement, puis payez.',
+  },
+  {
+    title: 'D\u00e9fendez le cristal',
+    text: 'Les monstres foncent droit sur le cristal. Votre h\u00e9ros tire tout seul sur le plus proche : allez au-devant d\u2019eux plut\u00f4t que d\u2019attendre. En laisser passer plus de la moiti\u00e9 d\u00e9truit le cristal et vous co\u00fbte des ressources.',
+  },
+  {
+    title: 'Le village est \u00e0 vous',
+    text: 'Chaque b\u00e2timent produit une ressource et fait venir un habitant ; la tourelle, elle, tire sur les monstres. Plus vous b\u00e2tissez, plus les vagues rapportent. Bonne chance !',
+  },
 ];
 
 export function Tutorial() {

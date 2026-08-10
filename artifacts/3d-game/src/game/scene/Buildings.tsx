@@ -10,6 +10,9 @@ import { Html, RoundedBox } from '@react-three/drei';
 // Scratch vector reused across frames — never allocate inside useFrame.
 const _ePos = new THREE.Vector3();
 
+/** Facteur d'agrandissement des batiments construits. Voir BuildingWrapper. */
+const BUILDING_SCALE = 1.35;
+
 type BuildingProps = {
   id: string;
   pos: [number, number, number];
@@ -118,8 +121,10 @@ function BuildingWrapper({ id, pos, color, children }: BuildingProps & { childre
   const selectBuilding = useGameStore(state => state.selectBuilding);
   const groupRef = useRef<THREE.Group>(null);
   
-  const [scale, setScale] = useState(0);
-  const targetScale = level > 0 ? 1 : 1; 
+  // Les batiments faisaient environ 2 unites de large pour une camera qui en
+  // cadre 26 de haut : 7 % de l'ecran, trop peu pour qu'une silhouette se lise
+  // sur un telephone. On les agrandit d'un tiers. `BUILDING_MIN_GAP` a suivi.
+  const targetScale = BUILDING_SCALE;
   const animRef = useRef({ vel: 0, scale: 0 });
 
   useEffect(() => {
@@ -167,7 +172,7 @@ function BuildingWrapper({ id, pos, color, children }: BuildingProps & { childre
             <ringGeometry args={[1.25, 1.5, 40]} />
             <meshBasicMaterial color={color} transparent opacity={0.7} depthWrite={false} />
           </mesh>
-          <pointLight position={[0, 1, 0]} color={color} intensity={0.8} distance={4} />
+          <pointLight position={[0, 0.6, 0]} color={color} intensity={0.35} distance={2.6} />
           {/* Wooden Sign */}
           <group position={[0, 0.4, 0]}>
             <mesh castShadow>
@@ -267,10 +272,20 @@ function BuildingFerme(props: BuildingProps) {
       </mesh>
       
       {/* Glass Dome */}
+      {/* Toit de serre. Un `meshStandardMaterial` translucide saturait en blanc
+          sous le bloom : vu de dessus, la serre n'etait plus qu'une carte
+          blanche. Toon opaque et teinte franche, la coupole se lit. */}
       <mesh position={[0, 0.4, 0]} castShadow>
-        <sphereGeometry args={[0.9, 24, 24, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshStandardMaterial color="#bff0d4" transparent opacity={0.3} roughness={0.1} />
+        <sphereGeometry args={[0.95, 24, 24, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshToonMaterial color="#7fd4a3" gradientMap={gradientMap} />
       </mesh>
+      {/* Armature : donne une arete au sommet, seul detail visible d'en haut. */}
+      {[0, Math.PI / 2].map((a, i) => (
+        <mesh key={i} position={[0, 0.42, 0]} rotation={[0, a, 0]}>
+          <boxGeometry args={[1.95, 0.06, 0.08]} />
+          <meshToonMaterial color="#3f6d54" gradientMap={gradientMap} />
+        </mesh>
+      ))}
       
       {/* Inside Sprouts */}
       <group position={[0, 0.4, 0]}>
@@ -288,7 +303,7 @@ function BuildingFerme(props: BuildingProps) {
         </mesh>
       </group>
       
-      <pointLight position={[0, 0.8, 0]} color={props.color} intensity={0.6} distance={4} />
+      <pointLight position={[0, 0.5, 0]} color={props.color} intensity={0.25} distance={2.4} />
     </BuildingWrapper>
   );
 }
@@ -343,7 +358,7 @@ function BuildingBar(props: BuildingProps) {
         </mesh>
       </group>
       
-      <pointLight position={[0, 1, 1]} color="#ff69b4" intensity={0.8} distance={5} />
+      <pointLight position={[0, 1.4, 0.8]} color="#ff69b4" intensity={0.3} distance={2.2} />
     </BuildingWrapper>
   );
 }
@@ -364,7 +379,7 @@ function BuildingAntenne(props: BuildingProps) {
 
   useFrame(({ clock }) => {
     if (lightRef.current) {
-      lightRef.current.intensity = Math.abs(Math.sin(clock.elapsedTime * 3)) * 2;
+      lightRef.current.intensity = Math.abs(Math.sin(clock.elapsedTime * 3)) * 0.6;
     }
     if (dishRef.current) {
       dishRef.current.rotation.y = clock.elapsedTime * 0.5;
@@ -403,7 +418,7 @@ function BuildingAntenne(props: BuildingProps) {
           <sphereGeometry args={[0.08]} />
           <meshStandardMaterial emissive="#ff0000" emissiveIntensity={2} color="#ff0000" />
         </mesh>
-        <pointLight ref={lightRef} position={[0, 0.4, 0]} color="#ff0000" distance={5} />
+        <pointLight ref={lightRef} position={[0, 0.4, 0]} color="#ff0000" distance={2.5} />
       </group>
     </BuildingWrapper>
   );
@@ -423,7 +438,9 @@ function BuildingMarche(props: BuildingProps) {
         {[-0.9, -0.3, 0.3, 0.9].map((x, i) => (
           <mesh key={i} position={[x, 0, 0]}>
             <cylinderGeometry args={[0.3, 0.3, 1.6, 16, 1, false, 0, Math.PI]} />
-            <meshToonMaterial color={i % 2 === 0 ? props.color : "#fff2df"} gradientMap={gradientMap} />
+            {/* Une bande sur deux etait creme : vu de dessus l'auvent devenait
+                une carte blanche. Alternance sombre, les rayures se lisent. */}
+            <meshToonMaterial color={i % 2 === 0 ? props.color : "#8c4a2f"} gradientMap={gradientMap} />
           </mesh>
         ))}
       </group>
@@ -449,7 +466,7 @@ function BuildingMarche(props: BuildingProps) {
         <mesh position={[0.0, 0.2, 0.0]}><sphereGeometry args={[0.08, 8, 8]}/><meshToonMaterial color="#8338ec"/></mesh>
       </group>
       
-      <pointLight position={[0, 0.6, 1]} color="#ffd24c" intensity={0.7} distance={5} />
+      <pointLight position={[0, 0.7, 0.6]} color="#ffd24c" intensity={0.28} distance={2.4} />
     </BuildingWrapper>
   );
 }
@@ -565,7 +582,7 @@ function BuildingTourelle(props: BuildingProps) {
         </mesh>
       </group>
       
-      <pointLight position={[0, 1, 0]} color={props.color} intensity={1} distance={5} />
+      <pointLight position={[0, 0.9, 0]} color={props.color} intensity={0.3} distance={2.4} />
     </BuildingWrapper>
   );
 }
