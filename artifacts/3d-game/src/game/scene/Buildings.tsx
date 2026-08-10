@@ -129,11 +129,21 @@ function BuildingWrapper({ id, pos, color, children }: BuildingProps & { childre
 
   useFrame((_, delta) => {
     if (groupRef.current) {
+      // Ce ressort est integre par Euler explicite, qui diverge des que le pas
+      // depasse ~0,3 s : l'echelle part a 1e28, puis NaN, et `setScalar(NaN)`
+      // fait disparaitre le batiment — definitivement, car NaN se propage a
+      // tous les calculs suivants. Une seconde d'a-coup suffit.
+      //
+      // On borne donc le pas. Un ralentissement rend l'animation plus lente
+      // que le temps reel, ce qui ne se voit pas sur une apparition de 0,5 s,
+      // alors qu'un batiment evapore se voit tout de suite.
+      const dt = Math.min(delta, 1 / 30);
+
       const spring = (targetScale - animRef.current.scale) * 15;
       const damper = animRef.current.vel * 5;
-      animRef.current.vel += (spring - damper) * delta;
-      animRef.current.scale += animRef.current.vel * delta;
-      
+      animRef.current.vel += (spring - damper) * dt;
+      animRef.current.scale += animRef.current.vel * dt;
+
       const s = Math.max(0, animRef.current.scale);
       groupRef.current.scale.setScalar(s);
     }
