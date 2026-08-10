@@ -3,13 +3,20 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 /**
- * Studio local uniquement : aucun accès réseau à l'exécution.
+ * Aucun accès réseau à l'exécution : tout est dans le bundle, la bibliothèque
+ * vit dans le localStorage. Le studio se sert donc aussi bien depuis un
+ * hébergement statique que depuis `pnpm run dev`.
+ *
+ * `BASE_PATH` existe pour ça : publié à côté du jeu sur GitHub Pages, le
+ * studio est servi sous un sous-chemin, et sans ce préfixe le navigateur
+ * chercherait ses assets à la racine du domaine.
  *
  * `@game/characters/*` pointe sur le système de personnages du jeu, lu à sa
  * source. Le studio n'en garde aucune copie : ce qu'il affiche est
  * littéralement le code que le jeu exécute.
  */
 export default defineConfig({
+  base: process.env.BASE_PATH || '/',
   plugins: [react()],
   resolve: {
   /**

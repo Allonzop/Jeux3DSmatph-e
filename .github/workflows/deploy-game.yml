@@ -44,13 +44,30 @@ jobs:
       # Seulement le jeu et ses dépendances d'espace de travail. Une install
       # complète tirerait Expo et React Native — près d'un gigaoctet dont le
       # jeu n'a aucun besoin.
-      - name: Installer les dépendances du jeu
-        run: pnpm install --frozen-lockfile --filter "@workspace/3d-game..."
+      - name: Installer les dépendances du jeu et du studio
+        run: pnpm install --frozen-lockfile --filter "@workspace/3d-game..." --filter "@workspace/character-studio..."
 
       - name: Construire le jeu
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
         run: pnpm --filter @workspace/3d-game run build
+
+      # Le studio est statique lui aussi : rien ne l'oblige à tourner en local.
+      # Publié sous /studio/, il s'ouvre depuis n'importe quel navigateur, sans
+      # clone ni installation. La bibliothèque de personnages vit dans le
+      # localStorage du navigateur, donc chacun garde la sienne.
+      #
+      # La ligne de commande (`studio gen`, `audit`, `emit`), elle, reste locale
+      # — c'est un outil d'agent, pas une page web.
+      - name: Construire le studio de personnages
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/studio/
+        run: pnpm --filter @workspace/character-studio run build
+
+      - name: Rassembler les deux sous un seul site
+        run: |
+          mkdir -p artifacts/3d-game/dist/public/studio
+          cp -r artifacts/character-studio/dist/. artifacts/3d-game/dist/public/studio/
 
       - uses: actions/configure-pages@v5
         with:
