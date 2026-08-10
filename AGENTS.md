@@ -8,6 +8,36 @@ pnpm install          # à la racine, jamais npm — le preinstall le refuse
 pnpm run typecheck    # les 6 projets d'un coup
 ```
 
+## Commencez par là
+
+Le projet avance en séances autonomes. Trois fichiers portent tout le cycle :
+
+| Fichier | Qui écrit | Quoi |
+|---|---|---|
+| **`BACKLOG.md`** | Allonzo | Ce qu'il y a à faire, par ordre d'importance. La seule entrée du projet. |
+| **`JOURNAL.md`** | l'agent | Une entrée par séance : fait, vérifié comment, **et ce qui a été essayé sans succès**. |
+| **`.agents/ROUTINE.md`** | — | La consigne de séance, à coller dans une routine. |
+
+**Une séance = la première tâche non cochée du backlog, finie et poussée.**
+Lisez le journal avant de commencer : il vous évitera de refaire des impasses
+déjà explorées.
+
+Le jeu est en ligne sur <https://allonzop.github.io/Jeux3DSmatph-e/>, republié
+à chaque push sur `main`. Le studio de personnages est à `/studio/`.
+
+## Voir ce que vous faites
+
+```bash
+node tools/game-check/shot.mjs --village     # une image du jeu — ouvrez-la
+node tools/game-check/wave.mjs --check       # joue une vague, vérifie l'issue
+```
+
+Sans ces outils on modifie du code 3D à l'aveugle. Chaque bug sérieux trouvé
+jusqu'ici l'a été avec l'un d'eux. Détail dans `tools/game-check/README.md`.
+
+`wave.mjs --check` protège le cœur du jeu : joueur passif → défaite, tourelle
+construite → victoire. La première propriété a longtemps été fausse.
+
 ## Où est quoi
 
 | Chemin | Quoi |
