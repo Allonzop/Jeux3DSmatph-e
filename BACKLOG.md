@@ -17,11 +17,13 @@ Pour ajouter quelque chose depuis GitHub : ouvrir ce fichier, le crayon en haut
 
 Par ordre d'importance — l'agent prend celle du haut.
 
-- [ ] **Redessiner les bâtiments pour la vue de dessus.** Ils ont été dessinés
+- [x] **Redessiner les bâtiments pour la vue de dessus.** Ils ont été dessinés
       de profil : portes, tabourets, cageots sont sur les façades, invisibles
       depuis la caméra qui les regarde d'en haut. Il leur faut des toits, des
       arêtes, une silhouette lisible à la verticale. C'est le plus gros
-      chantier restant, et le plus visible.
+      chantier restant, et le plus visible. — Fait le 2026-08-12, voir
+      JOURNAL.md. Reste ouvert : le socle de la ferme (bois brun) part en
+      blanc sous le bloom, indépendamment de cette tâche.
 
 - [ ] **Pouvoir déplacer un bâtiment déjà posé.** Une fois l'emplacement
       choisi, il est définitif — on ne peut plus que construire dessus. Il

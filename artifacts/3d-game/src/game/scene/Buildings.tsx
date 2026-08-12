@@ -207,17 +207,6 @@ function BuildingWrapper({ id, pos, color, children }: BuildingProps & { childre
 
 function BuildingHutte(props: BuildingProps) {
   const gradientMap = useToonGradient();
-  
-  const roofProfile = useMemo(() => [
-    new THREE.Vector2(0, 0.8),
-    new THREE.Vector2(0.5, 0.75),
-    new THREE.Vector2(0.85, 0.5),
-    new THREE.Vector2(1.1, 0.1),
-    new THREE.Vector2(1.2, -0.1),
-    new THREE.Vector2(1.1, -0.2),
-    new THREE.Vector2(0.9, -0.1),
-    new THREE.Vector2(0.8, 0)
-  ], []);
 
   const baseProfile = useMemo(() => [
     new THREE.Vector2(0, 0),
@@ -227,31 +216,45 @@ function BuildingHutte(props: BuildingProps) {
     new THREE.Vector2(0.75, 0.8)
   ], []);
 
+  // Toit vu de dessus : l'ancien profil lathe (32 segments, lisse, bord
+  // recourbe vers l'interieur) se lisait comme un anneau flou depuis la
+  // camera plongeante. Un cone a facettes peu nombreuses donne un pan de
+  // toit net par face — l'arete entre deux pans se voit d'en haut, ce que
+  // la surface lisse ne rendait pas.
+  const ROOF_BASE_Y = 0.78;
+  const ROOF_HEIGHT = 1.0;
+  const ROOF_RADIUS = 0.9;
+  const ROOF_SEGMENTS = 7;
+
   return (
     <BuildingWrapper {...props}>
       <mesh position={[0, 0, 0]} castShadow receiveShadow>
         <latheGeometry args={[baseProfile, 32]} />
         <meshToonMaterial color="#fff2df" gradientMap={gradientMap} />
       </mesh>
-      
-      <mesh position={[0, 0.7, 0]} castShadow>
-        <latheGeometry args={[roofProfile, 32]} />
+
+      <mesh position={[0, ROOF_BASE_Y + ROOF_HEIGHT / 2, 0]} rotation={[0, Math.PI / ROOF_SEGMENTS, 0]} castShadow>
+        <coneGeometry args={[ROOF_RADIUS, ROOF_HEIGHT, ROOF_SEGMENTS]} />
         <meshToonMaterial color={props.color} gradientMap={gradientMap} />
-        {/* Spots */}
-        <mesh position={[0.6, 0.4, 0.6]} scale={[1, 0.2, 1]} rotation={[0.5, -0.5, 0]}>
-          <sphereGeometry args={[0.2, 16, 16]} />
-          <meshToonMaterial color="#fff2df" gradientMap={gradientMap} />
-        </mesh>
-        <mesh position={[-0.7, 0.3, 0.4]} scale={[1, 0.2, 1]} rotation={[0.4, 0.5, 0]}>
-          <sphereGeometry args={[0.15, 16, 16]} />
-          <meshToonMaterial color="#fff2df" gradientMap={gradientMap} />
-        </mesh>
-        <mesh position={[0, 0.6, -0.8]} scale={[1, 0.2, 1]} rotation={[-0.5, 0, 0]}>
-          <sphereGeometry args={[0.25, 16, 16]} />
-          <meshToonMaterial color="#fff2df" gradientMap={gradientMap} />
-        </mesh>
       </mesh>
-      
+
+      {/* Chapeau de faitage : referme l'apex, lisible comme un point sombre d'en haut. */}
+      <mesh position={[0, ROOF_BASE_Y + ROOF_HEIGHT + 0.03, 0]} castShadow>
+        <icosahedronGeometry args={[0.1, 0]} />
+        <meshToonMaterial color="#8a6343" gradientMap={gradientMap} />
+      </mesh>
+
+      {/* Lucarnes : bosses claires accrochees au toit, seul repere de couleur
+          contrastee visible depuis le dessus. */}
+      <mesh position={[0.55, 1.15, 0.55]} scale={[1, 0.5, 1]} rotation={[0.5, -0.5, 0]}>
+        <sphereGeometry args={[0.2, 8, 8]} />
+        <meshToonMaterial color="#fff2df" gradientMap={gradientMap} />
+      </mesh>
+      <mesh position={[-0.6, 1.0, 0.4]} scale={[1, 0.5, 1]} rotation={[0.4, 0.5, 0]}>
+        <sphereGeometry args={[0.15, 8, 8]} />
+        <meshToonMaterial color="#fff2df" gradientMap={gradientMap} />
+      </mesh>
+
       {/* Door */}
       <mesh position={[0, 0.25, 0.9]} rotation={[0.1, 0, 0]} scale={[1, 1.2, 1]}>
         <sphereGeometry args={[0.25, 16, 16, 0, Math.PI * 2, 0, Math.PI/2]} />
@@ -274,16 +277,21 @@ function BuildingFerme(props: BuildingProps) {
       {/* Glass Dome */}
       {/* Toit de serre. Un `meshStandardMaterial` translucide saturait en blanc
           sous le bloom : vu de dessus, la serre n'etait plus qu'une carte
-          blanche. Toon opaque et teinte franche, la coupole se lit. */}
+          blanche. Toon opaque et teinte franche, la coupole se lit.
+          Segments reduits (8x5 au lieu de 24x24) : la coupole lisse ne
+          rendait aucune arete vue de dessus, un dome a facettes evoque une
+          verriere a panneaux et donne des lignes de rupture visibles. */}
       <mesh position={[0, 0.4, 0]} castShadow>
-        <sphereGeometry args={[0.95, 24, 24, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <sphereGeometry args={[0.95, 8, 5, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <meshToonMaterial color="#7fd4a3" gradientMap={gradientMap} />
       </mesh>
-      {/* Armature : donne une arete au sommet, seul detail visible d'en haut. */}
-      {[0, Math.PI / 2].map((a, i) => (
-        <mesh key={i} position={[0, 0.42, 0]} rotation={[0, a, 0]}>
-          <boxGeometry args={[1.95, 0.06, 0.08]} />
-          <meshToonMaterial color="#3f6d54" gradientMap={gradientMap} />
+      {/* Armature : croix epaisse et sombre, seul detail garanti visible d'en
+          haut — l'ancienne etait trop fine pour se distinguer du dome sous le
+          bloom. */}
+      {[0, Math.PI / 2, Math.PI / 4, -Math.PI / 4].map((a, i) => (
+        <mesh key={i} position={[0, 0.46, 0]} rotation={[0, a, 0]}>
+          <boxGeometry args={[1.9, 0.1, 0.1]} />
+          <meshToonMaterial color="#2f5843" gradientMap={gradientMap} />
         </mesh>
       ))}
       
@@ -321,27 +329,40 @@ function BuildingBar(props: BuildingProps) {
 
   return (
     <BuildingWrapper {...props}>
+      {/* Tonneau en bois neutre : le parasol au-dessus reprend la couleur du
+          batiment, et le contraste entre les deux est ce qui separe "mur" de
+          "toit" vu de dessus — la meme couleur sur les deux fondait le
+          batiment en un seul blob rond. */}
       <mesh position={[0, 0, 0]} castShadow receiveShadow>
         <latheGeometry args={[barrelProfile, 32]} />
+        <meshToonMaterial color="#8a6343" gradientMap={gradientMap} />
+      </mesh>
+
+      {/* Parasol : l'ancien auvent (demi-cylindres plaques sur la facade
+          avant) etait invisible vu de dessus. Un cone a facettes pose sur le
+          tonneau se lit d'en haut comme un toit, et un anneau de bosses
+          crema en rend le bord festonne. */}
+      <mesh position={[0, 1.2, 0]} rotation={[0, Math.PI / 8, 0]} castShadow>
+        <coneGeometry args={[1.0, 0.4, 8]} />
         <meshToonMaterial color={props.color} gradientMap={gradientMap} />
       </mesh>
-      
-      {/* Scalloped Awning */}
-      <group position={[0, 0.9, 0.9]}>
-        {[-0.6, -0.2, 0.2, 0.6].map((x, i) => (
-          <mesh key={i} position={[x, 0, 0]} rotation={[0.4, 0, 0]}>
-            <cylinderGeometry args={[0.2, 0.2, 0.8, 16, 1, false, 0, Math.PI]} />
+      {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
+        const a = (i / 8) * Math.PI * 2;
+        return (
+          <mesh key={i} position={[Math.cos(a) * 0.98, 1.0, Math.sin(a) * 0.98]} scale={[1, 0.4, 1]}>
+            <sphereGeometry args={[0.16, 8, 8]} />
             <meshToonMaterial color={i % 2 === 0 ? props.color : "#fff2df"} gradientMap={gradientMap} />
           </mesh>
-        ))}
-      </group>
+        );
+      })}
 
-      {/* Neon Sign */}
-      <mesh position={[0, 1.4, 0.8]} rotation={[0, 0, 0]}>
+      {/* Neon Sign : a plat, en halo visible d'en haut plutot qu'en enseigne
+          de facade tournee vers un spectateur qui n'existe pas d'en haut. */}
+      <mesh position={[0, 1.65, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <torusGeometry args={[0.3, 0.05, 16, 32]} />
         <meshBasicMaterial color="#ff69b4" />
       </mesh>
-      <mesh position={[0, 1.4, 0.8]}>
+      <mesh position={[0, 1.65, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[0.25, 0.25, 0.02, 32]} />
         <meshBasicMaterial color="#ff1493" transparent opacity={0.6} />
       </mesh>
@@ -358,7 +379,7 @@ function BuildingBar(props: BuildingProps) {
         </mesh>
       </group>
       
-      <pointLight position={[0, 1.4, 0.8]} color="#ff69b4" intensity={0.3} distance={2.2} />
+      <pointLight position={[0, 1.65, 0]} color="#ff69b4" intensity={0.3} distance={2.2} />
     </BuildingWrapper>
   );
 }
@@ -433,17 +454,34 @@ function BuildingMarche(props: BuildingProps) {
         <meshToonMaterial color={props.color} gradientMap={gradientMap} />
       </mesh>
       
-      {/* Awning */}
-      <group position={[0, 0.8, 0.4]} rotation={[0.2, 0, 0]}>
-        {[-0.9, -0.3, 0.3, 0.9].map((x, i) => (
-          <mesh key={i} position={[x, 0, 0]}>
-            <cylinderGeometry args={[0.3, 0.3, 1.6, 16, 1, false, 0, Math.PI]} />
-            {/* Une bande sur deux etait creme : vu de dessus l'auvent devenait
-                une carte blanche. Alternance sombre, les rayures se lisent. */}
+      {/* Auvent. L'ancienne version dressait 4 demi-tubes a l'axe vertical
+          (hauteur 1.6, a peine inclines de 0.2 rad) : vu du dessus on ne
+          voyait que leurs calottes rondes empilees, pas un auvent — d'ou le
+          "rectangle blanc a rayures" observe en jeu. Un toit de tente
+          horizontal, porte par 4 pieds, se lit comme un etal marchand vu
+          d'en haut. */}
+      {[[-1.0, 0.55], [1.0, 0.55], [-1.0, -0.55], [1.0, -0.55]].map(([x, z], i) => (
+        <mesh key={i} position={[x, 0.75, z]} castShadow>
+          <cylinderGeometry args={[0.04, 0.04, 0.5, 6]} />
+          <meshToonMaterial color="#8a6343" gradientMap={gradientMap} />
+        </mesh>
+      ))}
+      <mesh position={[0, 1.0, 0]} scale={[1.25, 0.4, 0.75]} rotation={[0, Math.PI / 8, 0]} castShadow>
+        <coneGeometry args={[1.0, 0.5, 8]} />
+        <meshToonMaterial color={props.color} gradientMap={gradientMap} />
+      </mesh>
+      {/* Une bande sur deux etait creme : vu de dessus le toit devenait une
+          carte blanche sous le bloom. Rayures sombres au bord, elles se
+          lisent. */}
+      {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
+        const a = (i / 8) * Math.PI * 2;
+        return (
+          <mesh key={i} position={[Math.cos(a) * 1.18, 0.85, Math.sin(a) * 0.72]} rotation={[0, -a, 0]}>
+            <boxGeometry args={[0.06, 0.18, 0.32]} />
             <meshToonMaterial color={i % 2 === 0 ? props.color : "#8c4a2f"} gradientMap={gradientMap} />
           </mesh>
-        ))}
-      </group>
+        );
+      })}
 
       {/* Crates & Fruits */}
       <group position={[0.4, 0.6, 0.4]}>
