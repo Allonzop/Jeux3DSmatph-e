@@ -11,6 +11,36 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-15 (bis) — Réparation de la boucle de routine
+
+**Le problème constaté.** Cinq séances de routine avaient tourné, toutes sur le
+même item n°1 du backlog (bâtiments), chacune sur sa branche `claude/...`. Une
+seule (celle de ce matin) avait été fusionnée dans `main` ; les quatre autres
+étaient restées ouvertes. Cause : `ROUTINE.md` disait « commite sur `main` et
+pousse », **ce qui est impossible** — l'environnement impose une branche à
+part. L'agent poussait donc sa branche sans que rien ne la fusionne ; `main` ne
+bougeait pas, et chaque séance repartait du même point et refaisait le même
+travail.
+
+**Corrigé.** Un workflow `auto-merge.yml` fusionne désormais toute PR
+`claude/* → main` dès que typecheck et build passent, puis supprime la branche.
+`ROUTINE.md` dit maintenant d'**ouvrir une PR**, pas de pousser sur `main`, et
+insiste : le backlog coché et l'entrée de journal doivent être dans la PR,
+sinon `main` ne les voit pas.
+
+**Comparaison des cinq branches avant nettoyage** (via `shot.mjs --village`,
+regardées) : `main` était la meilleure base (bug du blanc corrigé, toit hutte,
+socle tourelle). La seule idée à sauver venait de `b1x6ih` — un socle octogonal
+coloré sous *chaque* bâtiment, lisible même quand le toit crame. Portée dans le
+backlog plutôt que fusionnée (conflits garantis, toutes touchent `Buildings.tsx`
+depuis le même point). Les 5 branches supprimées, la PR #1 fermée.
+
+**À ne pas refaire.** Ne jamais écrire dans une consigne de routine « pousse sur
+`main` » : l'environnement l'interdit. Le seul chemin vers `main` est une PR
+auto-fusionnée.
+
+---
+
 ## 2026-08-15 — Bâtiments lisibles vus de dessus
 
 **Fait**

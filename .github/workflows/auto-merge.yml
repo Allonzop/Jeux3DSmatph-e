@@ -1,0 +1,66 @@
+# Fusionne automatiquement dans `main` les PR ouvertes par la routine, une fois
+# les vérifications passées. C'est ce qui referme la boucle : sans ça, chaque
+# séance de routine pousse une branche que personne ne fusionne, `main` ne
+# bouge pas, et la séance suivante repart du même point et refait le même
+# travail.
+#
+# Ne se déclenche que pour les branches `claude/*` — une PR humaine ordinaire
+# n'est jamais fusionnée toute seule.
+name: Fusion auto des PR de routine
+
+on:
+  pull_request:
+    branches: [main]
+
+# Le jeton doit pouvoir fusionner et supprimer la branche.
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  # Une fusion à la fois : deux PR fusionnées en parallèle se marcheraient
+  # dessus sur `main`.
+  group: auto-merge
+  cancel-in-progress: false
+
+jobs:
+  verify-and-merge:
+    if: startsWith(github.head_ref, 'claude/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # Jeu + studio et leurs dépendances d'espace de travail. Pas l'app Expo,
+      # inutile ici et lourde.
+      - name: Installer
+        run: pnpm install --frozen-lockfile --filter "@workspace/3d-game..." --filter "@workspace/character-studio..."
+
+      # Le filet de sécurité. Le typecheck attrape le code qui ne compile pas ;
+      # le build attrape ce que seule la production casse (chemins, imports).
+      # Le test de jouabilité (`wave.mjs`) reste à la charge de l'agent pendant
+      # sa séance — il exige un navigateur, trop lourd à monter ici — et il le
+      # consigne dans le journal.
+      - name: Typecheck
+        run: pnpm --filter @workspace/3d-game run typecheck
+
+      - name: Build du jeu
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/
+        run: pnpm --filter @workspace/3d-game run build
+
+      - name: Fusionner et supprimer la branche
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr merge "${{ github.event.pull_request.number }}" \
+            --squash --delete-branch \
+            --repo "${{ github.repository }}"
