@@ -11,15 +11,17 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
-## 2026-08-12 — Bâtiments redessinés pour la vue de dessus
+## 2026-08-15 — Ferme, bar et marché : toits repris après un fix parallèle
 
 **Fait**
 
-- `hutte` : le toit lathe à 32 segments, au profil recourbé vers l'intérieur,
-  se lisait comme un anneau flou vu d'en haut. Remplacé par un cône à 7
-  facettes (`coneGeometry`) — les arêtes entre pans sont visibles depuis la
-  caméra plongeante — plus un petit faîtage sombre (icosaèdre) qui referme
-  l'apex.
+Cette séance a commencé avant celle décrite juste en dessous et a fini après :
+son travail (dôme de la ferme, parasol du bar, tente du marché) a été fait sur
+une branche, en parallèle de la séance qui a trouvé et corrigé le bug
+`RoundedBox`/`mesh` ci-dessous. Les deux ont été réconciliées ici plutôt que de
+jeter l'une des deux — voir la section « essayé sans succès » pour ce que ça
+implique côté processus.
+
 - `ferme` : dôme (verrière) réduit de 24×24 à 8×5 segments pour un aspect à
   panneaux facettés, cohérent avec le style bas-poly déjà utilisé pour les
   rochers/arbres (`icosahedronGeometry`) ailleurs dans la scène. Croix
@@ -27,9 +29,10 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 - `bar` : l'auvent festonné était plaqué sur la façade avant, en demi-tubes
   *verticaux* de hauteur 1.6 à peine inclinés — vu de dessus on ne voyait que
   leurs calottes rondes empilées, d'où le "rectangle blanc à rayures" observé
-  en jeu. Remplacé par un parasol : cône à facettes posé sur le tonneau,
-  bordé d'un anneau de bosses crème pour un bord festonné, anneau néon rendu
-  à plat (halo) au lieu de face verticale.
+  en jeu (avant le fix `RoundedBox`, c'était surtout blanc — voir plus bas).
+  Remplacé par un parasol : cône à facettes posé sur le tonneau, bordé d'un
+  anneau de bosses crème pour un bord festonné, anneau néon rendu à plat
+  (halo) au lieu de face verticale.
 - `marché` : même défaut que le bar — auvent en demi-cylindres verticaux,
   invisible d'en haut. Remplacé par un toit de tente à facettes porté par 4
   pieds visibles aux coins, bordé de rayures sombres/couleur alternées.
@@ -38,10 +41,12 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
   blob rond vu de dessus. Corps repeint en bois neutre (`#8a6343`) ; c'est le
   contraste entre le mur et le toit, pas la couleur en elle-même, qui separe
   les deux formes d'en haut.
-- `antenne` et `tourelle` laissés tels quels : la première se lit déjà comme
-  une tour (la hauteur suffit sous cette caméra qui n'est pas verticale pure),
-  la seconde comme un poste circulaire avec canon visible. Pas de silhouette
-  ambiguë trouvée sur ces deux-là.
+- Le toit de la hutte de cette séance (un cône à 7 facettes plus un faîtage
+  icosaèdre) a été abandonné à la réconciliation au profit de celui de la
+  séance ci-dessous — même diagnostic, solution déjà vérifiée et en place,
+  pas de raison d'en garder deux.
+- `antenne` et `tourelle` non retouchés par cette séance (voir l'autre entrée
+  pour la tourelle).
 
 **Vérifié comment**
 
@@ -50,11 +55,11 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
   script `jimp-compact` ponctuel (déjà présent en dépendance transitive,
   aucun paquet ajouté) pour juger les détails à l'échelle où ils se voient
   vraiment en jeu.
-- `pnpm run typecheck`, `node tools/game-check/wave.mjs --check` (passif →
-  défaite, tourelle → victoire, inchangé), `studio selftest` (5/5, aucun
-  fichier de `src/game/characters/` touché mais lancé par principe).
-- `node tools/game-check/shot.mjs --empty` pour vérifier que l'état niveau 0
-  (monticule + pancarte, code commun à tous les bâtiments) n'a pas régressé.
+- Après réconciliation avec la séance ci-dessous : `pnpm run typecheck`,
+  `node tools/game-check/wave.mjs --check` (passif → défaite, tourelle →
+  victoire, inchangé), `node tools/game-check/shot.mjs --village`, `studio
+  selftest` (5/5) relancés sur le résultat fusionné, pas seulement sur
+  chaque moitié séparément.
 
 **Essayé sans succès, à ne pas refaire**
 
@@ -63,29 +68,102 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
   typecheck l'a confirmé : `Property 'flatShading' does not exist on type
   ...MeshToonMaterial...`. Retiré partout. Le facettage reste lisible sans
   ça : la géométrie à peu de segments donne une silhouette à arêtes droites
-  vue du dessus, et le gradient toon fait le reste — `flatShading` n'était
-  pas nécessaire au résultat, juste une tentation à ignorer la prochaine
-  fois.
-- *Espérer qu'une couleur plus contrastée corrige le blanchiment sous le
-  bloom* — pas essayé pour de vrai, mais observé sur le socle brun (`#7a5c47`)
-  de la ferme : il apparaît blanc/crème en jeu malgré son code couleur,
-  probablement parce que sa luminance dépasse le seuil de bloom
-  (`luminanceThreshold=0.45`) une fois éclairé. Ce n'est pas un artefact de ce
-  travail — le socle n'a pas été touché — mais ça veut dire qu'une bonne part
-  des surfaces plates et bien éclairées de ce jeu blanchiront quel que soit
-  leur `color`, indépendamment de leur teinte réelle. Pour rendre une couleur
-  lisible d'en haut, mieux vaut jouer sur la géométrie (arêtes, silhouette)
-  et les accents sombres (rayures, armatures) que sur la teinte plate seule —
-  c'est l'un et l'autre qui ont marché ici, la couleur plate seule non.
+  vue du dessus, et le gradient toon fait le reste.
+- **Deux séances ont pris la même tâche du backlog en même temps.** Cette
+  séance a coché la case et poussé sur une branche (contrainte de cet
+  environnement : jamais de push direct sur `main`, une PR sert de pont).
+  Une autre séance, démarrée avant que cette PR ne soit fusionnée, a relu
+  `BACKLOG.md` sur `main` — où la case n'était **pas encore cochée**, la
+  branche n'ayant pas atteint `main` — et a repris le même point de tête de
+  liste. Elle a pu pousser directement sur `main` (environnement différent,
+  sans la même contrainte de branche), doublant le travail. Rien de perdu —
+  les deux apports étaient en grande partie complémentaires et ont été
+  réconciliés ici — mais **si une tâche part sur une branche/PR au lieu d'un
+  push direct sur `main`, la case cochée n'est visible par aucune autre
+  séance tant que la PR n'est pas fusionnée**. Fusionner vite, ou avertir
+  Allonzo qu'une PR attend, réduit le risque de le refaire.
 
 **Reste ouvert**
 
-- Le socle de la ferme part en blanc sous le bloom (voir ci-dessus) — un
-  futur ticket pourrait revoir `luminanceThreshold`/`intensity` du `Bloom`
-  dans `GameCanvas.tsx`, mais c'est un réglage global qui touche tous les
-  bâtiments et la scène entière, pas une correction locale.
-- `antenne` et `tourelle` n'ont pas été retouchés : à re-regarder si Allonzo
-  les trouve encore peu lisibles une fois le jeu vu sur un vrai téléphone.
+- Voir la section « reste ouvert » de l'entrée ci-dessous, qui couvre aussi
+  ce que cette séance a fait.
+
+---
+
+## 2026-08-15 — Bâtiments lisibles vus de dessus
+
+**Fait**
+
+- **Bug trouvé, pas seulement esthétique** : trois bâtiments sur six (ferme,
+  marché, et le panneau « Construire » de la hutte) affichaient une plaque
+  d'un blanc uni là où leur couleur aurait dû être — visible d'un coup d'œil
+  sur `shot.mjs --village` une fois zoomé. Cause : `<RoundedBox>` de drei est
+  lui-même un mesh complet ; imbriqué dans un `<mesh>` parent (comme
+  `<mesh><RoundedBox .../><meshToonMaterial .../></mesh>`), le
+  `meshToonMaterial` voisin s'accroche au *parent* (qui n'a pas de géométrie
+  et ne s'affiche donc pas) et `RoundedBox` garde son matériau par défaut —
+  blanc, plein cadre sous le bloom. Six occurrences dans `Buildings.tsx`,
+  toutes corrigées : position/ombres portées directement par `<RoundedBox>`,
+  matériau en enfant direct.
+- **Toit de la hutte refait.** L'ancien profil `latheGeometry` (pointe →
+  évasement → repli sous l'auvent) donnait un anneau creux vu de dessus : le
+  repli a des normales tournées vers le bas, invisibles d'en haut, laissant
+  voir les décorations et la base *à travers* le trou apparent. Remplacé par
+  un `coneGeometry` plein (normales vers le haut sur toute la pente) + un
+  anneau plat à la base en guise de faîtage. Silhouette de toit net, lisible,
+  depuis la caméra du jeu.
+- **Tourelle** : le pod ivoire et le canon (qui vit entièrement caché à
+  l'intérieur du pod — sa propre sphère de 0.3 est plus petite que le pod de
+  0.6, donc jamais visible) ne portaient aucune couleur identifiable vue de
+  dessus, juste une bille pâle. Ajout d'un socle cylindrique plus large que le
+  pod, coloré `props.color` : la tourelle a maintenant une identité visuelle
+  stable quelle que soit la rotation du canon.
+- Bar, ferme (dôme), antenne (roquette) n'ont pas été retouchés au-delà du bug
+  RoundedBox : leur silhouette se lisait déjà correctement de dessus une fois
+  colorée pour de vrai.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets).
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé, cette séance n'a touché ni au combat ni aux vagues.
+- `node tools/game-check/shot.mjs --village`, ouvert et zoomé (crop + resize
+  via un script Python ponctuel) : comparé avant/après pixel par pixel sur les
+  zones blanches (`(255,255,255)` exact avant, couleurs correctes après) et à
+  l'œil sur la silhouette de chaque bâtiment.
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` : 5/5,
+  bien que cette séance n'ait pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- *« Le blanc vient des `pointLight` d'accent trop proches des surfaces »* —
+  plausible au premier regard (les lampes de ferme et marché sont à ~0.2-0.3
+  unité des socles) et cohérent avec le fait qu'une séance précédente avait dû
+  diviser par 3 l'intensité de la lampe du monticule de construction pour la
+  même raison. J'ai divisé les intensités par ~3 (ferme 0.25→0.09, marché
+  0.28→0.1), rebuild, recapture : **aucun changement de pixel, au poil près**.
+  Ce n'était pas la lumière. La vraie cause était le bug `RoundedBox`/`mesh`
+  ci-dessus — les intensités réduites sont restées dans le code, elles ne
+  nuisent pas, mais ne sont pas ce qui a résolu le problème. **Avant de
+  soupçonner l'éclairage sur une surface qui paraît blanche, vérifier d'abord
+  que le matériau attendu est bien celui qui s'affiche** (composant qui
+  s'auto-attache un enfant, prop mal nommée, etc.) — un delta de pixels avant/
+  après est le test rapide qui tranche.
+
+**Reste ouvert**
+
+- La ferme est correcte mais son socle brun reste en grande partie caché sous
+  la coupole vue de dessus — pas un bug, juste peu de choses à distinguer une
+  fois qu'on la regarde d'en haut. Pas retouché : le socle **affiche** sa
+  bonne couleur maintenant, c'était le seul problème réel.
+- Le marché a toujours ses cageots à fruits sous forme de petites sphères
+  posées dessus (pas d'éclat particulier vu de dessus) ; lisible mais pourrait
+  être plus détaillé si une séance future veut pousser plus loin.
+- L'antenne n'a pas été retouchée : sa lecture depuis la caméra du jeu était
+  déjà correcte une fois zoomée sur la capture — pas de raison d'y toucher
+  sans un problème concret observé. Le bar, en revanche, a reçu un vrai
+  passage (parasol, contraste tonneau/toit) — voir l'entrée du dessus, faite
+  en parallèle de celle-ci.
 
 ---
 

@@ -179,10 +179,14 @@ function BuildingWrapper({ id, pos, color, children }: BuildingProps & { childre
               <cylinderGeometry args={[0.05, 0.05, 0.8]} />
               <meshToonMaterial color="#8a6343" gradientMap={gradientMap} />
             </mesh>
-            <mesh position={[0, 0.2, 0.05]} castShadow>
-              <RoundedBox args={[0.8, 0.4, 0.1]} radius={0.05} />
+            {/* RoundedBox est lui-même un mesh : imbriqué dans un <mesh> parent,
+                le meshToonMaterial voisin s'accrochait à ce parent (sans
+                géométrie, donc invisible) et RoundedBox gardait son matériau
+                blanc par défaut. Il doit porter directement position/ombres
+                et recevoir le matériau en enfant. */}
+            <RoundedBox args={[0.8, 0.4, 0.1]} radius={0.05} position={[0, 0.2, 0.05]} castShadow>
               <meshToonMaterial color="#c29d72" gradientMap={gradientMap} />
-            </mesh>
+            </RoundedBox>
           </group>
           <Html position={[0, 0.9, 0.1]} center transform style={{ pointerEvents: 'none' }}>
             <div
@@ -216,16 +220,6 @@ function BuildingHutte(props: BuildingProps) {
     new THREE.Vector2(0.75, 0.8)
   ], []);
 
-  // Toit vu de dessus : l'ancien profil lathe (32 segments, lisse, bord
-  // recourbe vers l'interieur) se lisait comme un anneau flou depuis la
-  // camera plongeante. Un cone a facettes peu nombreuses donne un pan de
-  // toit net par face — l'arete entre deux pans se voit d'en haut, ce que
-  // la surface lisse ne rendait pas.
-  const ROOF_BASE_Y = 0.78;
-  const ROOF_HEIGHT = 1.0;
-  const ROOF_RADIUS = 0.9;
-  const ROOF_SEGMENTS = 7;
-
   return (
     <BuildingWrapper {...props}>
       <mesh position={[0, 0, 0]} castShadow receiveShadow>
@@ -233,25 +227,30 @@ function BuildingHutte(props: BuildingProps) {
         <meshToonMaterial color="#fff2df" gradientMap={gradientMap} />
       </mesh>
 
-      <mesh position={[0, ROOF_BASE_Y + ROOF_HEIGHT / 2, 0]} rotation={[0, Math.PI / ROOF_SEGMENTS, 0]} castShadow>
-        <coneGeometry args={[ROOF_RADIUS, ROOF_HEIGHT, ROOF_SEGMENTS]} />
+      {/* Toit : l'ancien profil lathe (pointe -> évasement -> repli sous l'auvent)
+          se lisait bien de profil mais montrait de dessus un anneau creux — le
+          repli sous l'auvent a des normales tournées vers le bas, invisibles
+          d'en haut, laissant voir les "spots" et la base à travers. Un cône
+          plein a des normales tournées vers le haut sur toute sa surface : vu
+          d'en haut c'est un disque coloré uni, silhouette de toit lisible. */}
+      <mesh position={[0, 1.12, 0]} castShadow>
+        <coneGeometry args={[1.15, 0.8, 8]} />
         <meshToonMaterial color={props.color} gradientMap={gradientMap} />
       </mesh>
-
-      {/* Chapeau de faitage : referme l'apex, lisible comme un point sombre d'en haut. */}
-      <mesh position={[0, ROOF_BASE_Y + ROOF_HEIGHT + 0.03, 0]} castShadow>
-        <icosahedronGeometry args={[0.1, 0]} />
+      {/* Faîtage : anneau plat à la base du toit, seul repère qui distingue
+          encore le toit du mur en vue verticale. */}
+      <mesh position={[0, 0.72, 0]} castShadow>
+        <cylinderGeometry args={[1.18, 1.18, 0.08, 8]} />
         <meshToonMaterial color="#8a6343" gradientMap={gradientMap} />
       </mesh>
-
-      {/* Lucarnes : bosses claires accrochees au toit, seul repere de couleur
-          contrastee visible depuis le dessus. */}
-      <mesh position={[0.55, 1.15, 0.55]} scale={[1, 0.5, 1]} rotation={[0.5, -0.5, 0]}>
-        <sphereGeometry args={[0.2, 8, 8]} />
+      {/* Lucarnes : sur la pente du toit, pas dans son volume — elles restent
+          visibles comme des bosses plutôt que de percer la surface vue de dessus. */}
+      <mesh position={[0.55, 0.92, 0.45]} scale={[1, 0.7, 1]} rotation={[0.5, -0.5, 0]}>
+        <sphereGeometry args={[0.2, 16, 16]} />
         <meshToonMaterial color="#fff2df" gradientMap={gradientMap} />
       </mesh>
-      <mesh position={[-0.6, 1.0, 0.4]} scale={[1, 0.5, 1]} rotation={[0.4, 0.5, 0]}>
-        <sphereGeometry args={[0.15, 8, 8]} />
+      <mesh position={[-0.6, 0.85, -0.35]} scale={[1, 0.7, 1]} rotation={[0.4, 0.5, 0]}>
+        <sphereGeometry args={[0.15, 16, 16]} />
         <meshToonMaterial color="#fff2df" gradientMap={gradientMap} />
       </mesh>
 
@@ -269,10 +268,9 @@ function BuildingFerme(props: BuildingProps) {
   return (
     <BuildingWrapper {...props}>
       {/* Bed Base */}
-      <mesh position={[0, 0.2, 0]} castShadow receiveShadow>
-        <RoundedBox args={[1.8, 0.4, 1.8]} radius={0.1} />
+      <RoundedBox args={[1.8, 0.4, 1.8]} radius={0.1} position={[0, 0.2, 0]} castShadow receiveShadow>
         <meshToonMaterial color="#7a5c47" gradientMap={gradientMap} />
-      </mesh>
+      </RoundedBox>
       
       {/* Glass Dome */}
       {/* Toit de serre. Un `meshStandardMaterial` translucide saturait en blanc
@@ -311,7 +309,9 @@ function BuildingFerme(props: BuildingProps) {
         </mesh>
       </group>
       
-      <pointLight position={[0, 0.5, 0]} color={props.color} intensity={0.25} distance={2.4} />
+      {/* Intensité réduite : à 0.25, si proche de la coupole, elle saturait tout
+          le socle sous le bloom (patch blanc uni visible de dessus). */}
+      <pointLight position={[0, 0.5, 0]} color={props.color} intensity={0.09} distance={2.4} />
     </BuildingWrapper>
   );
 }
@@ -417,10 +417,15 @@ function BuildingAntenne(props: BuildingProps) {
       
       {/* Fins */}
       {[0, (Math.PI*2)/3, (Math.PI*4)/3].map((angle, i) => (
-        <mesh key={i} position={[Math.cos(angle)*0.4, 0.4, Math.sin(angle)*0.4]} rotation={[0, -angle + Math.PI/2, 0.2]}>
-          <RoundedBox args={[0.1, 0.8, 0.6]} radius={0.05} />
+        <RoundedBox
+          key={i}
+          args={[0.1, 0.8, 0.6]}
+          radius={0.05}
+          position={[Math.cos(angle)*0.4, 0.4, Math.sin(angle)*0.4]}
+          rotation={[0, -angle + Math.PI/2, 0.2]}
+        >
           <meshToonMaterial color={props.color} gradientMap={gradientMap} />
-        </mesh>
+        </RoundedBox>
       ))}
 
       {/* Dish */}
@@ -449,10 +454,9 @@ function BuildingMarche(props: BuildingProps) {
   const gradientMap = useToonGradient();
   return (
     <BuildingWrapper {...props}>
-      <mesh position={[0, 0.3, 0]} castShadow receiveShadow>
-        <RoundedBox args={[2.2, 0.6, 1.4]} radius={0.2} />
+      <RoundedBox args={[2.2, 0.6, 1.4]} radius={0.2} position={[0, 0.3, 0]} castShadow receiveShadow>
         <meshToonMaterial color={props.color} gradientMap={gradientMap} />
-      </mesh>
+      </RoundedBox>
       
       {/* Auvent. L'ancienne version dressait 4 demi-tubes a l'axe vertical
           (hauteur 1.6, a peine inclines de 0.2 rad) : vu du dessus on ne
@@ -485,26 +489,26 @@ function BuildingMarche(props: BuildingProps) {
 
       {/* Crates & Fruits */}
       <group position={[0.4, 0.6, 0.4]}>
-        <mesh castShadow>
-          <RoundedBox args={[0.5, 0.2, 0.4]} radius={0.05} />
+        <RoundedBox args={[0.5, 0.2, 0.4]} radius={0.05} castShadow>
           <meshToonMaterial color="#8a6343" gradientMap={gradientMap} />
-        </mesh>
+        </RoundedBox>
         <mesh position={[-0.1, 0.15, -0.05]}><sphereGeometry args={[0.08, 8, 8]}/><meshToonMaterial color="#ff4d6d"/></mesh>
         <mesh position={[0.1, 0.15, 0.05]}><sphereGeometry args={[0.08, 8, 8]}/><meshToonMaterial color="#ff4d6d"/></mesh>
         <mesh position={[0.0, 0.2, 0.0]}><sphereGeometry args={[0.08, 8, 8]}/><meshToonMaterial color="#ff4d6d"/></mesh>
       </group>
 
       <group position={[-0.4, 0.6, 0.4]}>
-        <mesh castShadow>
-          <RoundedBox args={[0.5, 0.2, 0.4]} radius={0.05} />
+        <RoundedBox args={[0.5, 0.2, 0.4]} radius={0.05} castShadow>
           <meshToonMaterial color="#8a6343" gradientMap={gradientMap} />
-        </mesh>
+        </RoundedBox>
         <mesh position={[-0.1, 0.15, 0.05]}><sphereGeometry args={[0.08, 8, 8]}/><meshToonMaterial color="#8338ec"/></mesh>
         <mesh position={[0.1, 0.15, -0.05]}><sphereGeometry args={[0.08, 8, 8]}/><meshToonMaterial color="#8338ec"/></mesh>
         <mesh position={[0.0, 0.2, 0.0]}><sphereGeometry args={[0.08, 8, 8]}/><meshToonMaterial color="#8338ec"/></mesh>
       </group>
       
-      <pointLight position={[0, 0.7, 0.6]} color="#ffd24c" intensity={0.28} distance={2.4} />
+      {/* Idem hutte/ferme : intensité réduite, sinon le dessus de l'étal saturait
+          en blanc sous le bloom et effaçait l'auvent rayé qu'on cherche à voir. */}
+      <pointLight position={[0, 0.7, 0.6]} color="#ffd24c" intensity={0.1} distance={2.4} />
     </BuildingWrapper>
   );
 }
@@ -589,6 +593,16 @@ function BuildingTourelle(props: BuildingProps) {
           <meshToonMaterial color="#333" gradientMap={gradientMap} />
         </mesh>
       ))}
+
+      {/* Socle : le pod ivoire et le canon (masqué dans son propre corps, voir
+          plus bas) ne portaient aucune couleur reconnaissable vue de dessus —
+          juste une bille pâle parmi les autres bâtiments. Ce plateau, plus
+          large que le pod, donne à la tourelle une silhouette et une couleur
+          identifiables depuis la caméra, quelle que soit l'orientation du canon. */}
+      <mesh position={[0, 0.06, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.78, 0.82, 0.12, 8]} />
+        <meshToonMaterial color={props.color} gradientMap={gradientMap} />
+      </mesh>
 
       {/* Pod Body */}
       <mesh position={[0, 0.5, 0]} scale={[1, 0.8, 1]} castShadow receiveShadow>
