@@ -12,15 +12,16 @@ peut juger chaque changement isolément.
 ## Comment le travail arrive dans le jeu
 
 L'environnement de routine t'oblige à travailler sur une branche à toi
-(`claude/...`) — tu **ne peux pas** committer directement sur `main`. Tu ouvres
-donc une **Pull Request vers `main`**, et un workflow (`auto-merge.yml`) la
-fusionne tout seul une fois le typecheck et le build passés, puis supprime ta
-branche.
+(`claude/...`) — tu **ne peux pas** committer directement sur `main`, et tu
+**n'as pas besoin d'ouvrir de Pull Request**. Tu pousses ta branche, et un
+workflow (`auto-merge.yml`) la fusionne tout seul dans `main` dès que le
+typecheck et le build passent, puis supprime ta branche. Ton travail s'arrête
+au push.
 
-C'est le point vital : **tout ce que tu ne mets pas dans ta PR n'arrivera
-jamais dans `main`**, donc la séance suivante ne le verra pas et refera ton
-travail. Le backlog coché et l'entrée de journal doivent être des commits de ta
-branche, dans la PR, comme le code.
+C'est le point vital : **tout ce que tu ne commites pas sur ta branche
+n'arrivera jamais dans `main`**, donc la séance suivante ne le verra pas et
+refera ton travail. Le backlog coché et l'entrée de journal doivent être des
+commits de ta branche, au même titre que le code.
 
 ## Le texte à coller
 
@@ -59,19 +60,18 @@ pour la carte des lieux.
    ton successeur de refaire tes impasses. Ne pas cocher le backlog est la
    cause n°1 de travail répété d'une séance à l'autre.
 
-6. **Ouvre une Pull Request vers `main`** avec ta branche. Titre court et clair,
-   corps qui résume le changement. Le workflow d'auto-fusion vérifie et fusionne
-   ; tu n'as rien d'autre à faire. Le déploiement suit la fusion, automatique.
+6. **Commite sur ta branche `claude/*` et pousse.** N'ouvre pas de PR : le
+   workflow d'auto-fusion vérifie (typecheck + build) et fusionne dans `main`
+   tout seul, puis déclenche le déploiement. Ton travail s'arrête au push.
 
-   Si le workflow refuse de fusionner (typecheck ou build en échec), c'est que
-   ton code ne compile pas ou ne se construit pas : corrige et pousse sur la
-   même branche, la PR se revérifie seule.
+   Si la fusion échoue (typecheck ou build en échec), ta branche reste sans être
+   fusionnée : corrige et re-pousse sur la même branche, ça se revérifie seul.
 
 **Ce qui compte :**
 
-- Une amélioration finie, dans une PR, vaut mieux que trois entamées.
-- **Une PR par séance, une seule tâche.** Ne rouvre pas une PR pour une tâche
-  déjà traitée dans `main` : lis d'abord le backlog à jour depuis `main`.
+- Une amélioration finie et poussée vaut mieux que trois entamées.
+- **Une tâche par séance.** Lis d'abord le backlog à jour depuis `main` : ne
+  refais pas une tâche déjà cochée.
 - Ne conclus jamais d'une absence d'observation : le rendu tourne à quelques
   images par seconde, beaucoup de choses n'ont pas le temps d'apparaître. Va
   chercher le message d'erreur exact plutôt que de supposer.

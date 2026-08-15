@@ -1,34 +1,41 @@
-# Fusionne automatiquement dans `main` les PR ouvertes par la routine, une fois
-# les vérifications passées. C'est ce qui referme la boucle : sans ça, chaque
-# séance de routine pousse une branche que personne ne fusionne, `main` ne
-# bouge pas, et la séance suivante repart du même point et refait le même
-# travail.
+# Fusionne dans `main` toute branche `claude/*` poussée par la routine, une
+# fois le typecheck et le build passés — puis supprime la branche.
 #
-# Ne se déclenche que pour les branches `claude/*` — une PR humaine ordinaire
-# n'est jamais fusionnée toute seule.
-name: Fusion auto des PR de routine
+# Déclenché sur le PUSH de la branche, pas sur l'ouverture d'une PR : l'agent
+# de routine pousse toujours sa branche, mais n'ouvre pas toujours de PR (c'est
+# ce qui, avec l'ancienne consigne, laissait le travail bloqué). Se déclencher
+# sur le push retire cette dépendance — l'agent n'a qu'à pousser, la fusion est
+# garantie.
+#
+# La vérification porte sur le RÉSULTAT de la fusion (main + branche), pas sur
+# la branche seule : c'est ce qui attrape une régression d'intégration.
+name: Fusion auto des branches de routine
 
 on:
-  pull_request:
-    branches: [main]
+  push:
+    branches:
+      - 'claude/**'
 
-# Le jeton doit pouvoir fusionner et supprimer la branche.
 permissions:
   contents: write
-  pull-requests: write
 
 concurrency:
-  # Une fusion à la fois : deux PR fusionnées en parallèle se marcheraient
-  # dessus sur `main`.
+  # Une fusion à la fois : deux branches fusionnées en parallèle se
+  # marcheraient dessus sur `main`.
   group: auto-merge
   cancel-in-progress: false
 
 jobs:
   verify-and-merge:
-    if: startsWith(github.head_ref, 'claude/')
+    # Ignorer l'événement de suppression de branche (le workflow supprime la
+    # branche à la fin, ce qui est aussi un push).
+    if: ${{ !github.event.deleted }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
         with:
@@ -39,16 +46,24 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      # Jeu + studio et leurs dépendances d'espace de travail. Pas l'app Expo,
-      # inutile ici et lourde.
+      - name: Fusionner la branche dans main (local, pour vérifier le résultat)
+        run: |
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "$BRANCH"
+          # Un conflit fait échouer l'étape : la branche reste, rien n'est
+          # poussé, et on peut aller voir. Avec une séance par jour et des
+          # tâches distinctes, c'est rare.
+          git merge --no-edit "origin/$BRANCH"
+
       - name: Installer
         run: pnpm install --frozen-lockfile --filter "@workspace/3d-game..." --filter "@workspace/character-studio..."
 
-      # Le filet de sécurité. Le typecheck attrape le code qui ne compile pas ;
-      # le build attrape ce que seule la production casse (chemins, imports).
-      # Le test de jouabilité (`wave.mjs`) reste à la charge de l'agent pendant
-      # sa séance — il exige un navigateur, trop lourd à monter ici — et il le
-      # consigne dans le journal.
+      # Le filet : typecheck + build attrapent le code qui ne compile pas et ce
+      # que seule la production casse. Le test de jouabilité (`wave.mjs`) exige
+      # un navigateur, trop lourd ici — l'agent le lance pendant sa séance et le
+      # consigne au journal.
       - name: Typecheck
         run: pnpm --filter @workspace/3d-game run typecheck
 
@@ -57,10 +72,11 @@ jobs:
           BASE_PATH: /${{ github.event.repository.name }}/
         run: pnpm --filter @workspace/3d-game run build
 
-      - name: Fusionner et supprimer la branche
+      - name: Pousser main et supprimer la branche
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh pr merge "${{ github.event.pull_request.number }}" \
-            --squash --delete-branch \
-            --repo "${{ github.repository }}"
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          git push origin HEAD:main
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/$BRANCH" \
+            && echo "branche supprimée" || echo "branche déjà absente"

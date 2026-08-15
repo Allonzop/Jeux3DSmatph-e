@@ -13,6 +13,15 @@ name: Déployer le jeu sur GitHub Pages
 on:
   push:
     branches: [main]
+  # Après une fusion automatique, `main` est poussé par le jeton d'Actions.
+  # GitHub bloque volontairement les workflows déclenchés en chaîne par ce
+  # jeton (anti-récursion), donc le `push` ci-dessus ne suffit pas : sans ce
+  # `workflow_run`, le jeu ne se redéploierait jamais après une fusion de
+  # routine. `workflow_run`, lui, se déclenche à la fin d'un autre workflow,
+  # quelle qu'en soit l'origine.
+  workflow_run:
+    workflows: ['Fusion auto des branches de routine']
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -28,9 +37,16 @@ concurrency:
 
 jobs:
   build:
+    # Ne pas déployer si la fusion auto a échoué (build cassé) : dans ce cas
+    # `main` n'a pas bougé, rien à publier.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
+      # Déclenché par workflow_run, l'événement porte sur un autre workflow :
+      # on force le checkout de la pointe de main, l'état à publier.
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: pnpm/action-setup@v4
         with:
