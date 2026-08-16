@@ -198,10 +198,20 @@ function BuildingWrapper({ id, pos, color, children }: BuildingProps & { childre
           </Html>
         </group>
       ) : (
-        <group 
+        <group
           ref={groupRef}
           onPointerDown={(e) => { e.stopPropagation(); selectBuilding(id); }}
         >
+          {/* Socle octogonal : identifie chaque bâtiment par sa couleur même
+              quand son toit sursature sous le bloom (voir le patch blanc du
+              même problème plus haut). `meshBasicMaterial`, non éclairé donc
+              insensible au bloom et aux pointLight voisines — la leçon de
+              cette même séance sur les lampes qui saturaient les socles.
+              Rayon choisi pour dépasser du plus large toit (hutte : 1.15). */}
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+            <ringGeometry args={[1.05, 1.3, 8]} />
+            <meshBasicMaterial color={color} />
+          </mesh>
           {children}
         </group>
       )}

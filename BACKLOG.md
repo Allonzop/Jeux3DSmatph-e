@@ -27,15 +27,9 @@ Par ordre d'importance — l'agent prend celle du haut.
       JOURNAL.md — il reste des tours d'amélioration possibles, notée en fin
       d'entrée.)*
 
-- [ ] **Un socle octogonal coloré sous chaque bâtiment.** Idée éprouvée dans
-      une branche abandonnée : un anneau octogonal aux couleurs du bâtiment,
-      posé au sol sous lui, l'identifie d'un coup d'œil même quand le toit
-      sursature sous le bloom. `main` n'a ce socle que sous la tourelle ; le
-      généraliser aux six rendrait le village bien plus lisible vu de dessus.
-      Le motif : un `ringGeometry`/`cylinderGeometry` à 8 segments en
-      `meshBasicMaterial` (non éclairé, donc insensible au bloom) de la couleur
-      du bâtiment, dans `BuildingWrapper`. Vérifier avec
-      `shot.mjs --village`.
+- [x] **Un socle octogonal coloré sous chaque bâtiment.** *(2026-08-16 :
+      anneau `ringGeometry` à 8 segments ajouté dans `BuildingWrapper`,
+      généralisé aux six bâtiments. Voir JOURNAL.md.)*
 
 - [ ] **Pouvoir déplacer un bâtiment déjà posé.** Une fois l'emplacement
       choisi, il est définitif — on ne peut plus que construire dessus. Il

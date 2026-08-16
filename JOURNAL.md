@@ -11,6 +11,55 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-16 — Socle octogonal sous chaque bâtiment, et neuf commits orphelins récupérés
+
+**Constat de départ.** La séance a démarré sur une copie locale de la branche
+`claude/bold-brown-sxjf6j` qui contenait déjà 9 commits (toute la séance du
+15/08 : lisibilité des bâtiments, mise en place de `auto-merge.yml`, et l'ajout
+par Allonzo du bloc FEEDBACK dans `BACKLOG.md`) **jamais poussés** — la branche
+distante n'existait pas (`git fetch` : `couldn't find remote ref`). `main`
+était donc resté figé sur « Système de reprise » (5b87e05) : ni les corrections
+de bâtiments, ni le workflow d'auto-fusion lui-même n'y étaient jamais arrivés.
+Ce push (avec le travail de cette séance ajouté par-dessus) les livre enfin —
+c'est justement `auto-merge.yml`, présent dans cette branche, qui va se
+déclencher sur son propre push et fusionner tout ça dans `main`.
+
+**Fait**
+
+- Socle octogonal coloré ajouté sous les six bâtiments, dans `BuildingWrapper`
+  (`artifacts/3d-game/src/game/scene/Buildings.tsx`) plutôt que bâtiment par
+  bâtiment : un `ringGeometry` à 8 segments (rayon 1.05–1.3, dépasse du toit le
+  plus large — celui de la hutte à 1.15), `meshBasicMaterial` non éclairé donc
+  insensible au bloom et aux `pointLight` voisines. Il rejoint le groupe animé
+  par le ressort d'apparition, donc apparaît avec le bâtiment.
+- La tourelle avait déjà son propre socle (cylindre teinté, plus petit,
+  plaqué sous le pod) : les deux coexistent sans conflit, l'anneau générique
+  vient juste ajouter le même repère visuel que les cinq autres.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé, cette séance n'a pas touché au combat.
+- `node tools/game-check/shot.mjs --village`, ouvert avant/après : les six
+  bâtiments (hutte, ferme, bar, antenne, marché, tourelle) portent chacun un
+  anneau coloré identifiable à leur base, visible depuis la caméra du jeu.
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` : 5/5 —
+  cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté cette séance : la tâche était bien cadrée par le backlog (motif,
+  fichier, rayon de référence), pas de fausse piste à signaler.
+
+**Reste ouvert**
+
+- Voir `BACKLOG.md` : panneau de construction en anglais, déplacement de
+  bâtiment, équilibrage du combat, animation de mort des monstres, et le bloc
+  FEEDBACK d'Allonzo du 15/08 (grid, instanciation multiple, pacing, vagues).
+
+---
+
 ## 2026-08-15 (bis) — Réparation de la boucle de routine
 
 **Le problème constaté.** Cinq séances de routine avaient tourné, toutes sur le
