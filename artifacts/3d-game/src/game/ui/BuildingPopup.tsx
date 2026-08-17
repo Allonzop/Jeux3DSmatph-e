@@ -73,7 +73,7 @@ export function BuildingPopup() {
               <div>
                 <h2 className="text-xl font-bold text-white tracking-wide">{data.name}</h2>
                 <div className="text-sm font-medium" style={{ color: data.color }}>
-                  Level {level} <span className="text-white/30">/ {data.maxLevel}</span>
+                  Niveau {level} <span className="text-white/30">/ {data.maxLevel}</span>
                 </div>
               </div>
             </div>
@@ -99,12 +99,14 @@ export function BuildingPopup() {
             
             {/* Current Stats */}
             <div className="bg-black/20 rounded-xl p-4 border border-white/5">
-              <div className="text-xs uppercase tracking-wider text-white/40 mb-2">Current Production</div>
+              <div className="text-xs uppercase tracking-wider text-white/40 mb-2">
+                {level > 0 ? 'Production actuelle' : 'Production une fois construit'}
+              </div>
               <div className="text-white font-medium">
-                <PassiveYield passive={currentLevelData?.passive || {}} />
+                <PassiveYield passive={(level > 0 ? currentLevelData?.passive : nextLevelData?.passive) || {}} />
               </div>
               {data.id === 'tourelle' && level > 0 && (
-                <div className="text-cyan-400 font-medium text-sm mt-1">Fires beam dealing 50 dmg/sec</div>
+                <div className="text-cyan-400 font-medium text-sm mt-1">Tire un rayon infligeant 50 dgt/sec</div>
               )}
             </div>
 
@@ -112,9 +114,9 @@ export function BuildingPopup() {
             {!isMax ? (
               <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm uppercase tracking-wider text-white/40">Next Level Cost</div>
+                  <div className="text-sm uppercase tracking-wider text-white/40">Coût du niveau suivant</div>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(nextLevelData!.cost).map(([key, val]) => {
                     const have = resources[key as ResourceType];
@@ -131,10 +133,10 @@ export function BuildingPopup() {
                 </div>
 
                 <div className="text-sm bg-blue-500/10 text-blue-300 p-3 rounded-xl border border-blue-500/20">
-                  <span className="font-bold uppercase text-xs mr-2">New Yield:</span> 
+                  <span className="font-bold uppercase text-xs mr-2">Nouveau rendement :</span>
                   <PassiveYield passive={nextLevelData!.passive || {}} />
                   {data.id === 'tourelle' && (
-                    <span>(Increased fire rate / range implicit)</span>
+                    <span>(cadence de tir / portée augmentées)</span>
                   )}
                 </div>
 
@@ -142,19 +144,19 @@ export function BuildingPopup() {
                   disabled={!canAfford}
                   onClick={() => upgradeBuilding(selectedBuilding, nextLevelData!.cost)}
                   className={`mt-2 py-3 px-6 rounded-xl font-bold uppercase tracking-wider transition-all
-                    ${canAfford 
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_4px_0_#1e3a8a] active:translate-y-1 active:shadow-[0_0px_0_#1e3a8a] hover:brightness-110' 
+                    ${canAfford
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_4px_0_#1e3a8a] active:translate-y-1 active:shadow-[0_0px_0_#1e3a8a] hover:brightness-110'
                       : 'bg-white/5 text-white/30 cursor-not-allowed border border-white/5'
                     }
                   `}
                 >
-                  {canAfford ? (level === 0 ? 'Build' : 'Upgrade') : 'Not enough resources'}
+                  {canAfford ? (level === 0 ? 'Construire' : 'Améliorer') : 'Ressources insuffisantes'}
                 </button>
               </div>
             ) : (
               <div className="py-8 text-center flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-transparent to-black/20 rounded-xl">
                 <ResourceIcon type="energie_rire" className="w-10 h-10" />
-                <div className="text-amber-400 font-bold uppercase tracking-widest">Maximum Level Reached</div>
+                <div className="text-amber-400 font-bold uppercase tracking-widest">Niveau maximum atteint</div>
               </div>
             )}
           </div>

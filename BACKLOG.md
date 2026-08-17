@@ -34,11 +34,9 @@ Par ordre d'importance — l'agent prend celle du haut.
 - [x] **Pouvoir déplacer un bâtiment déjà posé.** *(2026-08-17 : bouton
       « déplacer » ajouté dans le panneau du bâtiment. Voir JOURNAL.md.)*
 
-- [ ] **Le panneau de construction est en anglais.** `CURRENT PRODUCTION`,
-      `NEXT LEVEL COST`, `NEW YIELD`, `BUILD`, `Level 0 / 4` — tout le reste du
-      jeu est en français. Et au niveau 0 il affiche « — » au lieu de ce que le
-      bâtiment rapporterait une fois construit, ce qui est justement
-      l'information qui aide à décider.
+- [x] **Le panneau de construction est en anglais.** *(2026-08-17 : traduit,
+      et le niveau 0 affiche désormais le rendement prévu au lieu de « — ».
+      Voir JOURNAL.md.)*
 
 - [ ] **Régler l'équilibrage du combat au ressenti.** Portée et dégâts du héros
       (`HERO_RANGE`, `HERO_DPS` dans `Hero.tsx`) sont un premier jet posé sans

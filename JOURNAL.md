@@ -11,6 +11,69 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-17 (bis) — Panneau de construction en français
+
+**Constat de départ.** La branche `claude/bold-brown-hdelot` de la séance
+précédente était déjà fusionnée dans `main` (identique à `origin/main`,
+`ca56496`) : PR mergée par `auto-merge.yml`, comme prévu. Redémarrée depuis
+`origin/main` avant de commencer, même nom de branche.
+
+**Fait**
+
+- Traduit tout le texte anglais de `BuildingPopup.tsx` (le seul fichier UI qui
+  en contenait — vérifié par recherche sur tout `ui/`) : « Level » →
+  « Niveau », « Current Production » → « Production actuelle », « Next Level
+  Cost » → « Coût du niveau suivant », « New Yield: » → « Nouveau
+  rendement : », « Build »/« Upgrade »/« Not enough resources » →
+  « Construire »/« Améliorer »/« Ressources insuffisantes », « Maximum Level
+  Reached » → « Niveau maximum atteint », la ligne de la tourelle et la
+  mention de cadence de tir.
+- Le niveau 0 affichait « — » dans la case production : `currentLevelData`
+  est `null` avant construction, il n'y a rien à afficher. Corrigé en
+  affichant le rendement de `nextLevelData` (celui du niveau 1) à la place,
+  avec un intitulé qui change en conséquence : « Production actuelle » une
+  fois construit, « Production une fois construit » avant.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets, après `pnpm install` — le
+  `node_modules` racine n'existait pas au démarrage de la séance) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé, cette séance n'a pas touché au combat.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png`, ouvert :
+  aucune régression sur les six bâtiments (le panneau ne s'ouvre pas depuis
+  cette vue, donc pas de texte à y lire).
+- **Popup ouvert et regardé**, hors des deux commandes standard (aucune des
+  deux n'ouvre de panneau) : script Playwright ad hoc réutilisant
+  `openGame`/`makeSave` de `lib.mjs`, sauvegarde avec la hutte au niveau 0 et
+  la tourelle au niveau 2, clic sur les puces correspondantes. Capture de la
+  hutte (niveau 0) : « Niveau 0 / 5 », « PRODUCTION UNE FOIS CONSTRUIT »,
+  « +2 /sec », « COÛT DU NIVEAU SUIVANT », « NOUVEAU RENDEMENT : », bouton
+  « CONSTRUIRE » — plus de « — ». Capture de la tourelle (niveau 2) :
+  « PRODUCTION ACTUELLE », « Tire un rayon infligeant 50 dgt/sec », bouton
+  « AMÉLIORER ». Aucun texte anglais restant sur les deux captures.
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` : 5/5
+  — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté cette séance : la tâche était un remplacement de texte direct,
+  pas de fausse piste.
+
+**Reste ouvert**
+
+- Voir `BACKLOG.md` : équilibrage du combat, animation de mort des monstres,
+  et le bloc FEEDBACK d'Allonzo du 15/08 (grid, instanciation multiple,
+  pacing, vagues).
+- **Observation, hors périmètre de cette tâche** : sur les deux captures du
+  popup, une étiquette orange « Construire » (label 3D flottant au-dessus des
+  bâtiments non construits, `Buildings.tsx` ligne ~196) déborde par-dessus le
+  texte du panneau — problème de superposition/z-index entre le DOM 3D et le
+  popup HTML, préexistant, sans lien avec la traduction. À regarder si
+  Allonzo le juge gênant.
+
+---
+
 ## 2026-08-17 — Déplacer un bâtiment déjà posé
 
 **Constat de départ.** Comme la séance précédente, la copie locale de
