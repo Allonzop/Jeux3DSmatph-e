@@ -31,9 +31,8 @@ Par ordre d'importance — l'agent prend celle du haut.
       anneau `ringGeometry` à 8 segments ajouté dans `BuildingWrapper`,
       généralisé aux six bâtiments. Voir JOURNAL.md.)*
 
-- [ ] **Pouvoir déplacer un bâtiment déjà posé.** Une fois l'emplacement
-      choisi, il est définitif — on ne peut plus que construire dessus. Il
-      faudrait une action « déplacer » dans le panneau du bâtiment.
+- [x] **Pouvoir déplacer un bâtiment déjà posé.** *(2026-08-17 : bouton
+      « déplacer » ajouté dans le panneau du bâtiment. Voir JOURNAL.md.)*
 
 - [ ] **Le panneau de construction est en anglais.** `CURRENT PRODUCTION`,
       `NEXT LEVEL COST`, `NEW YIELD`, `BUILD`, `Level 0 / 4` — tout le reste du

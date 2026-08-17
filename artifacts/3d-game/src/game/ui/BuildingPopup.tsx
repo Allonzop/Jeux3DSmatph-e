@@ -1,7 +1,7 @@
 import React from 'react';
 import { useGameStore, ResourceType } from '../store';
 import { BUILDINGS } from '../gamedata';
-import { ResourceIcon, BuildingIcon, CloseIcon } from './icons';
+import { ResourceIcon, BuildingIcon, CloseIcon, MoveIcon } from './icons';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function PassiveYield({ passive }: { passive: Partial<Record<string, number>> }) {
@@ -26,6 +26,7 @@ export function BuildingPopup() {
   const buildingLevels = useGameStore(state => state.buildingLevels);
   const upgradeBuilding = useGameStore(state => state.upgradeBuilding);
   const resources = useGameStore(state => state.resources);
+  const startPlacing = useGameStore(state => state.startPlacing);
 
   if (!selectedBuilding) return null;
 
@@ -76,12 +77,21 @@ export function BuildingPopup() {
                 </div>
               </div>
             </div>
-            <button 
-              onClick={() => selectBuilding(null)}
-              className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-colors"
-            >
-              <CloseIcon className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => startPlacing(selectedBuilding)}
+                title="Déplacer ce bâtiment"
+                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-colors"
+              >
+                <MoveIcon className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => selectBuilding(null)}
+                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-colors"
+              >
+                <CloseIcon className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Body */}

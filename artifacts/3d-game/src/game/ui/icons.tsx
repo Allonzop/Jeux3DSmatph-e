@@ -166,6 +166,21 @@ export function BuildingIcon({ id, className }: IconProps & { id: string }) {
   }
 }
 
+export function MoveIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path
+        d="M12 2.5 L12 21.5 M2.5 12 L21.5 12 M12 2.5 L9 5.5 M12 2.5 L15 5.5 M12 21.5 L9 18.5 M12 21.5 L15 18.5 M2.5 12 L5.5 9 M2.5 12 L5.5 15 M21.5 12 L18.5 9 M21.5 12 L18.5 15"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
 export function CloseIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden="true">

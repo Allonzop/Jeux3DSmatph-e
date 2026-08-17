@@ -11,6 +11,78 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-17 — Déplacer un bâtiment déjà posé
+
+**Constat de départ.** Comme la séance précédente, la copie locale de
+`claude/bold-brown-e1q9lx` contenait déjà 10 commits **jamais poussés** — pas
+de branche distante (`git ls-remote origin` ne la listait pas), et aucune PR
+ouverte à son nom. `main` distant était toujours figé sur « Système de
+reprise » (5b87e05) : ni le socle octogonal de la veille, ni `auto-merge.yml`
+lui-même n'étaient jamais arrivés jusque-là. Ce push les livre enfin, avec le
+travail de cette séance par-dessus.
+
+**Fait**
+
+- Bouton « déplacer » (icône flèches à 4 branches, nouvelle `MoveIcon` dans
+  `ui/icons.tsx`) ajouté dans l'en-tête de `BuildingPopup.tsx`, à côté du
+  bouton de fermeture. Appelle `startPlacing(selectedBuilding)`.
+- Aucune autre modification nécessaire : le mode de placement
+  (`PlacementController` dans `scene/Buildings.tsx`) excluait déjà le
+  bâtiment en cours de placement de la liste des collisions
+  (`.filter(([id]) => id !== placingBuilding)`), et `placeBuilding` ne touche
+  pas `buildingLevels` — la mécanique de « déplacement » existait déjà
+  dans le magasin, il manquait seulement l'affordance UI pour la déclencher
+  sur un bâtiment déjà construit. Tap sur le sol → nouvelle position, niveau
+  et production inchangés, panneau réouvert automatiquement sur le nouvel
+  emplacement.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé, cette séance n'a pas touché au combat.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png`, ouvert :
+  aucune régression visuelle sur les six bâtiments à leurs positions fixes.
+- **Test bout-en-bout du déplacement**, hors des deux commandes standard
+  (celles-ci ne couvrent ni les popups ni les interactions de pointeur) :
+  script Playwright ad hoc ouvrant le jeu avec la sauvegarde `--village`,
+  cliquant la puce Hutte, puis le bouton déplacer, puis un point du sol —
+  calculé à l'avance en rejouant en Node la même géométrie que
+  `checkPlacement`/`buildScatter` (seed identique) et projeté à l'écran avec
+  la caméra de `Camera.tsx` (`three.js` côté Node), pour taper un point
+  garanti valide sans deviner à l'aveugle. Résultat lu directement dans le
+  `localStorage` après coup : position de la hutte passée de `[-4,0,-3]` à
+  `[-2.45,0,-8.74]` (le point calculé), niveau et popup rouverte inchangés.
+  Capture d'écran du popup avant/après : même « Hutte, Level 2/5 ».
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` : 5/5
+  — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- *Cliquer un point du sol au hasard (ou à vue sur une capture d'écran) pour
+  tester le déplacement* — deux premiers essais ont visé des points en
+  réalité invalides (trop près d'un autre bâtiment ou de la lisière), donc le
+  clic était silencieusement ignoré par `checkPlacement` : `placingBuilding`
+  restait actif, la position ne changeait pas, et rien dans la console ne le
+  signalait (comportement voulu du jeu, pas un bug). Le sol est une bande
+  étroite entre `CORE_CLEAR_RADIUS` (4) et `WORLD_RADIUS - EDGE_MARGIN` (13),
+  truffée d'arbres/rochers/buissons dispersés par seed — deviner un point
+  valide à l'œil sur une capture n'est pas fiable. **Pour un test qui doit
+  taper un point précis, calculer la validité en rejouant la géométrie du
+  monde plutôt que de deviner.**
+
+**Reste ouvert**
+
+- Voir `BACKLOG.md` : panneau de construction en anglais, équilibrage du
+  combat, animation de mort des monstres, et le bloc FEEDBACK d'Allonzo du
+  15/08 (grid, instanciation multiple, pacing, vagues).
+- Le bouton déplacer n'a pas de confirmation ni d'annonce distincte du
+  placement initial (même bannière « Touchez le sol pour placer »). Pas gênant
+  à l'usage, mais une séance future pourrait distinguer le libellé
+  (« déplacer » vs « placer ») si Allonzo le juge utile.
+
+---
+
 ## 2026-08-16 — Socle octogonal sous chaque bâtiment, et neuf commits orphelins récupérés
 
 **Constat de départ.** La séance a démarré sur une copie locale de la branche
