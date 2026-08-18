@@ -43,9 +43,9 @@ Par ordre d'importance — l'agent prend celle du haut.
       pouvoir juger : le rendu logiciel tourne à quelques images par seconde. À
       reprendre sur un vrai appareil.
 
-- [ ] **Les monstres n'ont pas d'animation de mort.** `damageEnemy` les retire
-      du magasin dès que leurs points de vie tombent à zéro, ce qui démonte le
-      composant avant que son animation d'écrasement ait pu jouer.
+- [x] **Les monstres n'ont pas d'animation de mort.** *(2026-08-18 : corrigé —
+      `damageEnemy` ne retire plus l'ennemi du magasin dès 0 pv, il y reste le
+      temps de l'animation. Voir JOURNAL.md.)*
 
 Là c'est moi (Allonzo) qui écrit à la main j'ai fait une petit session de documentation pour répertorier les défauts du jeux. Mais en gros ça fait partie des tâches à faire.
 ### [FEEDBACK & REWORK] Équilibrage, Système de Construction et Game Loop, écrit le 15/08

@@ -258,22 +258,24 @@ export const useGameStore = create<GameState>()(
       damageEnemy: (id, amount) => {
         const wasActive = get().waveActive;
         set((state) => {
+          let justKilled = false;
           const enemies = state.enemies.map(e => {
             if (e.id === id) {
-              return { ...e, hp: Math.max(0, e.hp - amount) };
+              const hp = Math.max(0, e.hp - amount);
+              if (hp === 0 && e.hp > 0) justKilled = true;
+              return { ...e, hp };
             }
             return e;
           });
-          const livingEnemies = enemies.filter(e => e.hp > 0);
-          const waveActive = livingEnemies.length > 0;
-          // Seuls les monstres abattus comptent. Ceux qui atteignent le noyau
-          // passent par `damageCore`/`removeEnemy` et ne sont pas des victoires :
-          // c'est cette distinction qui fait varier la récompense.
-          const killed = enemies.length - livingEnemies.length;
+          // Le monstre reste dans `enemies` à 0 pv : `EnemyNode` (Enemies.tsx)
+          // joue son animation de mort puis se retire lui-même via
+          // `removeEnemy`. Le filtrer ici démonterait le composant avant que
+          // l'animation ait pu jouer.
+          const waveActive = enemies.some(e => e.hp > 0);
           return {
-            enemies: livingEnemies,
+            enemies,
             waveActive: state.waveActive ? waveActive : false,
-            waveKills: state.waveKills + killed,
+            waveKills: state.waveKills + (justKilled ? 1 : 0),
           };
         });
         if (wasActive && !get().waveActive) {

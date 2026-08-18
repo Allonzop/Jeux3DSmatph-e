@@ -11,6 +11,81 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-18 — Animation de mort des monstres
+
+**Choix de la tâche.** La première entrée non cochée du backlog
+(« équilibrage du combat ») exige explicitement un jugement « au ressenti »
+sur un vrai appareil — hors de portée de cet agent, et `shot.mjs`/`wave.mjs`
+ne mesurent ni le ressenti ni les performances (voir leur README). La
+retoucher sans pouvoir la juger aurait reproduit exactement l'écueil que le
+backlog signale déjà pour elle. Prise de la tâche suivante à la place :
+l'animation de mort des monstres.
+
+**Fait**
+
+- Cause confirmée en lisant `Enemies.tsx` : `EnemyNode` a bien un mécanisme
+  d'écrasement à la mort (`isDead`/`deathScale`/`deathSquash`, deux
+  `useFrame` dédiés) — mais `damageEnemy` (`store.ts`) filtrait l'ennemi hors
+  de `state.enemies` dès que ses pv touchaient 0, dans le même `set()`. Le
+  composant se démontait donc avant que son propre `useFrame` d'animation
+  n'ait eu une chance de tourner : le mécanisme existait, il n'était jamais
+  atteint.
+- `damageEnemy` (`store.ts`) ne filtre plus les ennemis à 0 pv hors du
+  tableau : ils y restent, `EnemyNode` détecte `hp <= 0`, joue l'animation,
+  puis se retire lui-même via `removeEnemy` (mécanisme déjà en place, jamais
+  déclenché). Le calcul de `waveKills`/`waveActive` a été adapté pour ne plus
+  dépendre du filtrage (`justKilled` détecté par transition individuelle,
+  `waveActive = enemies.some(e => e.hp > 0)`) — sinon un cadavre qui traîne
+  plusieurs frames aurait fait recompter un kill à chaque nouveau coup porté
+  à un *autre* ennemi.
+- `Hero.tsx` : la boucle de ciblage du héros ne sautait pas les ennemis à 0
+  pv (`Buildings.tsx`/tourelle le faisait déjà, `if (enemy.hp <= 0) continue`
+  — signe que ce cas était anticipé côté tourelle mais oublié côté héros).
+  Sans ce saut, le héros aurait pu rester braqué sur un cadavre en train de
+  s'écraser pendant qu'un monstre vivant approchait sans être inquiété.
+  Ajouté le même garde-fou.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets, après `pnpm install` — le
+  `node_modules` racine n'existait pas au démarrage de la séance) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres-final.png`,
+  ouvert : aucune régression sur les six bâtiments.
+- **L'animation elle-même, observée indirectement** (le rendu logiciel est
+  trop lent pour distinguer un écrasement de quelques frames à l'œil sur une
+  simple capture) : deux `console.log` temporaires ajoutés dans
+  `Enemies.tsx` — un au moment où `isDead` passe à vrai, un quand
+  `deathScale` atteint 0 et que `removeEnemy` est enfin appelé — puis retirés
+  avant ce commit. Script Playwright ad hoc (tourelle niveau 2, vague 1)
+  capturant ces deux lignes via `page.on('console')` : les deux événements
+  sont apparus séparés dans le temps pour chaque monstre tué (jusqu'à 5,3 s
+  d'écart pour le premier, sous le rendu logiciel ralenti), preuve que le
+  cadavre reste désormais dans le magasin le temps que l'animation tourne,
+  au lieu de disparaître au même tick que le coup fatal.
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` : 5/5
+  — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté cette séance : le bug était bien identifié dès la lecture du
+  code (mécanisme d'animation déjà écrit mais jamais atteint), pas de fausse
+  piste.
+
+**Reste ouvert**
+
+- Voir `BACKLOG.md` : équilibrage du combat (nécessite un vrai appareil,
+  hors de portée d'un agent), et le bloc FEEDBACK d'Allonzo du 15/08 (grid,
+  instanciation multiple, pacing, vagues).
+- La barre de vie flottante (`Html` dans `Enemies.tsx`) reste affichée à 0 %
+  pendant l'écrasement (elle ne se cache que quand `hpPercent === 1`). Pas
+  gênant à l'usage — une barre vide au-dessus d'un cadavre qui rétrécit reste
+  lisible — mais une séance future pourrait la masquer explicitement dès
+  `hp <= 0` si Allonzo la trouve distrayante.
+
+---
+
 ## 2026-08-17 (bis) — Panneau de construction en français
 
 **Constat de départ.** La branche `claude/bold-brown-hdelot` de la séance

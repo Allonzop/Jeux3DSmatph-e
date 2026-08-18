@@ -159,6 +159,10 @@ export function Hero() {
     let nearestId: string | null = null;
     let nearestDist = HERO_RANGE;
     for (const enemy of enemies) {
+      // Les monstres à 0 pv restent dans `enemies` le temps de leur animation
+      // de mort (voir Enemies.tsx) : ne pas les viser, sinon le héros reste
+      // braqué sur un cadavre pendant qu'un monstre vivant approche.
+      if (enemy.hp <= 0) continue;
       // Position vivante publiée par chaque monstre — `enemy.pos` n'est que son
       // point d'apparition et ne bouge jamais.
       const live = enemyPositions.get(enemy.id);
