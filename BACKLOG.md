@@ -72,8 +72,15 @@ Refonte de la Time Curve (Pacing) : Le jeu manque de satisfaction immédiate. Le
 Action : Implémenter une courbe de progression exponentielle pour les timers de construction/amélioration. Les 15 premières minutes de jeu doivent être ultra-rapides (timers très courts ou instantanés, beaucoup d'actions possibles) pour accrocher le joueur, avant de ralentir progressivement (comme le modèle de Clash of Clans).
 
 ⚔️ 4. Gestion et Équilibrage des Vagues (Wave Manager)
-Logique de progression des vagues (Condition de victoire) : Le joueur ne doit pas pouvoir passer à la vague suivante s'il perd.
-Action : Ajouter une logique de validation stricte dans le WaveManager. Bloquer l'incrémentation de l'index de la vague (wave_index) en cas de défaite. Si le joueur perd contre une vague spécifique, il doit rester sur cette même vague et la recommencer (bouton Retry) jusqu'à ce qu'il réussisse à la battre.
+~~Logique de progression des vagues (Condition de victoire) : Le joueur ne doit pas pouvoir passer à la vague suivante s'il perd.
+Action : Ajouter une logique de validation stricte dans le WaveManager. Bloquer l'incrémentation de l'index de la vague (wave_index) en cas de défaite. Si le joueur perd contre une vague spécifique, il doit rester sur cette même vague et la recommencer (bouton Retry) jusqu'à ce qu'il réussisse à la battre.~~
+*(2026-08-19 : fait — `waveNumber` ne s'incrémentait déjà pas pendant une
+défaite, mais rien n'empêchait la vague suivante de démarrer avec un index
+supérieur au prochain lancement. Ajout d'un drapeau `waveFailed` dans
+`store.ts` : `startWave` ne fait avancer l'index que si la dernière tentative
+de la vague en cours a été gagnée, sinon il relance la même. Voir JOURNAL.md.
+Le bouton reste « Lancer la vague » — pas de libellé « Retry » distinct,
+comme pour le bouton déplacer/placer déjà signalé le 17/08.)*
 Nerf de la difficulté (Spike à la vague 3) : La troisième vague agit comme un mur infranchissable (softlock de progression).
 Action : Revoir le fichier de configuration du WaveSpawner pour la Vague 3. Réduire les HP, les dégâts ou le nombre d'ennemis spawnés pour lisser la courbe de difficulté entre la Vague 2 et la Vague 4.
 Instructions pour l'Agent IA : Merci d'analyser ces points, de proposer les modifications de code correspondantes (notamment sur les scripts de BuilderController, EconomyManager, WaveManager et les Prefabs associés) et d'ouvrir les Pull Requests nécessaires par feature.

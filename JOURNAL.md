@@ -11,6 +11,88 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-19 — Une défaite ne devait plus faire avancer l'index de vague
+
+**Choix de la tâche.** Le backlog n'a qu'une entrée non cochée avec une case
+à cocher, « équilibrage du combat » — écartée pour la même raison que le
+15/08 et le 18/08 : elle exige un jugement « au ressenti » sur un vrai
+appareil, hors de portée de cet agent, et aucun des deux outils
+(`shot.mjs`/`wave.mjs`) ne mesure le ressenti ni les performances. Le reste
+du backlog est le bloc FEEDBACK d'Allonzo du 15/08, non structuré en cases
+mais explicitement « à faire ». Choisi le point le plus précis et le plus
+vérifiable qu'il contient (§4, Wave Manager) : « le joueur ne doit pas
+pouvoir passer à la vague suivante s'il perd ». C'est un vrai bug, pas un
+réglage de ressenti, et directement testable avec le magasin et une capture
+console — contrairement aux autres points du bloc (grid, instanciation
+multiple, pacing économique) qui demandent un jugement de conception plus
+large qu'une seule séance ne devrait pas trancher d'un coup.
+
+**Fait**
+
+- Confirmé en lisant `store.ts` : `startWave` calculait toujours
+  `nextWave = state.waveNumber + 1`, y compris juste après une défaite (où
+  `waveNumber` reste à la vague perdue, `damageCore` ne le touchant pas).
+  Résultat : relancer une vague après une défaite faisait sauter directement
+  à la vague suivante, plus difficile, au lieu de recommencer celle qui
+  venait d'être perdue — exactement le bug décrit dans le FEEDBACK.
+- Ajout d'un champ `waveFailed: boolean` au magasin (`GameState`,
+  `initialGameState`). Mis à `true` dans la branche défaite de `damageCore`
+  (à côté de `lastWaveOutcome: { type: 'defeat', ... }`), remis à `false` au
+  début de chaque `startWave` réussi. `startWave` calcule maintenant
+  `nextWave = state.waveFailed ? state.waveNumber : state.waveNumber + 1` :
+  une défaite fait recommencer la même vague, une victoire fait avancer
+  d'une.
+- Pas touché à l'UI : le bouton « Lancer la vague » sert aussi bien au
+  premier lancement qu'à la relance après défaite, pas besoin d'un libellé
+  « Retry » séparé pour que le comportement soit correct (juste signalé dans
+  le backlog comme piste facultative, pas fait cette séance).
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets, après `pnpm install` — le
+  `node_modules` racine n'existait pas au démarrage de la séance, comme à
+  chaque séance jusqu'ici) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé, ces deux scénarios ne couvrent qu'une seule vague chacun
+  et ne testent pas la relance après défaite.
+- **La relance après défaite elle-même**, hors de ce que couvrent les deux
+  commandes standard : script Playwright ad hoc réutilisant
+  `openGame`/`makeSave`/`serveStatic` de `lib.mjs`. Partie sans tourelle,
+  vague 1 lancée, défaite observée dans le texte de la page, toast fermé
+  d'un clic, vague relancée. Texte HUD lu après la relance :
+  **« WAVE 1 »** (majuscules dues au `text-transform` CSS du composant) —
+  pas « WAVE 2 ». Confirme que l'index reste bloqué sur la vague perdue tant
+  qu'elle n'est pas remportée.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png`, ouvert :
+  aucune régression sur les six bâtiments (cette séance n'a touché ni au
+  rendu ni au placement).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` : 5/5
+  — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté cette séance : la cause était visible dès la lecture de
+  `startWave`/`damageCore` (l'index n'était jamais retenu après une
+  défaite), pas de fausse piste.
+
+**Reste ouvert**
+
+- Voir `BACKLOG.md` : équilibrage du combat (nécessite un vrai appareil), et
+  le reste du bloc FEEDBACK d'Allonzo du 15/08 — agrandissement de la carte,
+  souplesse du placement, feedback visuel constructible/bloqué, levée du cap
+  d'instance sur Hutte/Tourelle, restauration du spawner du Bar
+  (« Chasseurs spatiaux »), buff du tick de récolte, courbe de pacing
+  exponentielle, et le nerf de la vague 3. Chacun mériterait sa propre
+  séance : ce sont des changements de conception, pas des corrections de bug
+  isolées comme celle d'aujourd'hui.
+- Le bouton de lancement de vague ne distingue toujours pas visuellement un
+  premier lancement d'une relance après défaite (même libellé « Lancer la
+  vague »). Pas gênant pour la mécanique — corrigée cette séance — mais une
+  séance future pourrait ajouter un libellé « Réessayer » si Allonzo le
+  trouve plus clair.
+
+---
+
 ## 2026-08-18 — Animation de mort des monstres
 
 **Choix de la tâche.** La première entrée non cochée du backlog

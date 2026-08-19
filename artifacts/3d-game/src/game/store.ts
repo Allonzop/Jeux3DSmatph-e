@@ -43,6 +43,8 @@ export interface GameState {
   coreMaxHp: number;
   waveActive: boolean;
   waveNumber: number;
+  /** true after the current waveNumber was lost: the next startWave retries it instead of advancing */
+  waveFailed: boolean;
   enemies: Enemy[];
   particles: Particle[];
   selectedBuilding: string | null;
@@ -126,6 +128,7 @@ const initialGameState = () => ({
   coreMaxHp: 100,
   waveActive: false,
   waveNumber: 0,
+  waveFailed: false,
   enemies: [] as Enemy[],
   particles: [] as GameState['particles'],
   selectedBuilding: null,
@@ -203,7 +206,9 @@ export const useGameStore = create<GameState>()(
         const state = get();
         if (state.waveActive) return;
 
-        const nextWave = state.waveNumber + 1;
+        // A lost wave keeps its index: the player retries it, never skips
+        // ahead to a harder one just for having failed.
+        const nextWave = state.waveFailed ? state.waveNumber : state.waveNumber + 1;
         const enemyCount = nextWave === 1 ? 3 : nextWave === 2 ? 5 : 5 + nextWave * 2;
         
         const newEnemies: Enemy[] = [];
@@ -222,6 +227,7 @@ export const useGameStore = create<GameState>()(
         set({
           waveActive: true,
           waveNumber: nextWave,
+          waveFailed: false,
           enemies: newEnemies,
           coreHp: state.coreMaxHp,
           lastWaveOutcome: null,
@@ -241,6 +247,7 @@ export const useGameStore = create<GameState>()(
             return {
               coreHp: 0,
               waveActive: false,
+              waveFailed: true,
               enemies: [],
               resources: {
                 boulons: state.resources.boulons - (losses.boulons || 0),
