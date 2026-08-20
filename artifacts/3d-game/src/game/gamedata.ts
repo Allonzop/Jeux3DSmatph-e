@@ -63,11 +63,11 @@ export const BUILDINGS: Record<string, BuildingData> = {
     color: '#f4a261',
     maxLevel: 5,
     levels: [
-      { cost: { boulons: 50 }, passive: { boulons: 2 } },
-      { cost: { boulons: 120 }, passive: { boulons: 3 } },
-      { cost: { boulons: 400 }, passive: { boulons: 4 } },
-      { cost: { boulons: 900, matiere_floue: 10 }, passive: { boulons: 7 } },
-      { cost: { boulons: 2000, matiere_floue: 30 }, passive: { boulons: 12 } }
+      { cost: { boulons: 50 }, passive: { boulons: 4 } },
+      { cost: { boulons: 120 }, passive: { boulons: 6 } },
+      { cost: { boulons: 400 }, passive: { boulons: 8 } },
+      { cost: { boulons: 900, matiere_floue: 10 }, passive: { boulons: 14 } },
+      { cost: { boulons: 2000, matiere_floue: 30 }, passive: { boulons: 24 } }
     ]
   },
   ferme: {

@@ -11,6 +11,95 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-20 — Production de Boulons de la Hutte doublée
+
+**Choix de la tâche.** Le backlog n'a toujours qu'une seule entrée à case
+non cochée, « équilibrage du combat » — écartée pour la même raison que les
+séances du 15/08, 18/08 et 19/08 : elle exige un jugement « au ressenti » sur
+un vrai appareil, hors de portée de cet agent. Le reste vient du bloc
+FEEDBACK d'Allonzo du 15/08. Avant de choisir, exploré en détail le point
+§2 « Correction de régression (Missing Scripts) : restaurer la logique du
+bâtiment Bar (Spawner), Chasseurs spatiaux » qui se présentait comme le plus
+proche d'un bug ponctuel (comme le Wave Manager du 19/08). Vérifié par
+lecture du code (`gamedata.ts`, `Buildings.tsx`, `Villagers.tsx`,
+`BuildingPopup.tsx`) et par l'historique git (`git log --all -S"Hunter"`,
+`-S"Chasseur"`, `-S"Spawner"` sur `artifacts/3d-game/src`, tout confondu,
+zéro résultat) : **ce n'est pas une régression**. Aucune trace, dans le code
+actuel ni dans un seul commit passé, d'un système de spawn de "Chasseurs
+spatiaux" par le Bar. Le Bar ne fait aujourd'hui que ce que les cinq autres
+bâtiments font (faire apparaître un villageois décoratif à la construction,
+`Villagers.tsx`). "Restaurer" est trompeur : il n'y a rien à restaurer, ce
+serait concevoir de zéro un nouveau type d'entité combattante avec IA et
+intégration au wave manager — hors de portée d'une seule séance. Écarté au
+profit du point le plus précis et vérifiable du bloc §3 : « Buff du Tick Rate
+de la ressource de base (Boulons) », qui pointe vers des constantes
+numériques isolées et directement mesurables.
+
+**Fait**
+
+- `GameCanvas.tsx` (`PassiveTicker`) confirmé comme le seul point d'entrée de
+  la production passive : toutes les 1000 ms, il additionne
+  `BUILDINGS[id].levels[level-1].passive` pour chaque bâtiment construit et
+  appelle `tickPassive`. Une seule source de vérité pour les valeurs
+  (`gamedata.ts`), pas de duplication ailleurs dans le code (vérifié par
+  recherche des littéraux `boulons: 2/3/4/7/12`).
+- Doublé la production passive de Boulons de la Hutte à chaque niveau dans
+  `gamedata.ts` : 2→4, 3→6, 4→8, 7→14, 12→24 par seconde. Coûts de
+  construction/amélioration inchangés — seule la récolte passive est
+  concernée, comme demandé (« La récolte est beaucoup trop lente, même avec
+  une Hutte améliorée »). Les autres bâtiments (Ferme, Marché) et la récolte
+  manuelle sur les nœuds de ressources (`ResourceNodes.tsx`) n'ont pas été
+  touchés — la demande porte spécifiquement sur les Boulons.
+
+**Vérifié comment**
+
+- `pnpm install` (nécessaire, `node_modules` absent au démarrage de la
+  séance) puis `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé, cette séance n'a pas touché au combat.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png`, ouvert :
+  aucune régression sur les six bâtiments (changement de données pures, pas
+  de rendu).
+- **Le taux réel de production, hors de portée des deux commandes standard**
+  (aucune des deux ne mesure l'écoulement des ressources dans le temps) :
+  script Playwright ad hoc réutilisant `openGame`/`makeSave`/`serveStatic` de
+  `lib.mjs`, sauvegarde avec Hutte niveau 1 et ressources à 0, lu le
+  `localStorage` à 6 s puis 11 s après ouverture. Delta observé : 20 Boulons
+  sur 5 s, soit 4/s — la nouvelle valeur exacte du niveau 1, contre 2/s
+  attendu avant ce changement. Confirme que le doublement est bien
+  fonctionnel, pas seulement une donnée modifiée sans effet.
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` : 5/5
+  — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- *Traiter la restauration du Bar comme une régression à corriger* — écarté
+  avant toute modification de code, sur preuve négative (recherche git
+  complète, aucune trace du terme "Hunter"/"Chasseur"/"Spawner" dans tout
+  l'historique). **Avant de traiter un point du FEEDBACK comme une
+  régression ("a perdu", "restaurer"), vérifier d'abord dans l'historique
+  git que la fonctionnalité a réellement existé — le mot du FEEDBACK ne
+  suffit pas comme preuve.**
+
+**Reste ouvert**
+
+- Voir `BACKLOG.md` : équilibrage du combat (nécessite un vrai appareil), et
+  le reste du bloc FEEDBACK d'Allonzo du 15/08 — agrandissement de la carte,
+  souplesse du placement, feedback visuel constructible/bloqué, levée du cap
+  d'instance sur Hutte/Tourelle (pas un simple flag : `buildingLevels`/
+  `buildingPositions` sont des `Record<string, ...>` indexés par id de
+  bâtiment dans `store.ts` — lever le cap demande de refactoriser ce modèle
+  en collections indexées par instance à travers `store.ts`, `Buildings.tsx`,
+  `Villagers.tsx`, `BuildingPopup.tsx` et `world.ts`), spawn "Chasseurs
+  spatiaux" du Bar (conception complète, pas une régression — voir
+  ci-dessus), courbe de pacing exponentielle, et le nerf de la vague 3.
+- Le doublement du taux de Boulons est un premier chiffre raisonnable, pas
+  calibré finement : si Allonzo le trouve encore trop lent (ou trop rapide)
+  une fois testé sur appareil, resserrer `gamedata.ts` directement, c'est la
+  seule source de vérité.
+
+---
+
 ## 2026-08-19 — Une défaite ne devait plus faire avancer l'index de vague
 
 **Choix de la tâche.** Le backlog n'a qu'une entrée non cochée avec une case

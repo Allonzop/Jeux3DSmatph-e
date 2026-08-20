@@ -66,8 +66,11 @@ Correction de régression (Missing Scripts) : Certains bâtiments ont perdu leur
 Action : Restaurer la logique du bâtiment "Bar" (Spawner). Il doit à nouveau pouvoir générer/gérer les entités "Chasseurs spatiaux" (Space Hunters).
 
 ⚖️ 3. Game Economy & Pacing (Ressources & Progression)
-Buff du Tick Rate de la ressource de base (Boulons) : La récolte est beaucoup trop lente, même avec une Hutte améliorée.
-Action : Réduire le time_between_ticks ou augmenter le yield_amount de base pour la génération de boulons. La boucle économique de base doit être plus généreuse.
+~~Buff du Tick Rate de la ressource de base (Boulons) : La récolte est beaucoup trop lente, même avec une Hutte améliorée.
+Action : Réduire le time_between_ticks ou augmenter le yield_amount de base pour la génération de boulons. La boucle économique de base doit être plus généreuse.~~
+*(2026-08-20 : fait — production passive de Boulons de la Hutte doublée à
+chaque niveau (2/3/4/7/12 → 4/6/8/14/24 par seconde), coûts de construction
+inchangés. Voir JOURNAL.md.)*
 Refonte de la Time Curve (Pacing) : Le jeu manque de satisfaction immédiate. Le joueur attend trop longtemps au début.
 Action : Implémenter une courbe de progression exponentielle pour les timers de construction/amélioration. Les 15 premières minutes de jeu doivent être ultra-rapides (timers très courts ou instantanés, beaucoup d'actions possibles) pour accrocher le joueur, avant de ralentir progressivement (comme le modèle de Clash of Clans).
 
