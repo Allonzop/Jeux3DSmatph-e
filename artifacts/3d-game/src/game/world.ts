@@ -4,10 +4,20 @@
 export const WORLD_RADIUS = 14; // playable plateau radius (was 8.5)
 export const EDGE_MARGIN = 1; // keep buildings away from the cliff edge
 export const CORE_CLEAR_RADIUS = 4; // nothing scattered/built near the crystal core
-// Ecart minimal entre deux batiments. Releve avec BUILDING_SCALE (1,35) : a
-// 2,6 les batiments agrandis se chevauchaient visuellement, alors que le
-// placement les declarait valides.
+/**
+ * Ecart minimal entre deux batiments, quand on ne connait pas leur gabarit.
+ *
+ * Ce n'est plus la regle generale : chaque batiment porte desormais son propre
+ * rayon d'encombrement (`footprint` dans gamedata.ts), et deux batiments se
+ * genent si la distance de leurs centres est sous la somme de leurs rayons.
+ * Cette constante ne sert plus que de repli quand un appelant ne fournit pas
+ * de rayon — et elle documente d'ou on vient : 3,4 unites pour tout le monde,
+ * y compris pour une antenne large de un metre.
+ */
 export const BUILDING_MIN_GAP = 3.4;
+
+/** Rayon d'encombrement suppose quand l'appelant n'en donne pas. */
+export const DEFAULT_FOOTPRINT = BUILDING_MIN_GAP / 2;
 export const ENEMY_SPAWN_RADIUS = WORLD_RADIUS + 1;
 
 // Legacy hardcoded building spots (pre free-placement saves migrate to these).
@@ -147,32 +157,74 @@ export type PlacementCheck = { valid: boolean; reason: 'ok' | 'edge' | 'core' | 
  * genants qui rendent le placement flou » du playtest — plutot que de retirer
  * le decor, on laisse le joueur faire sa place.
  */
+/** Un batiment deja pose, avec son gabarit. */
+export type PlacedBuilding = {
+  pos: [number, number, number];
+  footprint: number;
+};
+
+/** Rayon d'un gisement de ressources, pour le degagement autour. */
+const NODE_RADIUS = 1.0;
+
+/**
+ * Part du gabarit qui compte face au decor et aux gisements.
+ *
+ * Un batiment ne doit pas garder ses distances avec un arbre comme avec un
+ * autre batiment : un toit qui surplombe un buisson ne gene personne, deux
+ * socles qui se chevauchent, si.
+ *
+ * Le chiffre n'est pas choisi au jugé. L'ancienne regle imposait une marge
+ * fixe de 1,2 unite autour de chaque decor, calibree pour le plus large des
+ * batiments — la hutte, rayon 1,6. `1.6 * 0.75 = 1.2` : la hutte et le marche
+ * gardent donc exactement le degagement qu'ils avaient, et tout ce qui est
+ * plus etroit en gagne. **Personne ne perd de place, c'etait la condition.**
+ *
+ * Mesure avec un village de six batiments, plateau echantillonne au quart
+ * d'unite : sans ce facteur, la hutte tombait a −45 % d'emplacements valides
+ * alors que l'antenne gagnait +92 %. Le but etait d'assouplir, pas d'echanger.
+ */
+const DECOR_CLEARANCE = 0.75;
+
 export function checkPlacement(
   x: number,
   z: number,
-  otherBuildings: [number, number, number][],
+  otherBuildings: PlacedBuilding[],
   cleared?: Record<string, true>,
   /** Rayon constructible dans cette direction — voir `maxRadiusAt` (zones.ts). */
   limit: number = WORLD_RADIUS,
+  /** Gabarit du batiment qu'on pose — voir `footprint` dans gamedata.ts. */
+  footprint: number = DEFAULT_FOOTPRINT,
 ): PlacementCheck {
   const dist = Math.sqrt(x * x + z * z);
   if (dist > limit - EDGE_MARGIN) return { valid: false, reason: 'edge' };
   if (dist < CORE_CLEAR_RADIUS) return { valid: false, reason: 'core' };
+
+  // Somme des deux gabarits plutot qu'un ecart unique : deux tourelles
+  // etroites peuvent se serrer, un marche et une hutte gardent leurs distances.
   for (const b of otherBuildings) {
-    const dx = x - b[0];
-    const dz = z - b[2];
-    if (Math.sqrt(dx * dx + dz * dz) < BUILDING_MIN_GAP) return { valid: false, reason: 'building' };
+    const dx = x - b.pos[0];
+    const dz = z - b.pos[2];
+    if (Math.sqrt(dx * dx + dz * dz) < footprint + b.footprint) {
+      return { valid: false, reason: 'building' };
+    }
   }
+
+  // Le decor et les gisements : leur rayon plus une part du notre, au lieu
+  // d'une marge fixe de 1,2 pour tout le monde. Voir `DECOR_CLEARANCE`.
   for (const o of BLOCKERS) {
     if (cleared && cleared[o.id]) continue;
     const dx = x - o.x;
     const dz = z - o.z;
-    if (Math.sqrt(dx * dx + dz * dz) < o.r + 1.2) return { valid: false, reason: 'decor' };
+    if (Math.sqrt(dx * dx + dz * dz) < o.r + footprint * DECOR_CLEARANCE) {
+      return { valid: false, reason: 'decor' };
+    }
   }
   for (const n of Object.values(RESOURCE_NODE_POSITIONS)) {
     const dx = x - n[0];
     const dz = z - n[2];
-    if (Math.sqrt(dx * dx + dz * dz) < 2.2) return { valid: false, reason: 'decor' };
+    if (Math.sqrt(dx * dx + dz * dz) < NODE_RADIUS + footprint * DECOR_CLEARANCE) {
+      return { valid: false, reason: 'decor' };
+    }
   }
   return { valid: true, reason: 'ok' };
 }

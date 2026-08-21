@@ -11,8 +11,8 @@ import {
   MARCHE_LOOT_BONUS,
 } from './gamedata';
 import { composeWave, ENEMY_TYPES, type EnemyKind } from './enemies';
-import { clearableKind, type ClearableKind } from './world';
-import { ZONES } from './zones';
+import { clearableKind, checkPlacement, type ClearableKind } from './world';
+import { ZONES, maxRadiusAt } from './zones';
 import { heroTrack, type HeroTrackId } from './hero';
 import { xpForLevel, levelUpReward, XP } from './progress';
 import { resetPowers } from './heroPowers';
@@ -699,9 +699,20 @@ export const useGameStore = create<GameState>()(
 declare global {
   interface Window {
     __villageStore?: typeof useGameStore;
+    /** Regles de placement, pour que les outils puissent les mesurer. */
+    __villagePlacement?: {
+      check: typeof checkPlacement;
+      maxRadiusAt: typeof maxRadiusAt;
+      buildings: typeof BUILDINGS;
+    };
   }
 }
 
 if (typeof window !== 'undefined') {
   window.__villageStore = useGameStore;
+  // Meme raison que le magasin : `tools/game-check` pilote le jeu construit et
+  // ne peut rien importer. Sans cette poignee, impossible de compter les
+  // emplacements valides d'une carte — donc impossible de dire si une
+  // modification des regles de placement a vraiment assoupli quoi que ce soit.
+  window.__villagePlacement = { check: checkPlacement, maxRadiusAt, buildings: BUILDINGS };
 }

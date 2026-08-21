@@ -32,6 +32,21 @@ export type BuildingData = {
   maxLevel: number;
   /** Combien d'exemplaires le joueur peut poser. Voir `instanceIds` plus bas. */
   maxInstances: number;
+  /**
+   * Rayon d'encombrement au sol, en unites du monde, echelle de rendu comprise.
+   *
+   * Le placement demandait auparavant un ecart fixe de 3,4 unites entre deux
+   * batiments, quel que soit leur gabarit : une antenne — un mat de 0,5 de
+   * rayon — reservait autant de terrain qu'un marche de 2,2 de large. « Le
+   * placement des batiments est trop rigide », disait le backlog, avec pour
+   * action « revoir la taille des colliders ». C'est ce chiffre.
+   *
+   * Deux batiments se genent si la distance entre leurs centres est inferieure
+   * a la somme de leurs deux rayons. Le socle octogonal colore est dessine a
+   * ce rayon exactement : **l'anneau qu'on voit au sol est l'encombrement
+   * reel**, il n'y a rien a deviner.
+   */
+  footprint: number;
   levels: {
     cost: Partial<Resources>;
     passive: Partial<Resources>;
@@ -191,6 +206,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     blurb: 'Produit des boulons en continu, même jeu fermé. Un villageois vient s’y installer.',
     maxLevel: 5,
     maxInstances: 3,
+    footprint: 1.6,
     levels: [
       { cost: { boulons: 50 }, passive: { boulons: 4 } },
       { cost: { boulons: 120 }, passive: { boulons: 6 } },
@@ -213,6 +229,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     blurb: 'La seule source régulière de matière floue, la ressource des tours.',
     maxLevel: 4,
     maxInstances: 2,
+    footprint: 1.35,
     levels: [
       { cost: { boulons: 150 }, passive: {}, effect: 'Se met à produire au niveau 2.' },
       { cost: { boulons: 450, matiere_floue: 5 }, passive: { matiere_floue: 0.2 } },
@@ -228,6 +245,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     blurb: 'Recrute un Chasseur spatial par niveau : ils se battent à vos côtés pendant les vagues.',
     maxLevel: 4,
     maxInstances: 1,
+    footprint: 1.45,
     levels: [
       { cost: { boulons: 250 }, passive: {}, effect: '1 Chasseur spatial' },
       { cost: { boulons: 700, matiere_floue: 10 }, passive: {}, effect: '2 Chasseurs spatiaux' },
@@ -243,6 +261,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     blurb: 'Relais de combat : allonge la portée du héros et renforce son rayon.',
     maxLevel: 4,
     maxInstances: 1,
+    footprint: 1.1,
     levels: [
       { cost: { boulons: 600, matiere_floue: 15 }, passive: {}, effect: 'Héros : +1,1 portée, +12 dégâts/sec' },
       { cost: { boulons: 1500, matiere_floue: 35 }, passive: {}, effect: 'Héros : +2,2 portée, +24 dégâts/sec' },
@@ -258,6 +277,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     blurb: 'Produit de l’énergie de rire et majore le butin de chaque vague gagnée.',
     maxLevel: 3,
     maxInstances: 1,
+    footprint: 1.6,
     levels: [
       { cost: { boulons: 1000, matiere_floue: 25 }, passive: { energie_rire: 0.05 }, effect: 'Butin de vague +15 %' },
       { cost: { boulons: 2500, matiere_floue: 50 }, passive: { energie_rire: 0.12 }, effect: 'Butin de vague +30 %' },
@@ -279,6 +299,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     blurb: 'Rayon continu sur le monstre le plus proche. Ne touche pas les volants.',
     maxLevel: 5,
     maxInstances: 3,
+    footprint: 1.15,
     levels: [
       { cost: { boulons: 300 }, passive: {}, turret: laser(8, 50) },
       { cost: { boulons: 800, matiere_floue: 10 }, passive: {}, turret: laser(8.6, 70) },
@@ -295,6 +316,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     blurb: 'Obus lents qui explosent en zone : redoutable sur les groupes serrés.',
     maxLevel: 4,
     maxInstances: 2,
+    footprint: 1.25,
     levels: [
       { cost: { boulons: 700, matiere_floue: 20 }, passive: {},
         turret: { mode: 'mortier', range: 9, dps: 42, splash: 2.4, targets: 1, slow: 0, hitsAir: false } },
@@ -314,6 +336,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     blurb: 'Ralentit tous les monstres de sa zone, volants compris. Tue peu, sauve beaucoup.',
     maxLevel: 3,
     maxInstances: 2,
+    footprint: 1.15,
     levels: [
       { cost: { boulons: 900, matiere_floue: 30 }, passive: {},
         turret: { mode: 'cryo', range: 5, dps: 8, splash: 5, targets: 99, slow: 0.35, hitsAir: true },
@@ -334,6 +357,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     blurb: 'Arc qui frappe plusieurs monstres à la fois — la seule tour qui abat les volants.',
     maxLevel: 4,
     maxInstances: 2,
+    footprint: 1.2,
     levels: [
       { cost: { boulons: 1200, matiere_floue: 40, energie_rire: 4 }, passive: {},
         turret: { mode: 'tesla', range: 6.5, dps: 40, splash: 0, targets: 2, slow: 0, hitsAir: true },

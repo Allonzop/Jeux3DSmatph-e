@@ -86,18 +86,22 @@ function PlacementController() {
   // Portee de la tour en cours de pose, affichee pendant qu'on choisit : c'est
   // la seule facon de placer une defense en connaissance de cause.
   const previewRange = data?.levels[0]?.turret?.range ?? 0;
+  const ghostR = data?.footprint ?? 1.7;
 
   const updateGhost = (e: ThreeEvent<PointerEvent>) => {
     const x = e.point.x;
     const z = e.point.z;
+    // Chaque voisin est passe avec son propre gabarit : c'est la somme des
+    // deux rayons qui decide, pas un ecart fixe (voir `checkPlacement`).
     const others = Object.entries(useGameStore.getState().buildingPositions)
       .filter(([id]) => id !== placingBuilding)
-      .map(([, p]) => p);
+      .map(([id, p]) => ({ pos: p, footprint: buildingData(id)?.footprint ?? 1.7 }));
     // Le decor deblaye ne bloque plus : c'est tout l'interet du deblayage. Et
     // la limite exterieure suit le secteur, annexe ou non (voir zones.ts).
     const state = useGameStore.getState();
     const check = checkPlacement(
       x, z, others, state.clearedDecor, maxRadiusAt(x, z, state.unlockedZones),
+      data?.footprint,
     );
     validRef.current = check.valid;
     hasPointRef.current = true;
@@ -149,12 +153,14 @@ function PlacementController() {
 
       {/* Ghost marker: colored ring + center disc, green/red for validity */}
       <group ref={ghostRef} visible={false}>
+        {/* L'anneau du fantome est dessine au gabarit exact du batiment :
+            ce qu'on voit est ce qui sera reserve. */}
         <mesh rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[1.1, 1.35, 40]} />
+          <ringGeometry args={[ghostR - 0.22, ghostR, 40]} />
           <meshBasicMaterial ref={ringMatRef} color="#4ade80" transparent opacity={0.85} depthWrite={false} />
         </mesh>
         <mesh rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[1.1, 40]} />
+          <circleGeometry args={[ghostR - 0.22, 40]} />
           <meshBasicMaterial color={color} transparent opacity={0.25} depthWrite={false} />
         </mesh>
         {previewRange > 0 && (
@@ -252,6 +258,7 @@ function BuildingWrapper({ id, pos, color, children }: BuildingProps & { childre
 
   const gradientMap = useToonGradient();
   const data = buildingData(id);
+  const foot = data?.footprint ?? 1.7;
 
   return (
     <group position={surfacePos(pos[0], pos[2])} rotation={surfaceRotation(pos[0], pos[2])}>
@@ -266,7 +273,7 @@ function BuildingWrapper({ id, pos, color, children }: BuildingProps & { childre
           </mesh>
           {/* Glowing ground ring in the building's color for readability */}
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
-            <ringGeometry args={[1.25, 1.5, 40]} />
+            <ringGeometry args={[foot - 0.22, foot, 40]} />
             <meshBasicMaterial color={color} transparent opacity={0.7} depthWrite={false} />
           </mesh>
           <pointLight position={[0, 0.6, 0]} color={color} intensity={0.35} distance={2.6} />
@@ -295,35 +302,41 @@ function BuildingWrapper({ id, pos, color, children }: BuildingProps & { childre
           </Html>
         </group>
       ) : (
-        <group
-          ref={groupRef}
-          onPointerDown={tap}
-        >
+        <group onPointerDown={tap}>
           {/* Socle octogonal : identifie chaque bâtiment par sa couleur même
               quand son toit sursature sous le bloom (voir le patch blanc du
               même problème plus haut). `meshBasicMaterial`, non éclairé donc
-              insensible au bloom et aux pointLight voisines — la leçon de
-              cette même séance sur les lampes qui saturaient les socles.
-              Rayon choisi pour dépasser du plus large toit (hutte : 1.15). */}
+              insensible au bloom et aux pointLight voisines.
+
+              Il est **hors** du groupe mis à l'échelle, et dessiné au rayon
+              d'encombrement du bâtiment : l'anneau coloré qu'on voit au sol
+              est exactement la place que le placement lui réserve. Avant, il
+              avait un rayon fixe qui grandissait avec le niveau, et il ne
+              correspondait à rien de vérifiable. */}
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-            <ringGeometry args={[1.05, 1.3, 8]} />
+            <ringGeometry args={[foot - 0.25, foot, 8]} />
             <meshBasicMaterial color={color} />
           </mesh>
 
-          {/* Anneaux de rang : le socle s'elargit aux niveaux 3 et 5. */}
+          {/* Anneaux de rang : deux liserés fins au-delà du socle, aux niveaux
+              3 et 5. Ils ne débordent que de 0,2 unité — ils marquent le rang
+              sans mentir sur l'encombrement. */}
           {level >= 3 && (
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, 0]}>
-              <ringGeometry args={[1.36, 1.5, 8]} />
+              <ringGeometry args={[foot + 0.06, foot + 0.14, 8]} />
               <meshBasicMaterial color={color} transparent opacity={0.75} depthWrite={false} />
             </mesh>
           )}
           {level >= 5 && (
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]}>
-              <ringGeometry args={[1.56, 1.66, 8]} />
+              <ringGeometry args={[foot + 0.2, foot + 0.26, 8]} />
               <meshBasicMaterial color={color} transparent opacity={0.6} depthWrite={false} />
             </mesh>
           )}
 
+        <group
+          ref={groupRef}
+        >
           {/* Couronne de niveau : un jeton par niveau, en rotation lente. On
               compte le niveau d'un coup d'oeil sans ouvrir de panneau. */}
           <group ref={crownRef} position={[0, 1.55, 0]}>
@@ -339,6 +352,7 @@ function BuildingWrapper({ id, pos, color, children }: BuildingProps & { childre
           </group>
 
           {children}
+        </group>
         </group>
       )}
     </group>

@@ -74,6 +74,52 @@ niveau 5 rapportaient 72 boulons/seconde, de quoi payer une tourelle toutes les
 quatre secondes. Les niveaux 1 à 3 ne bougent pas : c'est le début de partie,
 et le buff du 20/08 répondait à un vrai problème.
 
+### Lot 5 — la grille de placement s'assouplit, mesures à l'appui
+
+Dernier point bien défini du backlog, demandé deux fois : « le placement des
+bâtiments est trop rigide, revoir la taille des colliders ».
+
+Le placement imposait un écart fixe de **3,4 unités entre deux centres**, quel
+que soit le gabarit : une antenne — un mât de 0,5 de rayon — réservait autant
+de terrain qu'un marché de 2,2 de large. Chaque bâtiment porte maintenant son
+`footprint` dans `gamedata.ts`, mesuré sur sa géométrie (1,1 pour l'antenne,
+1,6 pour la hutte et le marché), et deux bâtiments se gênent si la distance de
+leurs centres est sous **la somme de leurs deux rayons**.
+
+Le socle octogonal coloré est dessiné à ce rayon exactement, et il est sorti du
+groupe mis à l'échelle : **l'anneau qu'on voit au sol est l'encombrement réel**.
+Avant, il avait un rayon fixe qui grandissait avec le niveau et ne
+correspondait à rien de vérifiable.
+
+**Mesuré, pas supposé.** `window.__villagePlacement` expose les règles pour
+que les outils puissent les compter. Plateau échantillonné au quart d'unité
+avec les six bâtiments du scénario `--village` posés, emplacements valides :
+
+| bâtiment | rayon | valides | vs ancienne règle |
+|---|---|---|---|
+| antenne | 1,10 | 1787 | **+192 %** |
+| tourelle / cryo | 1,15 | 1677 | +174 % |
+| tesla | 1,20 | 1571 | +157 % |
+| mortier | 1,25 | 1452 | +137 % |
+| ferme | 1,35 | 1231 | +101 % |
+| bar | 1,45 | 1025 | +67 % |
+| hutte / marché | 1,60 | 779 | +27 % |
+| *(ancienne règle, écart fixe 3,4)* | — | *612* | — |
+
+**Le premier essai était un échange, pas un assouplissement.** En appliquant le
+gabarit entier au décor (`o.r + footprint`), l'antenne gagnait +92 % mais la
+hutte **perdait 45 %** : l'ancienne marge fixe de 1,2 unité autour du décor
+était calibrée pour le plus large des bâtiments. D'où `DECOR_CLEARANCE = 0.75`,
+choisi pour que `1.6 × 0.75 = 1.2` — la hutte et le marché gardent exactement
+le dégagement qu'ils avaient, et tout ce qui est plus étroit en gagne. La
+condition était que personne ne perde de place.
+
+**Attention en relisant une mesure** : l'émulation de l'« ancienne règle » doit
+être recalibrée quand la formule change. Après l'ajout de `DECOR_CLEARANCE`, ma
+ligne de référence est passée de 596 à 1150 emplacements sans que la règle
+d'avant ait bougé d'un pouce — la comparaison ne voulait plus rien dire. Les
+bons paramètres de l'émulation sont `footprint = 1.6` et voisins à `1.8`.
+
 ### Un piège de la boucle d'auto-fusion, découvert en poussant
 
 **Ne pas repousser sur la même branche tant que la fusion précédente n'a pas

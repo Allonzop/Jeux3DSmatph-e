@@ -127,8 +127,13 @@ Reste ouvert (voir JOURNAL.md du 21/08 au soir pour le détail) :
 - [ ] **Agrandir la zone jouable.** `WORLD_RADIUS` reste à 14 : la planète
       change l'envergure visuelle, pas la surface de jeu. Agrandir demande de
       reprendre ensemble la caméra, la vitesse du héros et la portée des tours.
-- [ ] **Assouplir la grille de placement.** `BUILDING_MIN_GAP` (3.4) et les
-      rayons de blocage du décor n'ont pas bougé.
+- [x] **Assouplir la grille de placement.** *(21/08 : fait — chaque bâtiment
+      porte son `footprint` dans `gamedata.ts` et deux bâtiments se gênent si
+      la distance de leurs centres est sous la somme de leurs rayons, au lieu
+      d'un écart fixe de 3,4 pour tout le monde. Le socle coloré est dessiné à
+      ce rayon exactement : l'anneau au sol est l'encombrement réel. Mesuré :
+      +27 % d'emplacements valides pour les plus larges, +192 % pour l'antenne,
+      personne n'en perd. Voir JOURNAL.md.)*
 - [ ] **Revoir les coûts en boulons du début de partie.** Le jeu n'a aucun
       timer de construction, donc la « time curve » demandée est à moitié déjà
       là ; ce sont les coûts qui n'ont pas été retouchés.
