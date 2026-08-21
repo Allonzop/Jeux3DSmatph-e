@@ -9,9 +9,18 @@ import { heroDef } from '../characters/defs';
 import { mulberry32 } from '../characters/rng';
 import { enemyPositions, enemyStates, damp } from './utils';
 import { cameraControl } from '../cameraControl';
+import { HERO_TRACKS, trackBonus, SURCHARGE_FACTOR } from '../hero';
+import { isSurcharged, nowSeconds } from '../heroPowers';
 import { ANTENNE_HERO_RANGE, ANTENNE_HERO_DPS } from '../gamedata';
 
 const SPEED = 4;
+
+/** Bonus d'une piste d'amelioration au niveau courant. Voir hero.ts. */
+function heroBonus(id: 'puissance' | 'portee' | 'vitesse'): number {
+  const track = HERO_TRACKS.find((t) => t.id === id);
+  if (!track) return 0;
+  return trackBonus(track, useGameStore.getState().heroUpgrades[id] || 0);
+}
 const DUST_COUNT = 8;
 
 // ---- Combat ----
@@ -87,8 +96,9 @@ export function Hero() {
     const isMoving = dx !== 0 || dz !== 0;
 
     if (isMoving) {
-      let nx = heroPos[0] + dx * SPEED * delta;
-      let nz = heroPos[2] + dz * SPEED * delta;
+      const speed = SPEED + heroBonus('vitesse');
+      let nx = heroPos[0] + dx * speed * delta;
+      let nz = heroPos[2] + dz * speed * delta;
 
       // La limite depend du secteur : elle recule dans les zones annexees, et
       // reste a WORLD_RADIUS partout ailleurs (voir zones.ts).
@@ -103,7 +113,7 @@ export function Hero() {
       // Tutorial step 0: completed after walking ~3 units total.
       const gs = useGameStore.getState();
       if (gs.tutorialStep === 0) {
-        tutorialMoveDist.current += SPEED * delta;
+        tutorialMoveDist.current += speed * delta;
         if (tutorialMoveDist.current > 3) gs.notifyTutorial('move');
       }
     }
@@ -175,8 +185,11 @@ export function Hero() {
 
     const { enemies, waveActive, damageEnemy, buildingLevels } = useGameStore.getState();
     const antenne = buildingLevels['antenne'] || 0;
-    const range = HERO_RANGE + antenne * ANTENNE_HERO_RANGE;
-    const dps = HERO_DPS + antenne * ANTENNE_HERO_DPS;
+    // Portee et degats cumulent l'Antenne (batiment) et les ameliorations du
+    // heros (hero.ts), puis la Surcharge si elle est active.
+    const range = HERO_RANGE + antenne * ANTENNE_HERO_RANGE + heroBonus('portee');
+    const base = HERO_DPS + antenne * ANTENNE_HERO_DPS + heroBonus('puissance');
+    const dps = isSurcharged(nowSeconds()) ? base * SURCHARGE_FACTOR : base;
 
     if (!waveActive || enemies.length === 0) {
       if (beam) beam.visible = false;

@@ -13,7 +13,9 @@ import {
 import { composeWave, ENEMY_TYPES, type EnemyKind } from './enemies';
 import { clearableKind, type ClearableKind } from './world';
 import { ZONES } from './zones';
+import { heroTrack, type HeroTrackId } from './hero';
 import { xpForLevel, levelUpReward, XP } from './progress';
+import { resetPowers } from './heroPowers';
 
 export type ResourceType = 'boulons' | 'matiere_floue' | 'energie_rire';
 
@@ -108,6 +110,10 @@ export interface GameState {
   /** Secteur dont la fiche d'annexion est ouverte. */
   selectedZone: string | null;
 
+  // ---- Le heros ----
+  /** Niveau atteint sur chaque piste d'amelioration. Voir hero.ts. */
+  heroUpgrades: Record<string, number>;
+
   addResources: (res: Partial<Resources>) => void;
   spendResources: (res: Partial<Resources>) => boolean;
   upgradeBuilding: (id: string, cost: Partial<Resources>) => void;
@@ -133,6 +139,8 @@ export interface GameState {
   advanceTutorial: () => void;
   skipTutorial: () => void;
   clearWaveOutcome: () => void;
+  /** Monte d'un cran une piste d'amelioration du heros. */
+  upgradeHero: (track: HeroTrackId) => boolean;
   selectZone: (id: string | null) => void;
   /** Annexe un secteur si le niveau et les ressources suivent. */
   unlockZone: (id: string) => boolean;
@@ -239,6 +247,7 @@ const initialGameState = () => ({
   selectedDecor: null,
   unlockedZones: {} as Record<string, true>,
   selectedZone: null,
+  heroUpgrades: {} as Record<string, number>,
 });
 
 export const useGameStore = create<GameState>()(
@@ -527,6 +536,18 @@ export const useGameStore = create<GameState>()(
       skipTutorial: () => set({ tutorialStep: TUTORIAL_DONE }),
       clearWaveOutcome: () => set({ lastWaveOutcome: null }),
 
+      upgradeHero: (trackId) => {
+        const track = heroTrack(trackId);
+        const level = get().heroUpgrades[trackId] || 0;
+        if (level >= track.maxLevel) return false;
+        if (!get().spendResources(track.cost(level))) return false;
+        set((s2) => ({
+          heroUpgrades: { ...s2.heroUpgrades, [trackId]: level + 1 },
+        }));
+        get().addXp(XP.heroUpgrade);
+        return true;
+      },
+
       selectZone: (id) => set({ selectedZone: id }),
 
       unlockZone: (id) => {
@@ -619,6 +640,7 @@ export const useGameStore = create<GameState>()(
       },
       resetGame: () => {
         set(initialGameState());
+        resetPowers();
         // Wipe the save so a page reload also starts fresh.
         useGameStore.persist.clearStorage();
       },
@@ -641,6 +663,7 @@ export const useGameStore = create<GameState>()(
         coreLevel: state.coreLevel,
         clearedDecor: state.clearedDecor,
         unlockedZones: state.unlockedZones,
+        heroUpgrades: state.heroUpgrades,
       }),
       migrate: (persisted: any, version) => {
         if (version < 2 && persisted) {

@@ -11,7 +11,7 @@ import { StarIcon, SkullIcon } from './icons';
  * ni le numero de vague ne faisaient — les premieres montent et descendent, le
  * second recule quand on perd. Le niveau, lui, ne redescend jamais.
  */
-export function XpBar() {
+export function XpBar({ onOpenHero }: { onOpenHero: () => void }) {
   const xp = useGameStore((s) => s.xp);
   const level = useGameStore((s) => s.playerLevel);
   const bestWave = useGameStore((s) => s.bestWave);
@@ -22,12 +22,19 @@ export function XpBar() {
 
   return (
     <div className="pointer-events-none flex items-center gap-2 w-[min(20rem,86vw)]">
-      {/* Ecusson de niveau */}
-      <div className="relative shrink-0">
+      {/* Ecusson de niveau — et porte d'entree de la fiche du commandant.
+          C'est deja la qu'on regarde pour savoir ou on en est ; y accrocher
+          les ameliorations du heros evite un onglet de plus dans une feuille
+          de construction qui n'a plus de place. */}
+      <button
+        onClick={onOpenHero}
+        title="Fiche du commandant"
+        className="pointer-events-auto relative shrink-0 active:scale-90 transition-transform"
+      >
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-300 to-orange-500 flex items-center justify-center shadow-[0_0_14px_rgba(245,158,11,0.55)]">
           <span className="text-black font-black text-sm leading-none">{level}</span>
         </div>
-      </div>
+      </button>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2 mb-0.5">

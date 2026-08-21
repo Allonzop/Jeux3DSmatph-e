@@ -74,6 +74,39 @@ niveau 5 rapportaient 72 boulons/seconde, de quoi payer une tourelle toutes les
 quatre secondes. Les niveaux 1 à 3 ne bougent pas : c'est le début de partie,
 et le buff du 20/08 répondait à un vrai problème.
 
+### Lot 4 — le héros s'améliore, et frappe fort
+
+« Ajouter la possibilité d'améliorer notre bonhomme et potentiellement lui
+donner des super-pouvoirs. » Tout l'investissement allait jusqu'ici dans des
+bâtiments ; le personnage qu'on pilote était le même à la vague 1 et à la
+vague 20.
+
+**Trois pistes chiffrées** (`hero.ts`) : Puissance (+18 dégâts/sec par cran,
+5 crans), Portée (+0,9 unité, 4 crans), Vitesse (+0,55 unité/sec, 4 crans).
+Coûts exponentiels, matière floue et énergie de rire à partir du deuxième cran
+— c'est un puits de ressources rares de plus, en plus des tours et du noyau.
+
+**Deux pouvoirs actifs** qui s'ouvrent au niveau de commandant, pas à l'argent :
+l'Onde de choc (niveau 4, 220 dégâts et une poussée de 2,6 unités dans un rayon
+de 6,5, recharge 22 s) et la Surcharge (niveau 9, dégâts doublés pendant huit
+secondes, recharge 40 s). Les boutons n'apparaissent qu'une fois le pouvoir
+ouvert — pas de bouton grisé sans explication ; le niveau requis est écrit dans
+la fiche du commandant.
+
+La fiche s'ouvre en touchant **l'écusson de niveau** en haut à gauche. C'est
+déjà là qu'on regarde pour savoir où on en est, et ça évite un cinquième onglet
+dans une feuille de construction qui n'a plus de place sur 390 pixels.
+
+Recharges et durées vivent dans `heroPowers.ts`, hors React et hors Zustand :
+ce sont des dates comparées à chaque image. Le HUD les échantillonne dix fois
+par seconde — la jauge paraît continue sans re-rendre l'interface à chaque
+image. L'horloge est `performance.now()` et non celle de three, sinon la jauge
+du bouton et l'effet dans la scène se décaleraient.
+
+Joué dans un navigateur : une amélioration achetée (`{}` → `puissance: 1`), et
+l'Onde de choc déclenchée en pleine vague fait tomber le total des points de
+vie ennemis de 2801 à 2281.
+
 ### Lot 3 — les zones deviennent des secteurs à annexer
 
 « Au lieu d'avoir un effet pas fini, transforme les zones grisées en zones

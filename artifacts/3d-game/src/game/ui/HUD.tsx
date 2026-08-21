@@ -11,6 +11,8 @@ import { Tutorial } from './Tutorial';
 import { WaveOutcome } from './WaveOutcome';
 import { WaveRadar } from './WaveRadar';
 import { XpBar } from './XpBar';
+import { HeroPanel } from './HeroPanel';
+import { PowerButtons } from './PowerButtons';
 import { ComboMeter } from './ComboMeter';
 import { LevelUp } from './LevelUp';
 import { Popups } from './Popups';
@@ -45,6 +47,7 @@ export function HUD() {
   const cancelPlacing = useGameStore(state => state.cancelPlacing);
   const tutorialStep = useGameStore(state => state.tutorialStep);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [heroOpen, setHeroOpen] = useState(false);
 
   const nextWave = waveFailed ? waveNumber : waveNumber + 1;
 
@@ -66,7 +69,7 @@ export function HUD() {
           <MuteButton />
           <ResetButton />
         </div>
-        <XpBar />
+        <XpBar onOpenHero={() => setHeroOpen(true)} />
       </div>
 
       {/* ---------- Milieu : objectif, tutoriel, bandeau de pose ---------- */}
@@ -108,7 +111,8 @@ export function HUD() {
           paddingRight: 'calc(0.75rem + var(--safe-right))',
         }}
       >
-        <div className="flex items-end justify-end">
+        <div className="flex items-end justify-between gap-3">
+          <PowerButtons />
           <ComboMeter />
         </div>
 
@@ -214,6 +218,7 @@ export function HUD() {
       <WaveOutcome />
       <LevelUp />
       <BuildSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
+      <HeroPanel open={heroOpen} onClose={() => setHeroOpen(false)} />
       <DecorPopup />
       <ZonePopup />
       <BuildingPopup />

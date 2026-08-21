@@ -45,6 +45,8 @@ export const XP = {
   clearDecor: 6,
   /** Annexer un secteur de la planete. */
   unlockZone: 250,
+  /** Ameliorer le heros. */
+  heroUpgrade: 45,
 } as const;
 
 /**
