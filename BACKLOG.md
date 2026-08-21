@@ -133,6 +133,40 @@ Reste ouvert (voir JOURNAL.md du 21/08 au soir pour le détail) :
       timer de construction, donc la « time curve » demandée est à moitié déjà
       là ; ce sont les coûts qui n'ont pas été retouchés.
 
+### [SPRINT 2 — 21/08 au soir] Retour de playtest — état
+
+Second compte-rendu de playtest, traité en quatre lots poussés au fil de l'eau.
+**Tous les points sont traités.**
+
+- [x] **Zones grisées → secteurs à annexer.** Quatre biomes (Cendre, Givre,
+      Spores, Dunes), verrouillés derrière un cadenas puis jouables et
+      constructibles. Voir `zones.ts`.
+- [x] **Nettoyage de la map.** Arbres, rochers, buissons, géodes et champignons
+      se déblaient contre une petite récompense, et cessent de bloquer le
+      placement.
+- [x] **Vision empire spatial.** Onglet Empire dans la feuille de construction,
+      qui montre les secteurs et annonce la deuxième planète.
+- [x] **Futures zones : d'autres cœurs.** Chaque zone porte déjà son `corePos`.
+      La donnée est là ; le combat n'a encore qu'un cœur, celui du centre.
+- [x] **Couleur du didacticiel.** Passée de l'ambre — déjà pris par le bouton de
+      vague, la barre d'XP et la carte de niveau — au magenta, qui n'est utilisé
+      nulle part ailleurs.
+- [x] **Interface du cristal.** L'anneau porte son nom et ses chiffres, suit le
+      code vert → ambre → rouge, et dit « réparé avant chaque vague ».
+- [x] **Problème de son.** Il n'était pas cassé mais inaudible : volume doublé,
+      nappe musicale continue ajoutée, déverrouillage réessayé à chaque geste.
+- [x] **Rotation de la caméra.** Deux flèches et une boussole, plus les flèches
+      du clavier. La direction du joystick tourne avec la vue.
+- [x] **Nerf de la hutte.** Niveaux 4 et 5 seulement (14 → 11 et 24 → 16).
+- [x] **Amélioration du héros.** Trois pistes chiffrées et deux pouvoirs actifs
+      (Onde de choc, Surcharge).
+- [x] **Freeze de début de vague.** Pire image au lancement d'une vague de 23
+      monstres : 2184 ms → 719 ms, soit le coût d'une image au repos.
+
+Ce qui reste ouvert vient du sprint précédent : agrandir la zone jouable du
+plateau central (les secteurs annexés l'agrandissent déjà vers l'extérieur),
+assouplir la grille de placement, et revoir les coûts en boulons du début.
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.
