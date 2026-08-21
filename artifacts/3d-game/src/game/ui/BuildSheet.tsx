@@ -135,7 +135,11 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
                 const ids = instanceIds(data.id);
                 const placed = ids.filter((id) => buildingPositions[id]).length;
                 const free = nextFreeInstance(data.id, buildingPositions);
-                const firstBuiltId = ids.find((id) => (buildingLevels[id] || 0) > 0);
+                // Un exemplaire pose mais pas encore construit compte : sans
+                // ca, poser les trois tourelles sans en batir aucune affichait
+                // « Complet » et ne laissait plus aucun moyen d'y revenir.
+                const firstPlacedId = ids.find((id) => buildingPositions[id]);
+                const built = firstPlacedId ? (buildingLevels[firstPlacedId] || 0) > 0 : false;
 
                 return (
                   <div
@@ -174,15 +178,15 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
                           Placer
                         </button>
                       )}
-                      {firstBuiltId && (
+                      {firstPlacedId && (
                         <button
-                          onClick={() => { sfx.tap(); selectBuilding(firstBuiltId); onClose(); }}
+                          onClick={() => { sfx.tap(); selectBuilding(firstPlacedId); onClose(); }}
                           className="px-3 py-1.5 rounded-xl text-[0.7rem] font-bold uppercase tracking-wider bg-white/8 border border-white/10 text-white/70"
                         >
-                          Améliorer
+                          {built ? 'Améliorer' : 'Construire'}
                         </button>
                       )}
-                      {!free && !firstBuiltId && (
+                      {!free && !firstPlacedId && (
                         <span className="text-[0.65rem] text-white/30 uppercase font-bold">Complet</span>
                       )}
                     </div>

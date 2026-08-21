@@ -104,7 +104,7 @@ au-delà le bord devient une frise illisible. Les monstres poussent aussi une
 gerbe à leur couleur au moment où ils apparaissent : c'est le seul instant où
 le joueur peut encore choisir de quel côté aller.
 
-### Quatre bugs trouvés en chemin
+### Six bugs trouvés en chemin
 
 1. **Le panneau de vague ne s'affichait jamais pendant un combat.**
    `AnimatePresence mode="wait"` attendait la fin de sortie du bouton « Lancer
@@ -125,7 +125,15 @@ le joueur peut encore choisir de quel côté aller.
    du jeu — des téléphones — c'est exactement là que ça casse. `damp()` dans
    `scene/utils.ts` rend le même comportement à toute cadence ; appliqué aussi
    au lissage du héros, des villageois et des chasseurs.
-4. **La carte de montée de niveau prenait tout l'écran en plein combat.** Les
+4. **Le ralentissement du cryo ne redescendait jamais.** La tour posait
+   `st.slow = Math.max(st.slow, …)` sans jamais remettre à zéro à
+   l'expiration : un monstre sorti d'un cryo de rang 3 pour entrer dans un
+   rang 1 restait gelé à 55 % au lieu de 35 %, pour toute la vague.
+5. **« Complet » s'affichait alors qu'il restait à bâtir.** Poser les trois
+   tourelles sans en construire aucune fermait la seule porte d'accès à leur
+   fiche depuis la feuille de construction : un exemplaire posé mais pas
+   encore bâti n'était compté nulle part.
+6. **La carte de montée de niveau prenait tout l'écran en plein combat.** Les
    niveaux se gagnent surtout en tuant : la fanfare tombait pendant une vague,
    avalait les touches quatre secondes et faisait perdre. Elle se réduit à un
    bandeau tant qu'une vague est en cours.

@@ -182,7 +182,17 @@ function EnemyNode({ enemy }: { enemy: Enemy }) {
         // Ralentissement des cryo-diffuseurs : ecrit par les tours, expire tout
         // seul si aucune ne couvre plus le monstre.
         let slow = 0;
-        if (st && state.clock.elapsedTime < st.slowUntil) slow = st.slow;
+        if (st) {
+          if (state.clock.elapsedTime < st.slowUntil) {
+            slow = st.slow;
+          } else if (st.slow !== 0) {
+            // Remise a zero a l'expiration, sinon `Math.max` cote tour garde
+            // pour toujours le plus fort ralentissement jamais subi : sortir
+            // d'un cryo de rang 3 pour entrer dans un rang 1 laissait le
+            // monstre gele a 55 % au lieu de 35 %.
+            st.slow = 0;
+          }
+        }
         const moveSpeed = BASE_SPEED * type.speed * (1 - slow) * delta;
         pos.x += _dir.x * moveSpeed;
         pos.z += _dir.z * moveSpeed;
