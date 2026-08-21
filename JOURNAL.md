@@ -11,6 +11,69 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-21 (sprint 2) — Freeze de vague, son, cristal lisible, tuto en magenta
+
+Second sprint ouvert par Allonzo sur son forfait, à partir d'un retour de
+playtest. Mêmes garde-fous : pas de moteur, pas de réorganisation des `.md`,
+pas de scripts d'agent. **Travail poussé par lots** — chaque lot vérifié et
+fusionné dès qu'il tient debout, pour que rien ne soit perdu si la séance
+s'arrête en route.
+
+### Lot 1 — technique et lisibilité
+
+**Le gel de début de vague, mesuré et corrigé.** Cause principale trouvée :
+chaque monstre portait une `pointLight`. Three.js **recompile tous les
+matériaux de la scène dès que le nombre de lumières change** — vingt monstres
+qui apparaissent, c'est vingt recompilations complètes du village, du sol et de
+la planète dans la même image. Remplacées par un disque additif au sol : même
+lueur, zéro lumière. Deux autres coûts retirés au passage : les barres de vie
+passaient par un `<Html>` de drei (un nœud DOM et un portail React par monstre
+blessé, montés et démontés en plein combat) — ce sont maintenant deux quads
+posés au sol ; et le montage des monstres est étalé (six d'un coup, puis quatre
+toutes les 120 ms), ce qui répartit la création des rigs sur plusieurs images.
+Le seuil de six laisse les vagues 1 et 2 passer en une fois, donc le scénario
+de `wave.mjs --check` est inchangé.
+
+Mesuré avec une sonde `requestAnimationFrame`, même machine, même sauvegarde,
+vague 11 (23 monstres), rendu logiciel :
+
+| | pire image au repos | pire image au lancement |
+|---|---|---|
+| avant | 673 ms | **2184 ms** |
+| après | 737 ms | **719 ms** |
+
+Le pic a disparu : le lancement coûte désormais exactement une image normale.
+
+**Le son.** Il n'était pas cassé — sonde en place, contexte `running`,
+oscillateurs bien créés. Il était **trop faible et trop rare** : volume général
+à 0.32, et rien entre deux tirs. Volume porté à 0.62 avec tous les effets
+relevés en proportion, et surtout une nappe musicale continue synthétisée qui
+bascule entre calme et combat. Le déverrouillage était branché `{ once: true }`
+sur un seul geste : si celui-là tombait au mauvais moment, le jeu restait muet
+toute la session sans rien pour le dire. Il réessaie maintenant à chaque geste,
+en capture. Réactiver le son joue deux notes de confirmation.
+
+**Le didacticiel passe au magenta** (`ui/tutorialTheme.ts`). Il était ambre,
+comme le bouton de vague, la barre d'XP, la carte de montée de niveau et le
+fanion de niveau maximum : un clignotement de plus dans cette teinte ne disait
+plus « regardez ici ». Le magenta n'est utilisé par aucune ressource, aucun
+bâtiment, aucun monstre — tout ce qui clignote en magenta appartient au
+tutoriel.
+
+**Le cristal s'explique.** « On ne comprend pas pourquoi l'anneau diminue,
+pourquoi il devient rouge ou bleu, ni s'il se régénère. » Trois causes, trois
+corrections : l'anneau porte son nom et ses chiffres au-dessus de lui ; il suit
+le code vert → ambre → rouge au lieu du cyan-puis-rouge (le cyan est l'identité
+du cristal, pas sa santé, et « plein » paraissait « allumé ») ; et hors combat
+l'étiquette rappelle « réparé avant chaque vague », avec une pulsation verte au
+moment où il repasse à 100 %.
+
+**Nerf de la hutte** sur ses deux derniers niveaux seulement (14 → 11 et
+24 → 16 boulons/seconde, niveau 5 renchéri de 2000 à 2600). Trois huttes de
+niveau 5 rapportaient 72 boulons/seconde, de quoi payer une tourelle toutes les
+quatre secondes. Les niveaux 1 à 3 ne bougent pas : c'est le début de partie,
+et le buff du 20/08 répondait à un vrai problème.
+
 ## 2026-08-21 (soir) — Sprint : planète 3D, bestiaire, arsenal, progression, UI
 
 **Séance exceptionnelle.** Allonzo a ouvert un sprint sur un surplus de crédits

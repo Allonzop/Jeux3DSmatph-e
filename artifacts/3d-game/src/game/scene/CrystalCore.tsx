@@ -2,7 +2,7 @@ import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from '../store';
-import { Float } from '@react-three/drei';
+import { Float, Html } from '@react-three/drei';
 import { useToonGradient } from './utils';
 import { CORE_MAX_LEVEL } from '../gamedata';
 
@@ -18,6 +18,24 @@ import { CORE_MAX_LEVEL } from '../gamedata';
  * - un anneau de vie au sol, qui se vide quand le noyau encaisse — la jauge du
  *   HUD est en bas a droite, loin du regard pendant une vague ;
  * - un anneau de renforcement par rang paye (voir `coreLevel` dans le magasin).
+ *
+ * ## L'anneau, en toutes lettres
+ *
+ * Le playtest est sans appel : « on ne comprend pas pourquoi il diminue,
+ * pourquoi il devient rouge ou bleu, ni s'il se regenere ». Trois causes, trois
+ * corrections :
+ *
+ * 1. **Il n'etait pas etiquete.** Un anneau qui se vide peut etre un temps de
+ *    recharge, une zone d'effet, une barre de progression. Il porte maintenant
+ *    son nom et ses chiffres, en clair, juste au-dessus.
+ * 2. **Cyan puis rouge ne veut rien dire.** Le cyan est la couleur d'identite
+ *    du cristal, pas celle de sa sante : plein, l'anneau paraissait « allume »
+ *    plutot que « intact ». Il suit desormais le code universel vert → ambre →
+ *    rouge, et seul le cristal lui-meme reste cyan.
+ * 3. **La reparation etait invisible.** Elle est ecrite dans le panneau de fin
+ *    de vague, qui a disparu depuis longtemps quand on relance. L'etiquette le
+ *    rappelle hors combat, et une pulsation verte marque le moment ou le noyau
+ *    repasse a 100 %.
  */
 export function CrystalCore() {
   const coreRef = useRef<THREE.Mesh>(null);
@@ -33,8 +51,27 @@ export function CrystalCore() {
   const hpPercent = coreHp / coreMaxHp;
   const isDanger = hpPercent < 0.5;
 
+  /** Le cristal garde son cyan : c'est son identite, pas sa sante. */
   const color = isDanger ? '#ff4444' : '#7df9ff';
+  /** L'anneau, lui, dit la sante — vert, ambre, rouge. */
+  const ringColor = hpPercent > 0.6 ? '#34d399' : hpPercent > 0.3 ? '#fbbf24' : '#f87171';
   const gradientMap = useToonGradient();
+
+  // Pulsation verte au moment ou le noyau repasse a 100 % : c'est le seul
+  // instant ou l'on peut *voir* qu'il se repare tout seul entre deux vagues.
+  const [justRepaired, setJustRepaired] = React.useState(false);
+  const wasDamaged = React.useRef(false);
+  React.useEffect(() => {
+    if (hpPercent < 0.999) {
+      wasDamaged.current = true;
+      return undefined;
+    }
+    if (!wasDamaged.current) return undefined;
+    wasDamaged.current = false;
+    setJustRepaired(true);
+    const t = setTimeout(() => setJustRepaired(false), 2200);
+    return () => clearTimeout(t);
+  }, [hpPercent]);
 
   const pedestalProfile = useMemo(() => [
     new THREE.Vector2(0, 0),
@@ -80,7 +117,12 @@ export function CrystalCore() {
           jauge circulaire et pas comme un anneau qui retrecit. */}
       <mesh ref={hpRingRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]}>
         <ringGeometry args={[2.1, 2.34, 64, 1, Math.PI / 2, Math.PI * 2 * Math.max(0.001, hpPercent)]} />
-        <meshBasicMaterial color={color} transparent opacity={waveActive ? 0.9 : 0.45} depthWrite={false} />
+        <meshBasicMaterial
+          color={justRepaired ? '#6ee7b7' : ringColor}
+          transparent
+          opacity={waveActive || justRepaired ? 0.95 : 0.5}
+          depthWrite={false}
+        />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
         <ringGeometry args={[2.1, 2.34, 64]} />
@@ -115,6 +157,36 @@ export function CrystalCore() {
         <icosahedronGeometry args={[1.05, 0]} />
         <meshBasicMaterial color={color} wireframe transparent opacity={0.35} depthWrite={false} />
       </mesh>
+
+      {/* L'etiquette : ce que l'anneau veut dire, ecrit.
+          Un seul noeud DOM pour toute la scene — c'est pour ca qu'on peut se
+          permettre un `<Html>` ici alors qu'il a ete retire des barres de vie
+          des monstres, ou il y en avait un par monstre blesse. */}
+      <Html position={[0, 3.5, 0]} center distanceFactor={undefined} zIndexRange={[40, 0]} style={{ pointerEvents: 'none' }}>
+        <div
+          className="px-2.5 py-1 rounded-xl border backdrop-blur-md text-center whitespace-nowrap"
+          style={{
+            backgroundColor: 'rgba(9,14,28,0.82)',
+            borderColor: `${justRepaired ? '#6ee7b7' : ringColor}88`,
+            boxShadow: `0 0 14px ${justRepaired ? '#6ee7b7' : ringColor}44`,
+          }}
+        >
+          <div
+            className="text-[0.58rem] font-black uppercase tracking-[0.18em]"
+            style={{ color: justRepaired ? '#6ee7b7' : ringColor }}
+          >
+            {justRepaired ? 'Noyau réparé' : 'Noyau'}
+          </div>
+          <div className="text-white font-mono font-bold text-[0.78rem] leading-tight">
+            {Math.ceil(coreHp)} / {coreMaxHp}
+          </div>
+          {!waveActive && !justRepaired && (
+            <div className="text-white/45 text-[0.52rem] leading-tight mt-0.5">
+              réparé avant chaque vague
+            </div>
+          )}
+        </div>
+      </Html>
 
       {/* Orbiting Shards */}
       <Float speed={2} rotationIntensity={2} floatIntensity={1} position={[1.2, 1.5, 0]}>

@@ -15,6 +15,7 @@ import { ThreatMarkers } from './ThreatMarkers';
 import { ResourceIcon, HammerIcon, SpeakerIcon } from './icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { sfx, isMuted, toggleMute } from '../sfx';
+import { TUTORIAL_COLOR, TUTORIAL_RING_GLOW } from './tutorialTheme';
 
 /**
  * L'interface.
@@ -111,10 +112,13 @@ export function HUD() {
           <button
             onClick={() => { sfx.tap(); setSheetOpen(true); }}
             className={`pointer-events-auto shrink-0 flex items-center gap-2 bg-[#1e2336ee] backdrop-blur-md border rounded-2xl px-4 py-3 text-white font-black uppercase tracking-wider text-[clamp(0.7rem,3vw,0.8rem)] active:scale-95 transition-transform ${
-              tutorialStep === 2
-                ? 'border-amber-300 shadow-[0_0_16px_rgba(245,158,11,0.8)] animate-pulse'
-                : 'border-white/12'
+              tutorialStep === 2 ? 'animate-pulse' : 'border-white/12'
             }`}
+            style={
+              tutorialStep === 2
+                ? { borderColor: TUTORIAL_COLOR, boxShadow: TUTORIAL_RING_GLOW }
+                : undefined
+            }
           >
             <HammerIcon className="w-[clamp(1rem,4vw,1.25rem)] h-[clamp(1rem,4vw,1.25rem)] text-amber-300" />
             Construire
@@ -144,8 +148,9 @@ export function HUD() {
                   <button
                     onClick={() => { sfx.waveStart(); startWave(); }}
                     className={`pointer-events-auto bg-gradient-to-r from-amber-400 to-orange-500 text-black font-black py-3 px-5 rounded-2xl shadow-[0_4px_0_#b45309,0_0_20px_rgba(245,158,11,0.5)] active:translate-y-1 active:shadow-[0_0px_0_#b45309,0_0_10px_rgba(245,158,11,0.5)] transition-all uppercase tracking-wider text-[clamp(0.7rem,3vw,0.875rem)] whitespace-nowrap ${
-                      tutorialStep === 3 ? 'animate-pulse ring-2 ring-white/70' : ''
+                      tutorialStep === 3 ? 'animate-pulse ring-4' : ''
                     }`}
+                    style={tutorialStep === 3 ? { boxShadow: TUTORIAL_RING_GLOW, outline: `3px solid ${TUTORIAL_COLOR}` } : undefined}
                   >
                     Lancer la vague {nextWave}
                   </button>

@@ -3,9 +3,10 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore, TUTORIAL_DONE } from '../store';
 import { RESOURCE_NODE_POSITIONS, surfacePos, surfaceRotation } from '../world';
+import { TUTORIAL_COLOR } from '../ui/tutorialTheme';
 
 /**
- * Pulsing golden ring highlighting the current tutorial target:
+ * Pulsing magenta ring highlighting the current tutorial target:
  * step 1 → the boulons node, step 2 → the placed hutte, step 3 → the core.
  * Position/scale are driven imperatively; only the step subscription re-renders.
  */
@@ -44,9 +45,9 @@ export function TutorialHighlight() {
     <group position={surfacePos(target[0], target[2], 0.06)} rotation={surfaceRotation(target[0], target[2])}>
       <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[radius, radius + 0.22, 48]} />
-        <meshBasicMaterial ref={matRef} color="#ffd24c" transparent opacity={0.7} depthWrite={false} />
+        <meshBasicMaterial ref={matRef} color={TUTORIAL_COLOR} transparent opacity={0.7} depthWrite={false} />
       </mesh>
-      <pointLight color="#ffd24c" intensity={1.2} distance={5} position={[0, 1, 0]} />
+      <pointLight color={TUTORIAL_COLOR} intensity={1.2} distance={5} position={[0, 1, 0]} />
     </group>
   );
 }

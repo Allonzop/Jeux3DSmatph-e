@@ -15,6 +15,7 @@ import { Hunters } from './scene/Hunters';
 import { CombatEffects } from './scene/CombatEffects';
 import { useGameStore } from './store';
 import { buildingData } from './gamedata';
+import { setCombatMusic } from './sfx';
 
 function PassiveTicker() {
   const tickPassive = useGameStore(state => state.tickPassive);
@@ -47,10 +48,20 @@ function PassiveTicker() {
   return null;
 }
 
+/** Bascule la nappe sonore entre calme et combat. Voir `sfx.ts`. */
+function MusicMood() {
+  const waveActive = useGameStore((state) => state.waveActive);
+  useEffect(() => {
+    setCombatMusic(waveActive);
+  }, [waveActive]);
+  return null;
+}
+
 export function GameCanvas() {
   return (
     <>
       <PassiveTicker />
+      <MusicMood />
       <Canvas shadows dpr={[1, 2]}>
         <color attach="background" args={['#0d1117']} />
         

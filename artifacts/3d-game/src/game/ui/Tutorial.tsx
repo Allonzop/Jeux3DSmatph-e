@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useGameStore, TUTORIAL_DONE } from '../store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { sfx } from '../sfx';
+import { TUTORIAL_COLOR, TUTORIAL_BORDER, TUTORIAL_GLOW } from './tutorialTheme';
 
 /**
  * Le tutoriel, en petites bouchees.
@@ -105,7 +106,8 @@ export function Tutorial() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -10, scale: 0.97 }}
           transition={{ duration: 0.18 }}
-          className="w-full bg-[#1a1f35f2] backdrop-blur-md border border-amber-300/40 rounded-2xl px-4 py-3 shadow-[0_0_24px_rgba(245,158,11,0.28)]"
+          className="w-full bg-[#1a1f35f2] backdrop-blur-md border rounded-2xl px-4 py-3"
+          style={{ borderColor: TUTORIAL_BORDER, boxShadow: TUTORIAL_GLOW }}
         >
           {/* Fil d'avancement : une barre par etape, remplie jusqu'a la courante.
               Le joueur voit combien il en reste — c'est ce qui evite le
@@ -114,8 +116,9 @@ export function Tutorial() {
             {CARDS.map((group, i) => (
               <div key={i} className="flex-1 h-[3px] rounded-full bg-white/10 overflow-hidden">
                 <div
-                  className="h-full bg-amber-300 rounded-full transition-all duration-300"
+                  className="h-full rounded-full transition-all duration-300"
                   style={{
+                    backgroundColor: TUTORIAL_COLOR,
                     width: i < step ? '100%' : i === step ? `${((card + 1) / group.length) * 100}%` : '0%',
                   }}
                 />
@@ -123,7 +126,10 @@ export function Tutorial() {
             ))}
           </div>
 
-          <div className="text-amber-300 font-black uppercase tracking-wider text-[clamp(0.78rem,3.4vw,0.92rem)]">
+          <div
+            className="font-black uppercase tracking-wider text-[clamp(0.78rem,3.4vw,0.92rem)]"
+            style={{ color: TUTORIAL_COLOR }}
+          >
             {def.title}
           </div>
           <p className="text-white text-[clamp(0.82rem,3.6vw,0.95rem)] leading-snug mt-0.5">
@@ -133,14 +139,21 @@ export function Tutorial() {
           {!def.waits && !isLastStep && (
             <button
               onClick={next}
-              className="pointer-events-auto mt-2.5 w-full bg-amber-400 text-black font-black uppercase tracking-wider text-xs py-2 rounded-xl active:scale-[0.98] transition-transform shadow-[0_3px_0_#b45309]"
+              className="pointer-events-auto mt-2.5 w-full text-white font-black uppercase tracking-wider text-xs py-2 rounded-xl active:scale-[0.98] transition-transform"
+              style={{ backgroundColor: TUTORIAL_COLOR, boxShadow: '0 3px 0 #a1176f' }}
             >
               Suivant
             </button>
           )}
           {def.waits && (
-            <div className="mt-2 flex items-center gap-1.5 text-amber-200/70 text-[0.68rem] font-bold uppercase tracking-wider">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse" />
+            <div
+              className="mt-2 flex items-center gap-1.5 text-[0.68rem] font-bold uppercase tracking-wider"
+              style={{ color: TUTORIAL_COLOR }}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full animate-pulse"
+                style={{ backgroundColor: TUTORIAL_COLOR }}
+              />
               À vous de jouer
             </div>
           )}

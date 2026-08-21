@@ -6,17 +6,21 @@ import { WebGLErrorBoundary } from './game/WebGLErrorBoundary';
 import { unlockAudio } from './game/sfx';
 
 export default function App() {
-  // Les navigateurs refusent de demarrer l'audio avant un geste du joueur. On
-  // ouvre donc le contexte au premier contact, une seule fois, plutot qu'au
-  // chargement — un contexte cree trop tot reste suspendu et le jeu est muet
-  // pour toute la session.
+  // Les navigateurs refusent de demarrer l'audio avant un geste du joueur.
+  //
+  // C'etait branche `{ once: true }` : si ce tout premier geste tombait a un
+  // moment ou le navigateur refusait encore, il n'y avait plus de seconde
+  // chance et le jeu restait muet toute la session. On reessaie a chaque
+  // geste — `unlockAudio` ne fait rien quand le contexte tourne deja — et on
+  // ecoute en capture pour que rien ne puisse intercepter l'evenement en
+  // route (le joystick capture le pointeur des le `pointerdown`).
   useEffect(() => {
     const unlock = () => unlockAudio();
-    window.addEventListener('pointerdown', unlock, { once: true });
-    window.addEventListener('keydown', unlock, { once: true });
+    const opts = { capture: true } as const;
+    const events = ['pointerdown', 'touchstart', 'click', 'keydown'] as const;
+    for (const name of events) window.addEventListener(name, unlock, opts);
     return () => {
-      window.removeEventListener('pointerdown', unlock);
-      window.removeEventListener('keydown', unlock);
+      for (const name of events) window.removeEventListener(name, unlock, opts);
     };
   }, []);
 

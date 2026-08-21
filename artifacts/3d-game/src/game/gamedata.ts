@@ -195,8 +195,14 @@ export const BUILDINGS: Record<string, BuildingData> = {
       { cost: { boulons: 50 }, passive: { boulons: 4 } },
       { cost: { boulons: 120 }, passive: { boulons: 6 } },
       { cost: { boulons: 400 }, passive: { boulons: 8 } },
-      { cost: { boulons: 900, matiere_floue: 10 }, passive: { boulons: 14 } },
-      { cost: { boulons: 2000, matiere_floue: 30 }, passive: { boulons: 24 } }
+      // Niveaux 4 et 5 rabotes (14 -> 11, 24 -> 16) et le dernier renchéri.
+      // Le playtest la trouve « un chouia trop puissante a partir d'un certain
+      // niveau » : trois huttes de niveau 5 rapportaient 72 boulons/seconde,
+      // de quoi payer une tourelle toutes les quatre secondes et vider tout
+      // interet a la recolte. Les niveaux 1 a 3 ne bougent pas — c'est le
+      // debut de partie, et il doit rester genereux (voir le buff du 20/08).
+      { cost: { boulons: 900, matiere_floue: 10 }, passive: { boulons: 11 } },
+      { cost: { boulons: 2600, matiere_floue: 30 }, passive: { boulons: 16 } }
     ]
   },
   ferme: {

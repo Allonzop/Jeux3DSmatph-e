@@ -3,7 +3,6 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore, Enemy } from '../store';
 import { enemyPositions, enemyStates } from './utils';
-import { Html } from '@react-three/drei';
 import { ToonHumanoid } from '../characters/ToonHumanoid';
 import { ENEMY_TYPES, enemyAppearance, CHAMAN_HEAL_RADIUS, CHAMAN_HEAL_PER_SEC } from '../enemies';
 import { surfaceY, applySurfaceRotation } from '../world';
@@ -16,11 +15,50 @@ const _dir = new THREE.Vector3();
 /** Vitesse de reference d'un monstre, en unites par seconde. */
 const BASE_SPEED = 1.5;
 
+/**
+ * Combien de monstres apparaissent d'un coup, et par quels paquets ensuite.
+ *
+ * Le lancement d'une vague tardive montait vingt-trois personnages complets
+ * dans la meme image : autant de geometries, de materiaux et de compilations
+ * de shaders — d'ou le gel signale au playtest. Les six premiers arrivent
+ * toujours immediatement, le reste par paquets de quatre toutes les 120 ms.
+ *
+ * Le seuil de six n'est pas arbitraire : les vagues 1 (3 monstres) et 2 (5)
+ * passent donc entierement en une fois, exactement comme avant. C'est ce que
+ * joue `tools/game-check/wave.mjs --check`, et c'est aussi la periode ou le
+ * joueur apprend le jeu — pas le moment pour changer un timing.
+ */
+const INSTANT_BATCH = 6;
+const BATCH_SIZE = 4;
+const BATCH_DELAY = 120;
+
 export function Enemies() {
   const enemies = useGameStore((state) => state.enemies);
+  const [mounted, setMounted] = React.useState(INSTANT_BATCH);
+
+  // Chaque nouvelle vague repart du premier paquet.
+  React.useEffect(() => {
+    if (enemies.length <= INSTANT_BATCH) {
+      setMounted(INSTANT_BATCH);
+      return undefined;
+    }
+    setMounted(INSTANT_BATCH);
+    const id = setInterval(() => {
+      setMounted((n) => {
+        const next = n + BATCH_SIZE;
+        if (next >= enemies.length) clearInterval(id);
+        return next;
+      });
+    }, BATCH_DELAY);
+    return () => clearInterval(id);
+    // Une vague = une identite de tableau. Se declencher sur `enemies.length`
+    // relancerait l'etalement a chaque mort de monstre.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enemies]);
+
   return (
     <group>
-      {enemies.map((enemy) => (
+      {enemies.slice(0, mounted).map((enemy) => (
         <EnemyNode key={enemy.id} enemy={enemy} />
       ))}
     </group>
@@ -273,14 +311,43 @@ function EnemyNode({ enemy }: { enemy: Enemy }) {
         )}
       </group>
 
-      <pointLight color={type.tint} intensity={0.5} distance={3} position={[0, 0.5, 0]} />
+      {/* Aureole au sol au lieu d'une `pointLight`.
+          **C'etait la cause principale du gel de debut de vague.** Three.js
+          recompile *tous* les materiaux de la scene des que le nombre de
+          lumieres change : vingt monstres qui apparaissent, c'est vingt
+          recompilations completes du village, du sol et de la planete, en une
+          image. Un disque additif donne la meme lueur pour zero lumiere. */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -type.altitude + 0.06, 0]}>
+        <circleGeometry args={[0.75, 16]} />
+        <meshBasicMaterial
+          color={type.tint}
+          transparent
+          opacity={0.3}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
 
+      {/* Barre de vie posee au sol, en geometrie.
+          Elle passait par un `<Html>` de drei : un noeud DOM et un portail
+          React par monstre blesse, montes et demontes en plein combat. Deux
+          quads coutent une poignee de triangles et ne touchent jamais au DOM.
+          Au sol plutot qu'au-dessus de la tete : la camera regarde d'en haut,
+          et ca evite d'avoir a orienter la barre vers elle a chaque image. */}
       {hpPercent < 1 && (
-        <Html position={[0, 1.2 + type.altitude * 0.15, 0]} center transform style={{ pointerEvents: 'none' }}>
-          <div className="w-10 h-1.5 bg-black/80 rounded-full overflow-hidden border border-black">
-            <div className="h-full" style={{ width: `${hpPercent * 100}%`, backgroundColor: type.tint }} />
-          </div>
-        </Html>
+        <group position={[0, -type.altitude + 0.09, 0.55]} rotation={[-Math.PI / 2, 0, 0]}>
+          <mesh>
+            <planeGeometry args={[0.96, 0.17]} />
+            <meshBasicMaterial color="#0b1020" transparent opacity={0.8} depthWrite={false} />
+          </mesh>
+          <mesh
+            position={[-0.45 * (1 - hpPercent), 0, 0.001]}
+            scale={[Math.max(0.001, hpPercent), 1, 1]}
+          >
+            <planeGeometry args={[0.9, 0.11]} />
+            <meshBasicMaterial color={type.tint} depthWrite={false} />
+          </mesh>
+        </group>
       )}
     </group>
   );
