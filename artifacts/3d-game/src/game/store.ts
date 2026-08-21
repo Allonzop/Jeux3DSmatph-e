@@ -1,7 +1,17 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { LEGACY_BUILDING_POSITIONS, ENEMY_SPAWN_RADIUS } from './world';
-import { coreBreachDamage, waveVictoryReward, waveDefeatLoss } from './gamedata';
+import {
+  coreBreachDamage,
+  waveVictoryReward,
+  waveDefeatLoss,
+  CORE_MAX_LEVEL,
+  coreUpgradeCost,
+  BUILDINGS,
+  MARCHE_LOOT_BONUS,
+} from './gamedata';
+import { composeWave, ENEMY_TYPES, type EnemyKind } from './enemies';
+import { xpForLevel, levelUpReward, XP } from './progress';
 
 export type ResourceType = 'boulons' | 'matiere_floue' | 'energie_rire';
 
@@ -16,6 +26,14 @@ export type Enemy = {
   pos: [number, number, number];
   hp: number;
   maxHp: number;
+  /** Profil du bestiaire (voir enemies.ts) : vitesse, resistance, vol, degats. */
+  kind: EnemyKind;
+};
+
+/** Montee de niveau a feter — consommee par l'overlay puis remise a null. */
+export type LevelUp = {
+  level: number;
+  reward: Partial<Resources>;
 };
 
 export type WaveOutcome = {
@@ -62,6 +80,20 @@ export interface GameState {
   waveEnemyCount: number;
   waveKills: number;
 
+  // ---- Progression du joueur ----
+  /** Experience accumulee dans le niveau en cours. */
+  xp: number;
+  /** Niveau du commandant. Monte en jouant, ne redescend jamais. */
+  playerLevel: number;
+  /** Derniere montee de niveau, affichee puis effacee. */
+  levelUp: LevelUp | null;
+  /** Meilleure vague jamais repoussee — le record que le joueur vient battre. */
+  bestWave: number;
+  /** Monstres abattus depuis le debut de la partie. */
+  totalKills: number;
+  /** Niveau de renforcement du noyau : chaque niveau encaisse un monstre de plus. */
+  coreLevel: number;
+
   addResources: (res: Partial<Resources>) => void;
   spendResources: (res: Partial<Resources>) => boolean;
   upgradeBuilding: (id: string, cost: Partial<Resources>) => void;
@@ -85,6 +117,11 @@ export interface GameState {
   advanceTutorial: () => void;
   skipTutorial: () => void;
   clearWaveOutcome: () => void;
+  /** Gagne de l'experience ; declenche une montee de niveau si le seuil est franchi. */
+  addXp: (amount: number) => void;
+  clearLevelUp: () => void;
+  /** Renforce le noyau d'un cran contre des ressources rares. */
+  upgradeCore: () => boolean;
   /** Dev/test helper: wipes the save and restarts the whole game from zero. */
   resetGame: () => void;
 }
@@ -106,7 +143,9 @@ function rewardVictory(
   const state = get();
   if (state.coreHp <= 0 || state.waveNumber === 0) return;
   const ratio = state.waveEnemyCount > 0 ? state.waveKills / state.waveEnemyCount : 1;
-  const gains = waveVictoryReward(state.waveNumber, ratio);
+  // Le Marche majore le butin — c'est ce que promet son `blurb`.
+  const lootBonus = 1 + MARCHE_LOOT_BONUS * (state.buildingLevels['marche'] || 0);
+  const gains = waveVictoryReward(state.waveNumber, ratio, lootBonus);
   set((s) => ({
     resources: {
       boulons: s.resources.boulons + (gains.boulons || 0),
@@ -114,14 +153,18 @@ function rewardVictory(
       energie_rire: s.resources.energie_rire + (gains.energie_rire || 0),
     },
     lastWaveOutcome: { type: 'victory', wave: s.waveNumber, gains },
+    bestWave: Math.max(s.bestWave, s.waveNumber),
   }));
+  get().addXp(XP.wave(state.waveNumber));
 }
 
 // Fresh-game snapshot, reused by resetGame. Functions return new arrays/objects
 // so a reset never shares references with the previous session.
 const initialGameState = () => ({
   resources: { boulons: 50, matiere_floue: 0, energie_rire: 0 },
-  buildingLevels: { hutte: 0, ferme: 0, bar: 0, antenne: 0, marche: 0, tourelle: 0 },
+  // Derive de BUILDINGS : ajouter un batiment a gamedata.ts suffit, il n'y a
+  // pas de seconde liste a tenir a jour ici.
+  buildingLevels: Object.fromEntries(Object.keys(BUILDINGS).map((id) => [id, 0])) as Record<string, number>,
   heroPos: [0, 0, 0] as [number, number, number],
   heroDir: [0, 0] as [number, number],
   coreHp: 100,
@@ -139,6 +182,12 @@ const initialGameState = () => ({
   breachDamage: 0,
   waveEnemyCount: 0,
   waveKills: 0,
+  xp: 0,
+  playerLevel: 1,
+  levelUp: null,
+  bestWave: 0,
+  totalKills: 0,
+  coreLevel: 0,
 });
 
 export const useGameStore = create<GameState>()(
@@ -185,6 +234,7 @@ export const useGameStore = create<GameState>()(
             },
           }));
           get().notifyTutorial('build');
+          get().addXp(XP.build);
         }
       },
 
@@ -218,15 +268,25 @@ export const useGameStore = create<GameState>()(
         // particulier, et continue la même progression sans à-coup ensuite.
         const enemyCount = 1 + nextWave * 2;
 
+        // Qui compose la vague — voir enemies.ts. Les vagues 1 et 2 restent
+        // 100 % grognards, donc l'equilibrage d'origine et le test de
+        // non-regression (`wave.mjs --check`) jouent exactement la meme chose
+        // qu'avant. La variete arrive ensuite, un profil a la fois.
+        const kinds = composeWave(nextWave, enemyCount);
+        const baseHp = 100 + nextWave * 20;
+
         const newEnemies: Enemy[] = [];
         for (let i = 0; i < enemyCount; i++) {
           const angle = Math.random() * Math.PI * 2;
           const radius = ENEMY_SPAWN_RADIUS;
+          const kind = kinds[i];
+          const hp = Math.round(baseHp * ENEMY_TYPES[kind].hp);
           newEnemies.push({
             id: `enemy_${nextWave}_${i}_${Math.random()}`,
             pos: [Math.cos(angle) * radius, 0.5, Math.sin(angle) * radius],
-            hp: 100 + nextWave * 20,
-            maxHp: 100 + nextWave * 20,
+            hp,
+            maxHp: hp,
+            kind,
           });
         }
 
@@ -238,7 +298,7 @@ export const useGameStore = create<GameState>()(
           enemies: newEnemies,
           coreHp: state.coreMaxHp,
           lastWaveOutcome: null,
-          breachDamage: coreBreachDamage(enemyCount, state.coreMaxHp),
+          breachDamage: coreBreachDamage(enemyCount, state.coreMaxHp, state.coreLevel),
           waveEnemyCount: enemyCount,
           waveKills: 0,
         });
@@ -271,6 +331,10 @@ export const useGameStore = create<GameState>()(
 
       damageEnemy: (id, amount) => {
         const wasActive = get().waveActive;
+        // Le monstre est relu avant et apres l'ecriture : TypeScript ne suit
+        // pas les affectations faites dans le rappel de `set`, et une variable
+        // capturee y serait vue comme toujours nulle.
+        const before = get().enemies.find(e => e.id === id);
         set((state) => {
           let justKilled = false;
           const enemies = state.enemies.map(e => {
@@ -290,8 +354,16 @@ export const useGameStore = create<GameState>()(
             enemies,
             waveActive: state.waveActive ? waveActive : false,
             waveKills: state.waveKills + (justKilled ? 1 : 0),
+            totalKills: state.totalKills + (justKilled ? 1 : 0),
           };
         });
+        // L'experience est versee hors du `set` : `addXp` peut declencher une
+        // montee de niveau, donc son propre `set`, et imbriquer les deux
+        // rendrait l'ordre des ecritures dependant de zustand.
+        const after = get().enemies.find(e => e.id === id);
+        if (before && before.hp > 0 && after && after.hp <= 0) {
+          get().addXp(ENEMY_TYPES[before.kind]?.xp ?? ENEMY_TYPES.grognard.xp);
+        }
         if (wasActive && !get().waveActive) {
           get().notifyTutorial('waveEnd');
           rewardVictory(set, get);
@@ -362,6 +434,61 @@ export const useGameStore = create<GameState>()(
       },
       skipTutorial: () => set({ tutorialStep: TUTORIAL_DONE }),
       clearWaveOutcome: () => set({ lastWaveOutcome: null }),
+
+      addXp: (amount) => {
+        if (amount <= 0) return;
+        const state = get();
+        let xp = state.xp + amount;
+        let level = state.playerLevel;
+        let gained = 0;
+        const reward: Resources = { boulons: 0, matiere_floue: 0, energie_rire: 0 };
+
+        // Boucle : un gros gain peut franchir deux paliers d'un coup, surtout
+        // aux premiers niveaux ou le seuil est bas.
+        while (xp >= xpForLevel(level)) {
+          xp -= xpForLevel(level);
+          level += 1;
+          gained += 1;
+          const r = levelUpReward(level);
+          reward.boulons += r.boulons || 0;
+          reward.matiere_floue += r.matiere_floue || 0;
+          reward.energie_rire += r.energie_rire || 0;
+        }
+
+        if (gained === 0) {
+          set({ xp });
+          return;
+        }
+
+        // Les ressources a zero ne sont pas listees dans la carte de montee de
+        // niveau : « +0 energie de rire » n'apprend rien.
+        const shown: Partial<Resources> = { boulons: reward.boulons };
+        if (reward.matiere_floue > 0) shown.matiere_floue = reward.matiere_floue;
+        if (reward.energie_rire > 0) shown.energie_rire = reward.energie_rire;
+
+        set((s) => ({
+          xp,
+          playerLevel: level,
+          levelUp: { level, reward: shown },
+          resources: {
+            boulons: s.resources.boulons + reward.boulons,
+            matiere_floue: s.resources.matiere_floue + reward.matiere_floue,
+            energie_rire: s.resources.energie_rire + reward.energie_rire,
+          },
+        }));
+      },
+
+      clearLevelUp: () => set({ levelUp: null }),
+
+      upgradeCore: () => {
+        const state = get();
+        if (state.coreLevel >= CORE_MAX_LEVEL) return false;
+        const cost = coreUpgradeCost(state.coreLevel);
+        if (!get().spendResources(cost)) return false;
+        set((s) => ({ coreLevel: s.coreLevel + 1 }));
+        get().addXp(XP.coreUpgrade);
+        return true;
+      },
       resetGame: () => {
         set(initialGameState());
         // Wipe the save so a page reload also starts fresh.
@@ -376,6 +503,14 @@ export const useGameStore = create<GameState>()(
         buildingLevels: state.buildingLevels,
         buildingPositions: state.buildingPositions,
         tutorialStep: state.tutorialStep,
+        // La progression survit a la fermeture de l'onglet — c'est tout
+        // l'interet d'un niveau. Les sauvegardes anterieures n'ont aucun de
+        // ces champs : zustand garde alors la valeur initiale, sans migration.
+        xp: state.xp,
+        playerLevel: state.playerLevel,
+        bestWave: state.bestWave,
+        totalKills: state.totalKills,
+        coreLevel: state.coreLevel,
       }),
       migrate: (persisted: any, version) => {
         if (version < 2 && persisted) {
@@ -395,3 +530,25 @@ export const useGameStore = create<GameState>()(
     }
   )
 );
+
+/**
+ * Le magasin, accessible depuis la page.
+ *
+ * `tools/game-check/*.mjs` pilote le jeu construit dans un vrai navigateur :
+ * il n'a aucun moyen d'importer ce module, et la sauvegarde ne porte que
+ * quatre champs (voir `partialize`). Sans cette poignee, impossible de
+ * *regarder* une vague tardive — donc impossible de verifier a l'oeil les
+ * profils de monstres qui n'apparaissent qu'a partir de la vague 8.
+ *
+ * C'est un jeu entierement local, sans serveur ni compte : exposer son etat ne
+ * donne au joueur que ce qu'il pourrait deja editer dans son localStorage.
+ */
+declare global {
+  interface Window {
+    __villageStore?: typeof useGameStore;
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.__villageStore = useGameStore;
+}

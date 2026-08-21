@@ -11,8 +11,10 @@ import { CrystalCore } from './scene/CrystalCore';
 import { Stars } from './scene/Stars';
 import { Camera } from './scene/Camera';
 import { TutorialHighlight } from './scene/TutorialHighlight';
+import { Hunters } from './scene/Hunters';
+import { CombatEffects } from './scene/CombatEffects';
 import { useGameStore } from './store';
-import { BUILDINGS } from './gamedata';
+import { buildingData } from './gamedata';
 
 function PassiveTicker() {
   const tickPassive = useGameStore(state => state.tickPassive);
@@ -24,7 +26,9 @@ function PassiveTicker() {
       
       Object.entries(state.buildingLevels).forEach(([id, level]) => {
         if (level > 0) {
-          const passive = BUILDINGS[id]?.levels[level - 1]?.passive;
+          // `id` peut etre un exemplaire (`hutte#2`) : chaque exemplaire
+          // produit pour son propre compte, d'ou la somme sur tous.
+          const passive = buildingData(id)?.levels[level - 1]?.passive;
           if (passive) {
             amounts.boulons += passive.boulons || 0;
             amounts.matiere_floue += passive.matiere_floue || 0;
@@ -66,10 +70,12 @@ export function GameCanvas() {
         <Ground />
         <Hero />
         <Villagers />
+        <Hunters />
         <ResourceNodes />
         <Buildings />
         <CrystalCore />
         <Enemies />
+        <CombatEffects />
         <TutorialHighlight />
 
         {/* Enhanced bloom for glowing emissive materials */}

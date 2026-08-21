@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore, TUTORIAL_DONE } from '../store';
-import { RESOURCE_NODE_POSITIONS } from '../world';
+import { RESOURCE_NODE_POSITIONS, surfacePos, surfaceRotation } from '../world';
 
 /**
  * Pulsing golden ring highlighting the current tutorial target:
@@ -41,7 +41,7 @@ export function TutorialHighlight() {
   if (!target) return null;
 
   return (
-    <group position={[target[0], 0.06, target[2]]}>
+    <group position={surfacePos(target[0], target[2], 0.06)} rotation={surfaceRotation(target[0], target[2])}>
       <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[radius, radius + 0.22, 48]} />
         <meshBasicMaterial ref={matRef} color="#ffd24c" transparent opacity={0.7} depthWrite={false} />

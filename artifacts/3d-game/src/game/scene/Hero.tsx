@@ -2,11 +2,12 @@ import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from '../store';
-import { WORLD_RADIUS } from '../world';
+import { WORLD_RADIUS, surfaceY, applySurfaceRotation } from '../world';
 import { ToonHumanoid } from '../characters/ToonHumanoid';
 import { heroDef } from '../characters/defs';
 import { mulberry32 } from '../characters/rng';
-import { enemyPositions } from './utils';
+import { enemyPositions, enemyStates } from './utils';
+import { ANTENNE_HERO_RANGE, ANTENNE_HERO_DPS } from '../gamedata';
 
 const SPEED = 4;
 const DUST_COUNT = 8;
@@ -19,6 +20,10 @@ const DUST_COUNT = 8;
 // le joystick, il n'y a pas de doigt libre pour un bouton d'attaque.
 const HERO_RANGE = 5;
 const HERO_DPS = 55;
+// L'Antenne n'avait aucun effet : elle coutait cher et ne faisait rien, ce que
+// le retour d'evaluation signale sous « les joueurs ne comprennent pas a quoi
+// servent les structures ». Elle est desormais un relais de combat, et c'est
+// son `blurb` dans gamedata.ts qui le dit au joueur.
 // Les dégâts sont accumulés puis versés 4 fois par seconde. Chaque écriture
 // dans le store re-rend l'arbre des ennemis (barres de vie) : à 60 images/s ce
 // serait 60 rendus par seconde et par ennemi. Même DPS, 15 fois moins de bruit.
@@ -33,6 +38,8 @@ const _target = new THREE.Vector3();
 const _local = new THREE.Vector3();
 const _aim = new THREE.Vector3();
 const _up = new THREE.Vector3(0, 1, 0);
+// Cible d'interpolation du heros — allouee une fois, pas par image.
+const _visual = new THREE.Vector3();
 
 // Reads movement state without React re-renders (ToonHumanoid accepts a getter).
 const isHeroMoving = () => {
@@ -41,7 +48,12 @@ const isHeroMoving = () => {
 };
 
 export function Hero() {
+  // Deux groupes imbriques depuis le passage a la planete : `groupRef` porte la
+  // position et l'inclinaison du sol (voir `surfaceRotation` dans world.ts),
+  // `bodyRef` porte le cap du personnage. Les melanger ferait tourner
+  // l'inclinaison avec le heros — il marcherait de travers a mi-pente.
   const groupRef = useRef<THREE.Group>(null);
+  const bodyRef = useRef<THREE.Group>(null);
   const setHeroPos = useGameStore((state) => state.setHeroPos);
 
   const beamRef = useRef<THREE.Mesh>(null);
@@ -86,16 +98,19 @@ export function Hero() {
     // Visual Interpolation
     if (groupRef.current) {
       const logicalPos = useGameStore.getState().heroPos;
-      const targetPos = new THREE.Vector3(logicalPos[0], logicalPos[1], logicalPos[2]);
-      groupRef.current.position.lerp(targetPos, 0.2);
+      // La hauteur vient de la planete : le jeu raisonne toujours en (x, z)
+      // plat, seul le rendu suit la courbure.
+      _visual.set(logicalPos[0], logicalPos[1] + surfaceY(logicalPos[0], logicalPos[2]), logicalPos[2]);
+      groupRef.current.position.lerp(_visual, 0.2);
+      applySurfaceRotation(groupRef.current, groupRef.current.position.x, groupRef.current.position.z);
 
-      if (isMoving) {
+      if (isMoving && bodyRef.current) {
         const targetRot = Math.atan2(dx, dz);
-        const currentRot = groupRef.current.rotation.y;
+        const currentRot = bodyRef.current.rotation.y;
         let diff = targetRot - currentRot;
         while (diff < -Math.PI) diff += Math.PI * 2;
         while (diff > Math.PI) diff -= Math.PI * 2;
-        groupRef.current.rotation.y += diff * 0.2;
+        bodyRef.current.rotation.y += diff * 0.2;
       }
 
       // Dust emission (synced with the walk bounce cycle)
@@ -145,7 +160,10 @@ export function Hero() {
     const beam = beamRef.current;
     if (!group) return;
 
-    const { enemies, waveActive, damageEnemy } = useGameStore.getState();
+    const { enemies, waveActive, damageEnemy, buildingLevels } = useGameStore.getState();
+    const antenne = buildingLevels['antenne'] || 0;
+    const range = HERO_RANGE + antenne * ANTENNE_HERO_RANGE;
+    const dps = HERO_DPS + antenne * ANTENNE_HERO_DPS;
 
     if (!waveActive || enemies.length === 0) {
       if (beam) beam.visible = false;
@@ -157,12 +175,15 @@ export function Hero() {
     group.getWorldPosition(_heroPos);
 
     let nearestId: string | null = null;
-    let nearestDist = HERO_RANGE;
+    let nearestDist = range;
     for (const enemy of enemies) {
       // Les monstres à 0 pv restent dans `enemies` le temps de leur animation
       // de mort (voir Enemies.tsx) : ne pas les viser, sinon le héros reste
       // braqué sur un cadavre pendant qu'un monstre vivant approche.
       if (enemy.hp <= 0) continue;
+      // Le Spectre est intouchable pendant sa phase de dematerialisation : le
+      // viser braquerait le heros sur une cible qui ne perd pas de vie.
+      if (enemyStates.get(enemy.id)?.intangible) continue;
       // Position vivante publiée par chaque monstre — `enemy.pos` n'est que son
       // point d'apparition et ne bouge jamais.
       const live = enemyPositions.get(enemy.id);
@@ -203,7 +224,7 @@ export function Hero() {
       beam.quaternion.setFromUnitVectors(_up, _aim);
     }
 
-    dmgAcc.current += HERO_DPS * delta;
+    dmgAcc.current += dps * delta;
     tickTimer.current += delta;
     if (tickTimer.current >= HERO_TICK) {
       damageEnemy(nearestId, dmgAcc.current);
@@ -231,7 +252,9 @@ export function Hero() {
         ))}
       </group>
 
-      <ToonHumanoid def={heroDef} moving={isHeroMoving} />
+      <group ref={bodyRef}>
+        <ToonHumanoid def={heroDef} moving={isHeroMoving} />
+      </group>
     </group>
   );
 }

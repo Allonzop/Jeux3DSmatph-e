@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, Resources } from '../store';
+import { sfx } from '../sfx';
 
 const RESOURCE_LABELS: Record<keyof Resources, { label: string; color: string }> = {
   boulons: { label: 'Boulons', color: '#c9c9c9' },
@@ -32,16 +33,25 @@ function ResourceList({ amounts, sign }: { amounts: Partial<Resources>; sign: '+
 export function WaveOutcome() {
   const outcome = useGameStore((state) => state.lastWaveOutcome);
   const clearWaveOutcome = useGameStore((state) => state.clearWaveOutcome);
+  // Une vague gagnee fait souvent monter de niveau : les deux cartes sont
+  // centrees et se superposaient, illisibles toutes les deux. La montee de
+  // niveau passe devant, et le butin attend son tour — son minuteur ne demarre
+  // qu'une fois la fanfare finie, donc il garde ses sept secondes entieres.
+  const levelUp = useGameStore((state) => state.levelUp);
 
   useEffect(() => {
-    if (!outcome) return undefined;
+    if (!outcome || levelUp) return undefined;
+    // La fanfare part ici, pas dans le magasin : le son suit ce qui s'affiche,
+    // et un magasin qui joue des sons devient impossible a tester.
+    if (outcome.type === 'victory') sfx.victory();
+    else sfx.defeat();
     const t = setTimeout(() => clearWaveOutcome(), 7000);
     return () => clearTimeout(t);
-  }, [outcome, clearWaveOutcome]);
+  }, [outcome, levelUp, clearWaveOutcome]);
 
   return (
     <AnimatePresence>
-      {outcome && (
+      {outcome && !levelUp && (
         <motion.div
           key={`${outcome.type}-${outcome.wave}`}
           initial={{ opacity: 0, scale: 0.85, y: 16 }}

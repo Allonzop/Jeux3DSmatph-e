@@ -6,6 +6,7 @@ import { villagerDefs } from '../characters/defs';
 import { mulberry32 } from '../characters/rng';
 import type { CharacterDef } from '../characters/types';
 import { useGameStore } from '../store';
+import { surfaceY, applySurfaceRotation } from '../world';
 
 // Vecteur de travail partage — jamais d'allocation dans useFrame.
 const _dir = new THREE.Vector3();
@@ -73,7 +74,10 @@ export function Villagers() {
 }
 
 function Villager({ def, start }: { def: CharacterDef; start: [number, number, number] }) {
+  // Comme le heros : le groupe exterieur porte position + inclinaison du sol,
+  // l'interieur porte le cap. Voir `surfaceRotation` dans world.ts.
   const groupRef = useRef<THREE.Group>(null);
+  const bodyRef = useRef<THREE.Group>(null);
 
   // AI state — refs only, never React state (per-frame data).
   const pos = useRef(new THREE.Vector3(...start));
@@ -120,25 +124,32 @@ function Villager({ def, start }: { def: CharacterDef; start: [number, number, n
         pos.current.addScaledVector(_dir, 1.2 * delta);
 
         // Rotation
-        if (groupRef.current) {
+        if (bodyRef.current) {
           const targetRot = Math.atan2(_dir.x, _dir.z);
-          const currentRot = groupRef.current.rotation.y;
+          const currentRot = bodyRef.current.rotation.y;
           let diff = targetRot - currentRot;
           while (diff < -Math.PI) diff += Math.PI * 2;
           while (diff > Math.PI) diff -= Math.PI * 2;
-          groupRef.current.rotation.y += diff * 0.1;
+          bodyRef.current.rotation.y += diff * 0.1;
         }
       }
     }
 
     if (groupRef.current) {
-      groupRef.current.position.copy(pos.current);
+      groupRef.current.position.set(
+        pos.current.x,
+        pos.current.y + surfaceY(pos.current.x, pos.current.z),
+        pos.current.z,
+      );
+      applySurfaceRotation(groupRef.current, pos.current.x, pos.current.z);
     }
   });
 
   return (
     <group ref={groupRef}>
-      <ToonHumanoid def={def} moving={isMoving} />
+      <group ref={bodyRef}>
+        <ToonHumanoid def={def} moving={isMoving} />
+      </group>
     </group>
   );
 }

@@ -3,7 +3,10 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore, ResourceType } from '../store';
 import { useToonGradient } from './utils';
-import { RESOURCE_NODE_POSITIONS } from '../world';
+import { RESOURCE_NODE_POSITIONS, surfacePos, surfaceRotation, surfaceY } from '../world';
+import { spawnPopup } from '../effects';
+import { XP } from '../progress';
+import { sfx } from '../sfx';
 import { Html, Float } from '@react-three/drei';
 
 // Scratch vectors reused across frames — never allocate inside useFrame.
@@ -19,16 +22,28 @@ type NodeDef = {
   pos: [number, number, number];
   color: string;
   amount: number;
+  /** Secondes avant que le gisement ne repousse. */
+  cooldown: number;
 };
 
-// Early-game pacing: shorter cooldown + bigger yields so the first buildings
-// come quickly (first Hutte ~immediate, second building within ~1-2 min).
-const HARVEST_COOLDOWN = 3;
-
+/**
+ * Rendement et repousse par gisement.
+ *
+ * Les trois partageaient un unique cooldown de 3 s, si bien que la matiere
+ * floue et l'energie de rire s'entassaient par milliers sans rien a en faire :
+ * le retour d'evaluation les decrit comme « surabondantes et inutiles ».
+ *
+ * Les boulons restent genereux — c'est la monnaie de base, et la boucle du
+ * debut doit rester rapide. Les deux ressources rares redeviennent rares : un
+ * passage toutes les 14 s pour la matiere floue, 24 s pour l'energie de rire,
+ * et deux fois moins par recolte. Elles ne s'obtiennent plus surtout en
+ * tournant autour d'un gisement, mais en gagnant des vagues et en batissant
+ * la ferme et le marche — voir `waveVictoryReward` dans gamedata.ts.
+ */
 const NODES: NodeDef[] = [
-  { id: 'boulons', pos: RESOURCE_NODE_POSITIONS.boulons, color: '#c9c9c9', amount: 15 },
-  { id: 'matiere_floue', pos: RESOURCE_NODE_POSITIONS.matiere_floue, color: '#8e5ce8', amount: 4 },
-  { id: 'energie_rire', pos: RESOURCE_NODE_POSITIONS.energie_rire, color: '#ffd24c', amount: 3 },
+  { id: 'boulons', pos: RESOURCE_NODE_POSITIONS.boulons, color: '#c9c9c9', amount: 15, cooldown: 3 },
+  { id: 'matiere_floue', pos: RESOURCE_NODE_POSITIONS.matiere_floue, color: '#8e5ce8', amount: 2, cooldown: 14 },
+  { id: 'energie_rire', pos: RESOURCE_NODE_POSITIONS.energie_rire, color: '#ffd24c', amount: 1, cooldown: 24 },
 ];
 
 export function ResourceNodes() {
@@ -84,11 +99,17 @@ function ResourceNode({ def }: { def: NodeDef }) {
       
       if (dist < 2) {
         setActive(false);
-        cooldownRef.current = HARVEST_COOLDOWN;
+        cooldownRef.current = def.cooldown;
         displayAccum.current = 0;
-        setCooldownTime(HARVEST_COOLDOWN);
+        setCooldownTime(def.cooldown);
         addResources({ [def.id]: def.amount });
         useGameStore.getState().notifyTutorial('harvest');
+        useGameStore.getState().addXp(XP.harvest);
+        sfx.harvest();
+        // Le chiffre part du gisement : on voit *ou* on a gagne quoi, ce qui
+        // manquait — la recolte etait silencieuse et invisible hors du HUD.
+        spawnPopup(def.pos[0], surfaceY(def.pos[0], def.pos[2]) + 1.6, def.pos[2],
+          `+${def.amount}`, 'resource');
         
         for (let i = 0; i < 5; i++) {
           addParticle({
@@ -101,7 +122,10 @@ function ResourceNode({ def }: { def: NodeDef }) {
   });
 
   return (
-    <group position={def.pos}>
+    <group
+      position={surfacePos(def.pos[0], def.pos[2], def.pos[1])}
+      rotation={surfaceRotation(def.pos[0], def.pos[2])}
+    >
       {/* Dirt Mound */}
       <mesh position={[0, -0.4, 0]} scale={[1, 0.4, 1]} receiveShadow>
         <sphereGeometry args={[0.8, 16, 16]} />
@@ -147,7 +171,7 @@ function ResourceNode({ def }: { def: NodeDef }) {
           <div className="w-8 h-2 bg-black/50 rounded overflow-hidden border border-black/50">
             <div 
               className="h-full bg-white/80 transition-all duration-100 ease-linear"
-              style={{ width: `${(1 - cooldownTime / HARVEST_COOLDOWN) * 100}%` }}
+              style={{ width: `${(1 - cooldownTime / def.cooldown) * 100}%` }}
             />
           </div>
         </Html>
@@ -206,8 +230,14 @@ function ParticleMesh({ particle }: { particle: any }) {
   useFrame(() => {
     if (ref.current) {
       const heroPos = useGameStore.getState().heroPos;
-      _start.set(particle.from[0], particle.from[1], particle.from[2]);
-      _end.set(heroPos[0], heroPos[1] + 1, heroPos[2]);
+      // Depart et arrivee suivent la courbure de la planete, sinon la parabole
+      // partirait sous le gisement et finirait au-dessus du heros.
+      _start.set(
+        particle.from[0],
+        particle.from[1] + surfaceY(particle.from[0], particle.from[2]),
+        particle.from[2],
+      );
+      _end.set(heroPos[0], heroPos[1] + surfaceY(heroPos[0], heroPos[2]) + 1, heroPos[2]);
       
       _mid.copy(_start).lerp(_end, 0.5);
       _mid.y += 2;

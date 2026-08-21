@@ -1,88 +1,160 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useGameStore, TUTORIAL_DONE } from '../store';
 import { motion, AnimatePresence } from 'framer-motion';
+import { sfx } from '../sfx';
 
-type StepDef = { title: string; text: string };
+/**
+ * Le tutoriel, en petites bouchees.
+ *
+ * L'ancienne version tenait en cinq cartes, mais chacune etait un pave de
+ * trois a quatre lignes : « les textes actuels sont de trop gros pavés », dit
+ * le retour d'evaluation, « le joueur passe les dialogues sans lire ».
+ *
+ * Meme contenu, redecoupe en **treize cartes d'une phrase**. La regle qu'on
+ * s'impose : un titre de trois mots, une phrase de dix mots au plus, une seule
+ * idee. Ce qui ne rentre pas devient la carte suivante.
+ *
+ * Le decoupage est purement d'affichage. Le magasin garde ses cinq etapes
+ * (`tutorialStep`) et ses quatre evenements declencheurs : les sauvegardes en
+ * cours de tutoriel restent valides, et `TutorialHighlight` continue de
+ * pointer la bonne cible. Les sous-cartes sont un etat local, remis a zero des
+ * que l'etape du magasin change.
+ */
 
-// Le tutoriel disait quoi faire, jamais pourquoi. On construisait une hutte
-// sans savoir ce qu'elle apportait, et on lancait une vague sans savoir ce
-// qu'on risquait. Chaque etape enonce desormais son enjeu.
-const STEPS: StepDef[] = [
-  {
-    title: 'Bienvenue, commandant !',
-    text: 'Ce cristal au centre est le c\u0153ur de votre village \u2014 s\u2019il tombe, vous perdez. Glissez votre pouce n\u2019importe o\u00f9 sur l\u2019\u00e9cran pour d\u00e9placer votre h\u00e9ros.',
-  },
-  {
-    title: 'R\u00e9coltez des boulons',
-    text: 'Approchez-vous des cristaux gris : la r\u00e9colte est automatique. Les boulons paient tout ce que vous b\u00e2tissez \u2014 c\u2019est votre seule monnaie au d\u00e9part.',
-  },
-  {
-    title: 'B\u00e2tissez votre premi\u00e8re hutte',
-    text: 'La hutte produit des boulons toute seule, en continu, m\u00eame quand vous ne jouez pas. C\u2019est ce qui vous \u00e9vite de tout r\u00e9colter \u00e0 la main \u2014 et un villageois vient s\u2019y installer. Touchez son ic\u00f4ne en bas, choisissez un emplacement, puis payez.',
-  },
-  {
-    title: 'D\u00e9fendez le cristal',
-    text: 'Les monstres foncent droit sur le cristal. Votre h\u00e9ros tire tout seul sur le plus proche : allez au-devant d\u2019eux plut\u00f4t que d\u2019attendre. En laisser passer plus de la moiti\u00e9 d\u00e9truit le cristal et vous co\u00fbte des ressources.',
-  },
-  {
-    title: 'Le village est \u00e0 vous',
-    text: 'Chaque b\u00e2timent produit une ressource et fait venir un habitant ; la tourelle, elle, tire sur les monstres. Plus vous b\u00e2tissez, plus les vagues rapportent. Bonne chance !',
-  },
+type Card = {
+  title: string;
+  text: string;
+  /** true = la carte attend l'action du joueur ; sinon un bouton « Suivant ». */
+  waits?: boolean;
+};
+
+const CARDS: Card[][] = [
+  // Etape 0 — se deplacer
+  [
+    { title: 'Bienvenue !', text: 'Vous commandez ce village spatial.' },
+    { title: 'Le cristal', text: 'Ce gros cristal au centre, c’est votre vie.' },
+    { title: 'S’il tombe…', text: 'Vous perdez la vague. Protégez-le.' },
+    { title: 'À vous', text: 'Glissez le pouce sur l’écran pour marcher.', waits: true },
+  ],
+  // Etape 1 — recolter
+  [
+    { title: 'Les boulons', text: 'C’est la monnaie. Tout se paie avec.' },
+    { title: 'Où en trouver', text: 'Dans les cristaux gris, là-bas.' },
+    { title: 'Récoltez', text: 'Marchez dessus : ça se ramasse tout seul.', waits: true },
+  ],
+  // Etape 2 — batir
+  [
+    { title: 'La hutte', text: 'Elle fabrique des boulons pendant que vous jouez.' },
+    { title: 'Choisissez-la', text: 'Touchez l’icône orange, tout en bas.' },
+    { title: 'Posez-la', text: 'Touchez le sol vert, puis « Construire ».', waits: true },
+  ],
+  // Etape 3 — la vague
+  [
+    { title: 'Les monstres', text: 'Ils foncent droit sur le cristal.' },
+    { title: 'Vous tirez seul', text: 'Approchez-vous : le héros vise le plus proche.' },
+    { title: 'La règle', text: 'Plus de la moitié passe = cristal détruit.' },
+    { title: 'Lancez !', text: 'Bouton orange, en bas à droite.', waits: true },
+  ],
+  // Etape 4 — c'est fini
+  [
+    { title: 'Bravo !', text: 'Le village est à vous, commandant.' },
+    { title: 'La suite', text: 'Touchez un bâtiment pour voir ce qu’il fait.' },
+  ],
 ];
 
 export function Tutorial() {
   const step = useGameStore(state => state.tutorialStep);
   const skipTutorial = useGameStore(state => state.skipTutorial);
   const advanceTutorial = useGameStore(state => state.advanceTutorial);
+  const [card, setCard] = useState(0);
 
-  // The final "well done" card auto-dismisses.
+  // Chaque etape du magasin repart de sa premiere carte.
+  useEffect(() => { setCard(0); }, [step]);
+
+  const cards = CARDS[step];
+
+  // La derniere etape n'attend aucune action : elle defile puis se ferme.
   useEffect(() => {
-    if (step === TUTORIAL_DONE - 1) {
-      const t = setTimeout(() => advanceTutorial(), 4000);
-      return () => clearTimeout(t);
-    }
-    return undefined;
-  }, [step, advanceTutorial]);
+    if (step !== TUTORIAL_DONE - 1 || !cards) return undefined;
+    const t = setTimeout(() => {
+      if (card < cards.length - 1) setCard((c) => c + 1);
+      else advanceTutorial();
+    }, 3200);
+    return () => clearTimeout(t);
+  }, [step, card, cards, advanceTutorial]);
 
-  if (step >= TUTORIAL_DONE) return null;
-  const def = STEPS[step];
+  if (step >= TUTORIAL_DONE || !cards) return null;
+  const def = cards[card];
   if (!def) return null;
-  const isLast = step === TUTORIAL_DONE - 1;
+
+  const isLastStep = step === TUTORIAL_DONE - 1;
+  const next = () => {
+    sfx.tap();
+    if (card < cards.length - 1) setCard(card + 1);
+  };
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={step}
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -12 }}
-        className="absolute left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center gap-1.5 w-[min(22rem,88vw)]"
-        style={{ top: 'calc(4.5rem + var(--safe-top))' }}
-      >
-        <div className="w-full bg-[#1a1f35e6] backdrop-blur-md border border-amber-300/30 rounded-2xl px-4 py-3 shadow-[0_0_20px_rgba(245,158,11,0.25)]">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-amber-300 font-bold uppercase tracking-wider text-[clamp(0.7rem,3vw,0.8rem)]">
-              {def.title}
-            </span>
-            {!isLast && (
-              <span className="text-white/40 text-[0.65rem] font-mono shrink-0">
-                {step + 1}/4
-              </span>
-            )}
+    <div
+      className="absolute left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center gap-2 w-[min(21rem,88vw)]"
+      style={{ top: 'calc(6.4rem + var(--safe-top))' }}
+    >
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={`${step}-${card}`}
+          initial={{ opacity: 0, y: -10, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -10, scale: 0.97 }}
+          transition={{ duration: 0.18 }}
+          className="w-full bg-[#1a1f35f2] backdrop-blur-md border border-amber-300/40 rounded-2xl px-4 py-3 shadow-[0_0_24px_rgba(245,158,11,0.28)]"
+        >
+          {/* Fil d'avancement : une barre par etape, remplie jusqu'a la courante.
+              Le joueur voit combien il en reste — c'est ce qui evite le
+              sentiment de tunnel sans fin qui pousse a tout passer. */}
+          <div className="flex gap-1 mb-2">
+            {CARDS.map((group, i) => (
+              <div key={i} className="flex-1 h-[3px] rounded-full bg-white/10 overflow-hidden">
+                <div
+                  className="h-full bg-amber-300 rounded-full transition-all duration-300"
+                  style={{
+                    width: i < step ? '100%' : i === step ? `${((card + 1) / group.length) * 100}%` : '0%',
+                  }}
+                />
+              </div>
+            ))}
           </div>
-          <p className="text-white/90 text-[clamp(0.75rem,3.2vw,0.875rem)] leading-snug mt-1">
+
+          <div className="text-amber-300 font-black uppercase tracking-wider text-[clamp(0.78rem,3.4vw,0.92rem)]">
+            {def.title}
+          </div>
+          <p className="text-white text-[clamp(0.82rem,3.6vw,0.95rem)] leading-snug mt-0.5">
             {def.text}
           </p>
-        </div>
-        {!isLast && (
-          <button
-            onClick={skipTutorial}
-            className="pointer-events-auto text-white/50 hover:text-white text-xs uppercase tracking-wider font-bold px-3 py-1.5 rounded-lg bg-black/40 border border-white/10"
-          >
-            Passer le tutoriel
-          </button>
-        )}
-      </motion.div>
-    </AnimatePresence>
+
+          {!def.waits && !isLastStep && (
+            <button
+              onClick={next}
+              className="pointer-events-auto mt-2.5 w-full bg-amber-400 text-black font-black uppercase tracking-wider text-xs py-2 rounded-xl active:scale-[0.98] transition-transform shadow-[0_3px_0_#b45309]"
+            >
+              Suivant
+            </button>
+          )}
+          {def.waits && (
+            <div className="mt-2 flex items-center gap-1.5 text-amber-200/70 text-[0.68rem] font-bold uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse" />
+              À vous de jouer
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+
+      {!isLastStep && (
+        <button
+          onClick={() => { sfx.tap(); skipTutorial(); }}
+          className="pointer-events-auto text-white/45 hover:text-white text-[0.65rem] uppercase tracking-wider font-bold px-3 py-1 rounded-lg bg-black/40 border border-white/10"
+        >
+          Passer le tutoriel
+        </button>
+      )}
+    </div>
   );
 }

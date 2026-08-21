@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import type { CharacterDef } from '@game/characters/types';
-import { heroDef, villagerDefs, enemyDef } from '@game/characters/defs';
+import { heroDef, villagerDefs, enemyDefs, hunterDefs } from '@game/characters/defs';
 import type { LibraryEntry } from './types';
 
 const STORAGE_KEY = 'character-studio.library.v1';
@@ -65,7 +65,10 @@ export function seedEntriesFromKit(): LibraryEntry[] {
   return [
     fromDef(heroDef, 'Héros', ['héros']),
     ...villagerDefs.map((d, i) => fromDef(d, `Villageois ${i + 1}`, ['villageois'])),
-    fromDef(enemyDef, 'Imp', ['ennemi']),
+    // Tout le bestiaire et les Chasseurs spatiaux, pas seulement l'imp
+    // d'origine — voir `enemyDefs` / `hunterDefs` dans le jeu.
+    ...enemyDefs.map((d) => fromDef(d, `Monstre ${d.id}`, ['ennemi'])),
+    ...hunterDefs.map((d, i) => fromDef(d, `Chasseur ${i + 1}`, ['allié'])),
   ];
 }
 

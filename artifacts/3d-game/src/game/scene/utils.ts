@@ -29,3 +29,23 @@ export function useToonGradient() {
 // frame and read by turrets for targeting. Bypasses React/Zustand so enemy
 // movement never triggers React re-renders.
 export const enemyPositions = new Map<string, THREE.Vector3>();
+
+/**
+ * Etat de combat vivant de chaque monstre, meme principe que `enemyPositions` :
+ * ecrit et lu plusieurs fois par image, donc hors de React et de Zustand.
+ *
+ * - `slow` / `slowUntil` : ralentissement pose par les cryo-diffuseurs. La
+ *   tour ecrit une date d'expiration plutot que de retirer l'effet, comme ca
+ *   une tour detruite ou un monstre sorti de la zone se debloquent tout seuls.
+ * - `altitude` : les tours au sol ne visent pas ce qui vole.
+ * - `intangible` : le Spectre, pendant sa phase de dematerialisation.
+ */
+export type EnemyCombatState = {
+  slow: number;
+  slowUntil: number;
+  altitude: number;
+  kind: string;
+  intangible?: boolean;
+};
+
+export const enemyStates = new Map<string, EnemyCombatState>();

@@ -15,7 +15,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { KIT_VERSION } from '@game/characters/KIT_VERSION';
 import { resolveDef } from '@game/characters/types';
 import type { CharacterDef } from '@game/characters/types';
-import { heroDef, villagerDefs, enemyDef } from '@game/characters/defs';
+import { heroDef, villagerDefs, enemyDefs, hunterDefs } from '@game/characters/defs';
 import {
   BACK_KEYS, BODY_TYPES, DEFAULTS, EYE_SHAPES, FACE_GEAR_KEYS, FIELD_ORDER,
   HEADWEAR_KEYS, MOUTH_SHAPES, NECK_KEYS, PERSONALITY_KEYS, RANGES, minimalDef,
@@ -300,7 +300,15 @@ function cmdKit() {
     ...villagerDefs.map((def, i) => ({
       uid: `kit_v${i}`, name: `Villageois ${i + 1}`, tags: ['villageois'], def,
     })),
-    { uid: 'kit_imp', name: 'Imp', tags: ['ennemi'], def: enemyDef },
+    // Le bestiaire complet, pas seulement l'imp d'origine : les statistiques
+    // de chaque profil vivent dans `3d-game/src/game/enemies.ts`, mais son
+    // apparence est ici, et c'est elle que le studio sert à retoucher.
+    ...enemyDefs.map((def) => ({
+      uid: `kit_e_${def.id}`, name: `Monstre ${def.id}`, tags: ['ennemi'], def,
+    })),
+    ...hunterDefs.map((def, i) => ({
+      uid: `kit_h${i}`, name: `Chasseur ${i + 1}`, tags: ['allié'], def,
+    })),
   ];
   out(buildExportBundle(entries));
 }
@@ -326,7 +334,7 @@ function cmdSelftest() {
     return ok;
   };
 
-  const kitDefs = [heroDef, ...villagerDefs, enemyDef];
+  const kitDefs = [heroDef, ...villagerDefs, ...enemyDefs, ...hunterDefs];
   const generated = surpriseBatch({ count: 60, seed: 20260809, prefix: 'st' });
   const all = [...kitDefs, ...generated];
 

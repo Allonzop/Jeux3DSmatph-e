@@ -161,6 +161,42 @@ export function BuildingIcon({ id, className }: IconProps & { id: string }) {
           />
         </svg>
       );
+    case 'mortier':
+      // Squat mortar tube pointing up
+      return (
+        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+          <rect x="4.4" y="16.4" width="15.2" height="4.4" rx="2.2" fill="#4a4a52" />
+          <path d="M7.6 17.6 L13.4 6.2 L17.6 8.4 L11.8 19.8 Z" fill="#33333a" />
+          <path d="M12.6 6.6 L17.2 9" stroke="#ff7b00" strokeWidth="2.6" strokeLinecap="round" />
+          <circle cx="15.2" cy="4.4" r="2.1" fill="#ffba08" />
+          <circle cx="18.9" cy="2.6" r="1.15" fill="#ff7b00" opacity="0.8" />
+          <rect x="8.6" y="12.4" width="7.6" height="1.5" rx="0.75" transform="rotate(-27 12 13)" fill="#ff7b00" />
+        </svg>
+      );
+    case 'cryo':
+      // Ice spire inside a frost ring
+      return (
+        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+          <ellipse cx="12" cy="18.6" rx="8.6" ry="2.6" fill="none" stroke="#7dd3fc" strokeWidth="1.5" opacity="0.75" />
+          <path d="M12 3.2 L15.4 12.4 H8.6 Z" fill="#e0f2fe" />
+          <path d="M8.6 12.4 H15.4 L14.4 16.8 H9.6 Z" fill="#bae6fd" />
+          <path d="M6.2 9.6 L8 14.2 L4.6 13.6 Z" fill="#bae6fd" opacity="0.9" />
+          <path d="M17.8 9.6 L16 14.2 L19.4 13.6 Z" fill="#bae6fd" opacity="0.9" />
+          <circle cx="12" cy="8.4" r="1.3" fill="#ffffff" opacity="0.85" />
+        </svg>
+      );
+    case 'tesla':
+      // Coil stack topped by a sparking orb
+      return (
+        <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+          <path d="M8 20.6 L10.4 13.6 H13.6 L16 20.6 Z" fill="#3d3357" />
+          <ellipse cx="12" cy="13.4" rx="4.6" ry="1.5" fill="#b388eb" />
+          <ellipse cx="12" cy="10.8" rx="3.7" ry="1.25" fill="#b388eb" opacity="0.85" />
+          <ellipse cx="12" cy="8.5" rx="2.9" ry="1" fill="#b388eb" opacity="0.7" />
+          <circle cx="12" cy="5.2" r="2.7" fill="#f3e8ff" />
+          <path d="M12 5.2 L17.6 1.8 M12 5.2 L6.6 2.2 M12 5.2 L19.4 6.4" stroke="#e9d5ff" strokeWidth="1.3" strokeLinecap="round" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -190,6 +226,88 @@ export function CloseIcon({ className }: IconProps) {
         strokeWidth="2.4"
         strokeLinecap="round"
       />
+    </svg>
+  );
+}
+
+export function HammerIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path
+        d="M14.6 3.2 L20.8 9.4 L18 12.2 L15.6 9.8 L5.9 19.5 a1.9 1.9 0 0 1 -2.7 -2.7 L12.9 7.1 L10.5 4.7 Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+export function SwordIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path d="M20.5 3.5 L12.6 11.4 L9.4 8.2 L17.3 0.3 Z" fill="none" />
+      <path
+        d="M21 3 L13.4 10.6 L10.2 13.8 L7.6 11.2 L10.8 8 L18.4 0.4 Z M9.2 14.8 L7 17 M4.4 15.2 L8.8 19.6 M6.6 13 L11 17.4"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
+export function ShieldIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path
+        d="M12 2.4 L20 5.4 V11 c0 5.2 -3.4 9 -8 10.6 C7.4 20 4 16.2 4 11 V5.4 Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+export function SpeakerIcon({ className, muted }: IconProps & { muted?: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path d="M4 9.5 H7.5 L12 5.5 V18.5 L7.5 14.5 H4 Z" fill="currentColor" />
+      {muted ? (
+        <path d="M15.5 9.5 L20.5 14.5 M20.5 9.5 L15.5 14.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      ) : (
+        <path
+          d="M15.4 9 a4 4 0 0 1 0 6 M18 6.8 a7.4 7.4 0 0 1 0 10.4"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          fill="none"
+        />
+      )}
+    </svg>
+  );
+}
+
+export function StarIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path
+        d="M12 2.2 L14.9 8.6 L21.8 9.4 L16.7 14 L18.1 20.8 L12 17.3 L5.9 20.8 L7.3 14 L2.2 9.4 L9.1 8.6 Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+export function SkullIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path
+        d="M12 2.4 c-4.7 0 -8 3.3 -8 7.6 0 2.5 1.2 4.3 2.8 5.5 V19 a1.6 1.6 0 0 0 1.6 1.6 h7.2 A1.6 1.6 0 0 0 17.2 19 v-3.5 c1.6 -1.2 2.8 -3 2.8 -5.5 0 -4.3 -3.3 -7.6 -8 -7.6 Z"
+        fill="currentColor"
+      />
+      <circle cx="9" cy="10.4" r="1.9" fill="#111827" />
+      <circle cx="15" cy="10.4" r="1.9" fill="#111827" />
+      <rect x="11" y="13.6" width="2" height="3" rx="1" fill="#111827" />
     </svg>
   );
 }
