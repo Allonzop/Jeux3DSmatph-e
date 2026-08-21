@@ -74,6 +74,36 @@ niveau 5 rapportaient 72 boulons/seconde, de quoi payer une tourelle toutes les
 quatre secondes. Les niveaux 1 à 3 ne bougent pas : c'est le début de partie,
 et le buff du 20/08 répondait à un vrai problème.
 
+### Lot 2 — déblayage du décor et rotation de la vue
+
+**Le décor devient déblayable.** « Plein de petits éléments de décor gênants
+qui rendent le placement des bâtiments flou. » Plutôt que de retirer le décor —
+il fait la vie de la planète — le joueur fait sa place : une touche sur un
+arbre, un rocher, un buisson, une géode ou un champignon ouvre un panneau, et
+un bouton le déblaie contre une petite récompense (6 à 18 boulons, plus de la
+matière floue pour les géodes). Une touche ne suffit pas à détruire : le geste
+est irréversible et le joystick renvoie les touches brèves au canevas, donc un
+doigt qui glisse près d'un rocher raserait la moitié de la planète.
+
+Chaque élément de `SCATTER` porte désormais un `id` stable, `checkPlacement`
+reçoit `clearedDecor` et ignore ce qui a été déblayé, et la liste est
+persistée. Vérifié dans un vrai navigateur : `rock-0` déblayé, 500 → 518
+boulons, l'élément disparaît du rendu et de la validation de placement.
+
+**La vue tourne autour du héros** (`cameraControl.ts`, `ui/CameraControls.tsx`).
+Deux flèches et une boussole à gauche de l'écran, plus les flèches du clavier ;
+tenir une flèche fait tourner en continu, et la boussole indique de combien on
+s'est écarté de l'axe. Pas un geste à deux doigts : le joystick dynamique
+capture le pointeur dès le premier contact et les deux se déclencheraient
+ensemble.
+
+Deux points qui comptent : l'angle vit hors de React et de Zustand (il change à
+chaque image tant qu'un bouton est tenu), et **la direction du joystick est
+tournée du même angle** dans `Hero.tsx` — sans ça, pousser vers le haut de
+l'écran enverrait le héros de travers dès qu'on a tourné. À `yaw = 0` la
+rotation est l'identité : le cadrage et les commandes d'origine sont
+exactement conservés, et les outils de vérification voient la même scène.
+
 ## 2026-08-21 (soir) — Sprint : planète 3D, bestiaire, arsenal, progression, UI
 
 **Séance exceptionnelle.** Allonzo a ouvert un sprint sur un surplus de crédits

@@ -7,6 +7,7 @@ import { ToonHumanoid } from '../characters/ToonHumanoid';
 import { heroDef } from '../characters/defs';
 import { mulberry32 } from '../characters/rng';
 import { enemyPositions, enemyStates, damp } from './utils';
+import { cameraControl } from '../cameraControl';
 import { ANTENNE_HERO_RANGE, ANTENNE_HERO_DPS } from '../gamedata';
 
 const SPEED = 4;
@@ -72,8 +73,16 @@ export function Hero() {
     const time = state.clock.elapsedTime;
 
     // Movement Logic
-    const dx = heroDir[0];
-    const dz = heroDir[1];
+    //
+    // Le joystick donne une direction **a l'ecran**. Depuis que la vue peut
+    // tourner (voir `cameraControl.ts`), il faut la ramener dans le monde,
+    // sinon pousser vers le haut de l'ecran enverrait le heros de travers des
+    // qu'on a tourne la camera. A yaw = 0 la rotation est l'identite : le
+    // comportement d'origine est exactement conserve.
+    const sin = Math.sin(cameraControl.yaw);
+    const cos = Math.cos(cameraControl.yaw);
+    const dx = heroDir[0] * cos + heroDir[1] * sin;
+    const dz = -heroDir[0] * sin + heroDir[1] * cos;
     const isMoving = dx !== 0 || dz !== 0;
 
     if (isMoving) {

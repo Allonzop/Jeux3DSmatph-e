@@ -3,6 +3,7 @@ import { useGameStore } from '../store';
 import { surfaceY } from '../world';
 import { damp } from './utils';
 import { shake } from '../effects';
+import { cameraControl } from '../cameraControl';
 import * as THREE from 'three';
 
 // Vecteur de travail — la version precedente allouait un Vector3 par image.
@@ -21,11 +22,24 @@ export function Camera() {
 
   useFrame(({ clock }, delta) => {
     const ground = surfaceY(heroPos[0], heroPos[2]);
+    // Amortissement de l'orientation : une rotation instantanee donne le mal
+    // de mer sur un telephone. `damp` la rend independante de la cadence.
+    cameraControl.yaw += (cameraControl.target - cameraControl.yaw) * damp(0.12, delta);
+
     // Angle abaisse depuis le passage a la planete : a 55° on ne voyait que du
     // sol, et la courbure — tout l'interet de la sphere — sortait du cadre. A
     // 45° l'horizon, l'anneau et les lunes entrent dans l'image sans que les
     // batiments se cachent les uns les autres.
-    _target.set(heroPos[0], heroPos[1] + ground + 13.5, heroPos[2] + 13);
+    //
+    // Le decalage de 13 unites derriere le heros tourne avec `yaw` : a 0 on
+    // retombe exactement sur (0, +13,5, +13), le cadrage d'origine.
+    const sin = Math.sin(cameraControl.yaw);
+    const cos = Math.cos(cameraControl.yaw);
+    _target.set(
+      heroPos[0] + sin * 13,
+      heroPos[1] + ground + 13.5,
+      heroPos[2] + cos * 13,
+    );
     camera.position.lerp(_target, damp(0.05, delta));
 
     // Secousse : un monstre qui atteint le noyau doit se sentir. L'amplitude

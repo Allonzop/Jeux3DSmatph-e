@@ -41,6 +41,8 @@ function mulberry32(seed: number) {
 }
 
 export type ScatterItem = {
+  /** Identifiant stable, utilise pour retenir ce que le joueur a deblaye. */
+  id: string;
   pos: [number, number, number];
   scale: number;
   rot: number;
@@ -99,7 +101,8 @@ function buildScatter(): Scatter {
     return [Math.cos(a) * (maxR - 0.5), 0.5, Math.sin(a) * (maxR - 0.5)];
   };
 
-  const item = (minR: number, maxR: number, selfR: number, blockRadius: number, scaleBase: number, scaleVar: number): ScatterItem => ({
+  const item = (id: string, minR: number, maxR: number, selfR: number, blockRadius: number, scaleBase: number, scaleVar: number): ScatterItem => ({
+    id,
     pos: randomPos(minR, maxR, selfR),
     scale: scaleBase + rand() * scaleVar,
     rot: rand() * Math.PI,
@@ -109,21 +112,21 @@ function buildScatter(): Scatter {
 
   const max = WORLD_RADIUS - 0.5;
   return {
-    pond: item(6, max - 2, 2.0, 2.2, 1, 0),
-    trees: Array.from({ length: 9 }).map(() => item(5.5, max, 1.0, 1.4, 0.8, 0.4)),
-    rocks: Array.from({ length: 7 }).map(() => item(6, max, 0.8, 1.1, 0.5, 0.5)),
-    bushes: Array.from({ length: 10 }).map(() => item(4.5, max, 0.6, 0.9, 0.7, 0.6)),
-    flowers: Array.from({ length: 14 }).map(() => item(4.5, max, 0.3, 0, 0.8, 0.4)),
+    pond: item('pond', 6, max - 2, 2.0, 2.2, 1, 0),
+    trees: Array.from({ length: 9 }).map((_, i) => item(`tree-${i}`, 5.5, max, 1.0, 1.4, 0.8, 0.4)),
+    rocks: Array.from({ length: 7 }).map((_, i) => item(`rock-${i}`, 6, max, 0.8, 1.1, 0.5, 0.5)),
+    bushes: Array.from({ length: 10 }).map((_, i) => item(`bush-${i}`, 4.5, max, 0.6, 0.9, 0.7, 0.6)),
+    flowers: Array.from({ length: 14 }).map((_, i) => item(`flower-${i}`, 4.5, max, 0.3, 0, 0.8, 0.4)),
     // Ajoutes en dernier a dessein : `randomPos` consomme un rng partage, donc
     // tout ce qui est genere avant garde exactement la position qu'il avait.
-    crystals: Array.from({ length: 6 }).map(() => item(6, max, 0.7, 1.0, 0.7, 0.5)),
-    mushrooms: Array.from({ length: 7 }).map(() => item(5, max, 0.5, 0.8, 0.6, 0.5)),
+    crystals: Array.from({ length: 6 }).map((_, i) => item(`crystal-${i}`, 6, max, 0.7, 1.0, 0.7, 0.5)),
+    mushrooms: Array.from({ length: 7 }).map((_, i) => item(`mush-${i}`, 5, max, 0.5, 0.8, 0.6, 0.5)),
   };
 }
 
 export const SCATTER: Scatter = buildScatter();
 
-const BLOCKERS: { x: number; z: number; r: number }[] = [
+const BLOCKERS: { id: string; x: number; z: number; r: number }[] = [
   SCATTER.pond,
   ...SCATTER.trees,
   ...SCATTER.rocks,
@@ -132,14 +135,23 @@ const BLOCKERS: { x: number; z: number; r: number }[] = [
   ...SCATTER.mushrooms,
 ]
   .filter((s) => s.blockRadius > 0)
-  .map((s) => ({ x: s.pos[0], z: s.pos[2], r: s.blockRadius * s.scale }));
+  .map((s) => ({ id: s.id, x: s.pos[0], z: s.pos[2], r: s.blockRadius * s.scale }));
 
 export type PlacementCheck = { valid: boolean; reason: 'ok' | 'edge' | 'core' | 'building' | 'decor' };
 
+/**
+ * Le placement est-il valide ici ?
+ *
+ * `cleared` porte les elements de decor que le joueur a deblayes : ils ne
+ * bloquent plus rien. C'est la reponse au « plein de petits elements de decor
+ * genants qui rendent le placement flou » du playtest — plutot que de retirer
+ * le decor, on laisse le joueur faire sa place.
+ */
 export function checkPlacement(
   x: number,
   z: number,
   otherBuildings: [number, number, number][],
+  cleared?: Record<string, true>,
 ): PlacementCheck {
   const dist = Math.sqrt(x * x + z * z);
   if (dist > WORLD_RADIUS - EDGE_MARGIN) return { valid: false, reason: 'edge' };
@@ -150,6 +162,7 @@ export function checkPlacement(
     if (Math.sqrt(dx * dx + dz * dz) < BUILDING_MIN_GAP) return { valid: false, reason: 'building' };
   }
   for (const o of BLOCKERS) {
+    if (cleared && cleared[o.id]) continue;
     const dx = x - o.x;
     const dz = z - o.z;
     if (Math.sqrt(dx * dx + dz * dz) < o.r + 1.2) return { valid: false, reason: 'decor' };
@@ -236,3 +249,16 @@ export function applySurfaceRotation(
 
 /** Angle polaire du bord du plateau — sert à découper la calotte d'herbe. */
 export const PLATEAU_THETA = Math.asin(WORLD_RADIUS / PLANET_RADIUS);
+
+
+/** Le decor deblayable, a plat : id -> ce qu'il rapporte une fois retire. */
+export type ClearableKind = 'tree' | 'rock' | 'bush' | 'crystal' | 'mush';
+
+export function clearableKind(id: string): ClearableKind | null {
+  const dash = id.indexOf('-');
+  if (dash === -1) return null;
+  const kind = id.slice(0, dash);
+  return kind === 'tree' || kind === 'rock' || kind === 'bush' || kind === 'crystal' || kind === 'mush'
+    ? kind
+    : null;
+}

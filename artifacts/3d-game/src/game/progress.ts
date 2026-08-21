@@ -41,6 +41,8 @@ export const XP = {
   wave: (wave: number) => 40 + wave * 12,
   /** Renforcer le noyau. */
   coreUpgrade: 60,
+  /** Deblayer un element de decor. */
+  clearDecor: 6,
 } as const;
 
 /**

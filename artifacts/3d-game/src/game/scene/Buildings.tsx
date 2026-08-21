@@ -92,7 +92,8 @@ function PlacementController() {
     const others = Object.entries(useGameStore.getState().buildingPositions)
       .filter(([id]) => id !== placingBuilding)
       .map(([, p]) => p);
-    const check = checkPlacement(x, z, others);
+    // Le decor deblaye ne bloque plus : c'est tout l'interet du deblayage.
+    const check = checkPlacement(x, z, others, useGameStore.getState().clearedDecor);
     validRef.current = check.valid;
     hasPointRef.current = true;
     if (ghostRef.current) {

@@ -3,6 +3,8 @@ import { useGameStore, ResourceType } from '../store';
 import { buildingData } from '../gamedata';
 import { nextObjective } from '../objectives';
 import { BuildingPopup } from './BuildingPopup';
+import { DecorPopup } from './DecorPopup';
+import { CameraControls } from './CameraControls';
 import { BuildSheet } from './BuildSheet';
 import { Tutorial } from './Tutorial';
 import { WaveOutcome } from './WaveOutcome';
@@ -93,6 +95,8 @@ export function HUD() {
       </AnimatePresence>
 
       {!placingBuilding && tutorialStep >= 5 && <ObjectiveChip />}
+
+      <CameraControls />
 
       {/* ---------- Bas : agir ---------- */}
       <div
@@ -209,6 +213,7 @@ export function HUD() {
       <WaveOutcome />
       <LevelUp />
       <BuildSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
+      <DecorPopup />
       <BuildingPopup />
     </div>
   );

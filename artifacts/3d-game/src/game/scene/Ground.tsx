@@ -12,6 +12,9 @@ import {
   surfaceRotation,
 } from '../world';
 import * as THREE from 'three';
+import { useGameStore } from '../store';
+import type { ScatterItem } from '../world';
+import { sfx } from '../sfx';
 
 /**
  * La planète.
@@ -37,6 +40,7 @@ const RIM_Y = surfaceY(WORLD_RADIUS, 0);
 export function Ground() {
   const gradientMap = useToonGradient();
   const { trees, bushes, flowers, rocks, pond, crystals, mushrooms } = SCATTER;
+  const cleared = useGameStore((state) => state.clearedDecor);
 
   return (
     <group>
@@ -59,7 +63,7 @@ export function Ground() {
 
       {/* Arbres */}
       {trees.map((t, i) => (
-        <OnSurface key={`tree-${i}`} x={t.pos[0]} z={t.pos[2]}>
+        <Clearable key={t.id} item={t} cleared={cleared}>
           <group scale={t.scale} rotation={[0, t.rot, 0]}>
             <mesh position={[0, 0.6, 0]} castShadow receiveShadow>
               <cylinderGeometry args={[0.1, 0.2, 1.2, 8]} />
@@ -78,12 +82,12 @@ export function Ground() {
               <meshToonMaterial color="#57cc99" gradientMap={gradientMap} />
             </mesh>
           </group>
-        </OnSurface>
+        </Clearable>
       ))}
 
       {/* Buissons */}
       {bushes.map((b, i) => (
-        <OnSurface key={`bush-${i}`} x={b.pos[0]} z={b.pos[2]}>
+        <Clearable key={b.id} item={b} cleared={cleared}>
           <group scale={b.scale}>
             <mesh position={[0, 0.2, 0]} scale={[1, 0.8, 1]} castShadow receiveShadow>
               <sphereGeometry args={[0.4, 16, 16]} />
@@ -98,7 +102,7 @@ export function Ground() {
               <meshToonMaterial color="#57cc99" gradientMap={gradientMap} />
             </mesh>
           </group>
-        </OnSurface>
+        </Clearable>
       ))}
 
       {/* Fleurs */}
@@ -125,17 +129,17 @@ export function Ground() {
 
       {/* Rochers */}
       {rocks.map((r, i) => (
-        <OnSurface key={`rock-${i}`} x={r.pos[0]} z={r.pos[2]}>
+        <Clearable key={r.id} item={r} cleared={cleared}>
           <mesh rotation={[r.rot * 0.7, r.rot, r.rot * 1.3]} scale={r.scale} castShadow receiveShadow>
             <icosahedronGeometry args={[0.5, 0]} />
             <meshStandardMaterial color="#888888" flatShading roughness={1} />
           </mesh>
-        </OnSurface>
+        </Clearable>
       ))}
 
       {/* Géodes : trois éclats groupés, la seule source de couleur froide du décor */}
       {crystals.map((c, i) => (
-        <OnSurface key={`crystal-${i}`} x={c.pos[0]} z={c.pos[2]}>
+        <Clearable key={c.id} item={c} cleared={cleared}>
           <group scale={c.scale} rotation={[0, c.rot, 0]}>
             <mesh position={[0, 0.45, 0]} scale={[0.35, 1, 0.35]} castShadow>
               <octahedronGeometry args={[0.6, 0]} />
@@ -175,12 +179,12 @@ export function Ground() {
               />
             </mesh>
           </group>
-        </OnSurface>
+        </Clearable>
       ))}
 
       {/* Champignons géants */}
       {mushrooms.map((m, i) => (
-        <OnSurface key={`mush-${i}`} x={m.pos[0]} z={m.pos[2]}>
+        <Clearable key={m.id} item={m} cleared={cleared}>
           <group scale={m.scale} rotation={[0, m.rot, 0]}>
             <mesh position={[0, 0.35, 0]} castShadow>
               <cylinderGeometry args={[0.13, 0.19, 0.7, 10]} />
@@ -199,7 +203,7 @@ export function Ground() {
               <meshToonMaterial color="#fff2df" gradientMap={gradientMap} />
             </mesh>
           </group>
-        </OnSurface>
+        </Clearable>
       ))}
 
       {/* Éclats en orbite basse — repères de profondeur autour de la planète */}
@@ -224,6 +228,56 @@ export function Ground() {
           <meshToonMaterial color="#6ede8a" gradientMap={gradientMap} />
         </mesh>
       </Float>
+    </group>
+  );
+}
+
+/**
+ * Un element de decor deblayable.
+ *
+ * Le playtest signale « plein de petits elements de decor genants qui rendent
+ * le placement des batiments flou ». Plutot que de retirer le decor — il fait
+ * la vie de la planete — le joueur peut faire sa place : une touche ouvre son
+ * panneau, un bouton le deblaie, et il rapporte de quoi payer le geste.
+ *
+ * Deblaye, l'element disparait du rendu **et** de la validation de placement
+ * (`checkPlacement` recoit `clearedDecor`), et ca survit a la sauvegarde.
+ */
+function Clearable({
+  item,
+  cleared,
+  children,
+}: {
+  item: ScatterItem;
+  cleared: Record<string, true>;
+  children: React.ReactNode;
+}) {
+  const selectDecor = useGameStore((state) => state.selectDecor);
+  const placing = useGameStore((state) => state.placingBuilding);
+  const selected = useGameStore((state) => state.selectedDecor === item.id);
+
+  if (cleared[item.id]) return null;
+
+  // Pendant une pose, le decor laisse passer la touche : le capteur de pose
+  // est sous lui, exactement comme pour les batiments (voir Buildings.tsx).
+  const tap = placing
+    ? undefined
+    : (e: { stopPropagation: () => void }) => {
+        e.stopPropagation();
+        selectDecor(item.id);
+        sfx.tap();
+      };
+
+  return (
+    <group position={surfacePos(item.pos[0], item.pos[2])} rotation={surfaceRotation(item.pos[0], item.pos[2])}>
+      <group onPointerDown={tap}>{children}</group>
+      {/* Halo de selection : sans lui, on ne sait pas lequel on vient de toucher. */}
+      {selected && (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.07, 0]}>
+          <ringGeometry args={[0.75, 0.95, 28]} />
+          <meshBasicMaterial color="#fbbf24" transparent opacity={0.85} depthWrite={false} />
+        </mesh>
+      )}
     </group>
   );
 }

@@ -11,6 +11,7 @@ import {
   MARCHE_LOOT_BONUS,
 } from './gamedata';
 import { composeWave, ENEMY_TYPES, type EnemyKind } from './enemies';
+import { clearableKind, type ClearableKind } from './world';
 import { xpForLevel, levelUpReward, XP } from './progress';
 
 export type ResourceType = 'boulons' | 'matiere_floue' | 'energie_rire';
@@ -94,6 +95,12 @@ export interface GameState {
   /** Niveau de renforcement du noyau : chaque niveau encaisse un monstre de plus. */
   coreLevel: number;
 
+  // ---- Deblayage du decor ----
+  /** Elements de decor retires par le joueur. Ils ne bloquent plus le placement. */
+  clearedDecor: Record<string, true>;
+  /** Element de decor selectionne, dont le panneau de deblayage est ouvert. */
+  selectedDecor: string | null;
+
   addResources: (res: Partial<Resources>) => void;
   spendResources: (res: Partial<Resources>) => boolean;
   upgradeBuilding: (id: string, cost: Partial<Resources>) => void;
@@ -119,6 +126,9 @@ export interface GameState {
   advanceTutorial: () => void;
   skipTutorial: () => void;
   clearWaveOutcome: () => void;
+  selectDecor: (id: string | null) => void;
+  /** Retire un element de decor et verse sa recompense. */
+  clearDecor: (id: string) => void;
   /** Gagne de l'experience ; declenche une montee de niveau si le seuil est franchi. */
   addXp: (amount: number) => void;
   clearLevelUp: () => void;
@@ -127,6 +137,31 @@ export interface GameState {
   /** Dev/test helper: wipes the save and restarts the whole game from zero. */
   resetGame: () => void;
 }
+
+/**
+ * Ce que rapporte le deblayage d'un element de decor.
+ *
+ * Volontairement modeste : c'est une recompense de nettoyage, pas une source
+ * de revenu. Le decor ne repousse pas, donc chaque gain est unique — le total
+ * de la planete tient dans les cent premieres secondes de production d'une
+ * hutte de niveau 2.
+ */
+export const DECOR_REWARD: Record<ClearableKind, Partial<Resources>> = {
+  tree: { boulons: 12 },
+  rock: { boulons: 18 },
+  bush: { boulons: 6 },
+  mush: { boulons: 9 },
+  crystal: { boulons: 10, matiere_floue: 2 },
+};
+
+/** Nom affiche de chaque famille de decor. */
+export const DECOR_LABEL: Record<ClearableKind, string> = {
+  tree: 'Arbre',
+  rock: 'Rocher',
+  bush: 'Buisson',
+  mush: 'Champignon géant',
+  crystal: 'Géode',
+};
 
 export const TUTORIAL_DONE = 5;
 // Which player event completes each tutorial step.
@@ -190,6 +225,8 @@ const initialGameState = () => ({
   bestWave: 0,
   totalKills: 0,
   coreLevel: 0,
+  clearedDecor: {} as Record<string, true>,
+  selectedDecor: null,
 });
 
 export const useGameStore = create<GameState>()(
@@ -478,6 +515,25 @@ export const useGameStore = create<GameState>()(
       skipTutorial: () => set({ tutorialStep: TUTORIAL_DONE }),
       clearWaveOutcome: () => set({ lastWaveOutcome: null }),
 
+      selectDecor: (id) => set({ selectedDecor: id }),
+
+      clearDecor: (id) => {
+        if (get().clearedDecor[id]) return;
+        const kind = clearableKind(id);
+        if (!kind) return;
+        const reward = DECOR_REWARD[kind];
+        set((state) => ({
+          clearedDecor: { ...state.clearedDecor, [id]: true as const },
+          selectedDecor: null,
+          resources: {
+            boulons: state.resources.boulons + (reward.boulons || 0),
+            matiere_floue: state.resources.matiere_floue + (reward.matiere_floue || 0),
+            energie_rire: state.resources.energie_rire + (reward.energie_rire || 0),
+          },
+        }));
+        get().addXp(XP.clearDecor);
+      },
+
       addXp: (amount) => {
         if (amount <= 0) return;
         const state = get();
@@ -554,6 +610,7 @@ export const useGameStore = create<GameState>()(
         bestWave: state.bestWave,
         totalKills: state.totalKills,
         coreLevel: state.coreLevel,
+        clearedDecor: state.clearedDecor,
       }),
       migrate: (persisted: any, version) => {
         if (version < 2 && persisted) {
