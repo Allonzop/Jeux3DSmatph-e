@@ -14,6 +14,7 @@ import {
   surfaceY,
 } from '../world';
 import { Html, RoundedBox } from '@react-three/drei';
+import { maxRadiusAt, ZONE_OUTER_RADIUS } from '../zones';
 import { spawnBurst, spawnPopup } from '../effects';
 import { sfx } from '../sfx';
 
@@ -92,8 +93,12 @@ function PlacementController() {
     const others = Object.entries(useGameStore.getState().buildingPositions)
       .filter(([id]) => id !== placingBuilding)
       .map(([, p]) => p);
-    // Le decor deblaye ne bloque plus : c'est tout l'interet du deblayage.
-    const check = checkPlacement(x, z, others, useGameStore.getState().clearedDecor);
+    // Le decor deblaye ne bloque plus : c'est tout l'interet du deblayage. Et
+    // la limite exterieure suit le secteur, annexe ou non (voir zones.ts).
+    const state = useGameStore.getState();
+    const check = checkPlacement(
+      x, z, others, state.clearedDecor, maxRadiusAt(x, z, state.unlockedZones),
+    );
     validRef.current = check.valid;
     hasPointRef.current = true;
     if (ghostRef.current) {
@@ -130,8 +135,14 @@ function PlacementController() {
           }
         }}
       >
+        {/* Le capteur couvre desormais jusqu'au bord des zones annexables :
+            sans ca, toucher le sol d'un secteur annexe ne posait rien. La
+            validite du point reste decidee par `checkPlacement`. */}
         <sphereGeometry
-          args={[PLANET_RADIUS + 0.03, 64, 40, 0, Math.PI * 2, 0, PLATEAU_THETA + 0.03]}
+          args={[
+            PLANET_RADIUS + 0.03, 72, 48, 0, Math.PI * 2, 0,
+            Math.asin(ZONE_OUTER_RADIUS / PLANET_RADIUS) + 0.03,
+          ]}
         />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>

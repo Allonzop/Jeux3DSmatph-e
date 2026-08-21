@@ -12,6 +12,7 @@ import {
 } from './gamedata';
 import { composeWave, ENEMY_TYPES, type EnemyKind } from './enemies';
 import { clearableKind, type ClearableKind } from './world';
+import { ZONES } from './zones';
 import { xpForLevel, levelUpReward, XP } from './progress';
 
 export type ResourceType = 'boulons' | 'matiere_floue' | 'energie_rire';
@@ -101,6 +102,12 @@ export interface GameState {
   /** Element de decor selectionne, dont le panneau de deblayage est ouvert. */
   selectedDecor: string | null;
 
+  // ---- Annexion des zones ----
+  /** Secteurs de la planete annexes par le joueur. Voir zones.ts. */
+  unlockedZones: Record<string, true>;
+  /** Secteur dont la fiche d'annexion est ouverte. */
+  selectedZone: string | null;
+
   addResources: (res: Partial<Resources>) => void;
   spendResources: (res: Partial<Resources>) => boolean;
   upgradeBuilding: (id: string, cost: Partial<Resources>) => void;
@@ -126,6 +133,9 @@ export interface GameState {
   advanceTutorial: () => void;
   skipTutorial: () => void;
   clearWaveOutcome: () => void;
+  selectZone: (id: string | null) => void;
+  /** Annexe un secteur si le niveau et les ressources suivent. */
+  unlockZone: (id: string) => boolean;
   selectDecor: (id: string | null) => void;
   /** Retire un element de decor et verse sa recompense. */
   clearDecor: (id: string) => void;
@@ -227,6 +237,8 @@ const initialGameState = () => ({
   coreLevel: 0,
   clearedDecor: {} as Record<string, true>,
   selectedDecor: null,
+  unlockedZones: {} as Record<string, true>,
+  selectedZone: null,
 });
 
 export const useGameStore = create<GameState>()(
@@ -515,6 +527,23 @@ export const useGameStore = create<GameState>()(
       skipTutorial: () => set({ tutorialStep: TUTORIAL_DONE }),
       clearWaveOutcome: () => set({ lastWaveOutcome: null }),
 
+      selectZone: (id) => set({ selectedZone: id }),
+
+      unlockZone: (id) => {
+        const state = get();
+        if (state.unlockedZones[id]) return false;
+        const zone = ZONES.find((z) => z.id === id);
+        if (!zone) return false;
+        if (state.playerLevel < zone.requiredLevel) return false;
+        if (!get().spendResources(zone.cost)) return false;
+        set((s2) => ({
+          unlockedZones: { ...s2.unlockedZones, [id]: true as const },
+          selectedZone: null,
+        }));
+        get().addXp(XP.unlockZone);
+        return true;
+      },
+
       selectDecor: (id) => set({ selectedDecor: id }),
 
       clearDecor: (id) => {
@@ -611,6 +640,7 @@ export const useGameStore = create<GameState>()(
         totalKills: state.totalKills,
         coreLevel: state.coreLevel,
         clearedDecor: state.clearedDecor,
+        unlockedZones: state.unlockedZones,
       }),
       migrate: (persisted: any, version) => {
         if (version < 2 && persisted) {

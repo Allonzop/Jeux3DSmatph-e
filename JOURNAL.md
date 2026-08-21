@@ -74,6 +74,40 @@ niveau 5 rapportaient 72 boulons/seconde, de quoi payer une tourelle toutes les
 quatre secondes. Les niveaux 1 à 3 ne bougent pas : c'est le début de partie,
 et le buff du 20/08 répondait à un vrai problème.
 
+### Lot 3 — les zones deviennent des secteurs à annexer
+
+« Au lieu d'avoir un effet pas fini, transforme les zones grisées en zones
+déblocables. » C'est fait, et c'est le plus gros morceau du sprint.
+
+`zones.ts` découpe la couronne `WORLD_RADIUS → 22` en **quatre secteurs d'un
+quart de tour**, chacun avec son biome : Plaines de Cendre (obsidienne sur
+coulée refroidie), Toundra de Givre (pics de glace), Jungle de Spores
+(champignons bioluminescents), Dunes Dorées (sable de verre et quartz).
+Verrouillé, un secteur est gris mat et porte un cadenas — « pas encore à vous »
+plutôt que « pas fini ». Annexé, il prend sa palette, son décor propre, et
+devient jouable **et constructible**.
+
+Une seule fonction arbitre tout : `maxRadiusAt(x, z, unlocked)`. Le héros s'y
+heurte, `checkPlacement` s'en sert, et elle rend `WORLD_RADIUS` partout tant
+que rien n'est annexé — donc une partie sans zone se comporte exactement comme
+avant, y compris pour les outils de vérification. Vérifié dans un navigateur :
+les quatre secteurs s'annexent, et le héros marche jusqu'à r = 22 dans un
+secteur annexé contre 14 ailleurs.
+
+Chaque zone porte déjà un `corePos`, l'emplacement de son futur cœur à
+défendre — la donnée est là, le combat n'a encore qu'un cœur. Et un onglet
+**Empire** dans la feuille de construction montre les secteurs possédés, ceux
+qui restent, et annonce la deuxième planète : « annexez les quatre secteurs de
+la Racine, et l'empire s'étendra plus loin ». C'est le point d'entrée tout
+trouvé pour la suite.
+
+**La conversion d'angle, à ne pas refaire de tête.** `zones.ts` décrit les
+secteurs en `atan2(z, x)` ; la `SphereGeometry` de three paramètre par `phi`,
+avec `x = −r·sinθ·cos φ`, d'où `phi = π − angle`, `phiStart = π − to` et
+`phiLength = to − from`. Un seul endroit du projet fait cette conversion, dans
+`ZoneSector` — la refaire ailleurs à l'envers donne des secteurs en miroir,
+qui compilent et se placent silencieusement du mauvais côté.
+
 ### Lot 2 — déblayage du décor et rotation de la vue
 
 **Le décor devient déblayable.** « Plein de petits éléments de décor gênants

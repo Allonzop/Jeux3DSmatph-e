@@ -4,6 +4,7 @@ import { buildingData } from '../gamedata';
 import { nextObjective } from '../objectives';
 import { BuildingPopup } from './BuildingPopup';
 import { DecorPopup } from './DecorPopup';
+import { ZonePopup } from './ZonePopup';
 import { CameraControls } from './CameraControls';
 import { BuildSheet } from './BuildSheet';
 import { Tutorial } from './Tutorial';
@@ -214,6 +215,7 @@ export function HUD() {
       <LevelUp />
       <BuildSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
       <DecorPopup />
+      <ZonePopup />
       <BuildingPopup />
     </div>
   );

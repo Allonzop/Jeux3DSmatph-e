@@ -11,6 +11,7 @@ import {
   type BuildingRole,
 } from '../gamedata';
 import { ResourceIcon, BuildingIcon, CloseIcon } from './icons';
+import { EmpirePanel } from './ZonePopup';
 import { sfx } from '../sfx';
 
 /**
@@ -27,6 +28,9 @@ import { sfx } from '../sfx';
  */
 
 const ROLE_ORDER: BuildingRole[] = ['defense', 'production', 'soutien'];
+
+/** Le quatrieme onglet n'est pas un role de batiment : c'est la carte des zones. */
+type Tab = BuildingRole | 'empire';
 
 const ROLE_TINT: Record<BuildingRole, string> = {
   defense: '#f87171',
@@ -69,7 +73,7 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
   const buildingPositions = useGameStore((s) => s.buildingPositions);
   const startPlacing = useGameStore((s) => s.startPlacing);
   const selectBuilding = useGameStore((s) => s.selectBuilding);
-  const [tab, setTab] = useState<BuildingRole>('defense');
+  const [tab, setTab] = useState<Tab>('defense');
 
   const groups = ROLE_ORDER.map((role) => ({
     role,
@@ -115,7 +119,7 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
                   <button
                     key={g.role}
                     onClick={() => { sfx.tap(); setTab(g.role); }}
-                    className={`flex-1 py-2 rounded-xl text-[0.7rem] font-black uppercase tracking-wider border transition-colors ${
+                    className={`flex-1 py-2 rounded-xl text-[0.66rem] font-black uppercase tracking-wider border transition-colors ${
                       tab === g.role
                         ? 'text-black border-transparent'
                         : 'text-white/50 bg-white/5 border-white/10'
@@ -125,10 +129,19 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
                     {ROLE_LABEL[g.role]}
                   </button>
                 ))}
+                <button
+                  onClick={() => { sfx.tap(); setTab('empire'); }}
+                  className={`flex-1 py-2 rounded-xl text-[0.66rem] font-black uppercase tracking-wider border transition-colors ${
+                    tab === 'empire' ? 'bg-violet-400 text-black border-transparent' : 'text-white/50 bg-white/5 border-white/10'
+                  }`}
+                >
+                  Empire
+                </button>
               </div>
             </div>
 
             <div className="overflow-y-auto px-4 pb-4 flex flex-col gap-2.5">
+              {tab === 'empire' && <EmpirePanel onClose={onClose} />}
               {tab === 'defense' && <CoreCard />}
 
               {shown.map((data) => {

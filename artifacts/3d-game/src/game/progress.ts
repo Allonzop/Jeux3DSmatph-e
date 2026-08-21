@@ -43,6 +43,8 @@ export const XP = {
   coreUpgrade: 60,
   /** Deblayer un element de decor. */
   clearDecor: 6,
+  /** Annexer un secteur de la planete. */
+  unlockZone: 250,
 } as const;
 
 /**

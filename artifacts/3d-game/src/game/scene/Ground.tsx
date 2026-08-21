@@ -15,6 +15,7 @@ import * as THREE from 'three';
 import { useGameStore } from '../store';
 import type { ScatterItem } from '../world';
 import { sfx } from '../sfx';
+import { ZONES, ZONE_THETA_INNER, ZONE_THETA_OUTER, ZONE_OUTER_RADIUS, type ZoneDef } from '../zones';
 
 /**
  * La planète.
@@ -36,6 +37,8 @@ const PLANET_CENTER: [number, number, number] = [0, -PLANET_RADIUS, 0];
 
 /** Bord du plateau jouable : le cercle où l'herbe cède au rocher. */
 const RIM_Y = surfaceY(WORLD_RADIUS, 0);
+/** Bord extérieur des zones annexables. */
+const ZONE_RIM_Y = surfaceY(ZONE_OUTER_RADIUS, 0);
 
 export function Ground() {
   const gradientMap = useToonGradient();
@@ -45,6 +48,7 @@ export function Ground() {
   return (
     <group>
       <PlanetBody gradientMap={gradientMap} />
+      <Zones gradientMap={gradientMap} />
       <Atmosphere />
       <PlanetRing />
       <Moons gradientMap={gradientMap} />
@@ -322,8 +326,10 @@ function PlanetBody({ gradientMap }: { gradientMap: THREE.Texture }) {
       {/* Roche : le reste de la même sphère, même rayon donc aucun raccord
           visible. Peu de segments + flatShading pour des facettes franches. */}
       <mesh receiveShadow>
+        {/* La roche ne commence plus au bord du plateau mais au bord des
+            zones annexables : entre les deux, c'est le secteur qui peint. */}
         <sphereGeometry
-          args={[PLANET_RADIUS, 40, 28, 0, Math.PI * 2, PLATEAU_THETA + 0.02, Math.PI]}
+          args={[PLANET_RADIUS, 40, 28, 0, Math.PI * 2, ZONE_THETA_OUTER, Math.PI]}
         />
         <meshStandardMaterial color="#6d5468" flatShading roughness={1} />
       </mesh>
@@ -337,15 +343,232 @@ function PlanetBody({ gradientMap }: { gradientMap: THREE.Texture }) {
   );
 }
 
+/**
+ * Les quatre secteurs annexables.
+ *
+ * Verrouillés, ils sont gris et portent un cadenas : ce sont les « zones
+ * grisées » du playtest, qui passaient pour un décor inachevé. Annexés, chacun
+ * prend la couleur de son biome et son propre décor.
+ *
+ * ## La conversion d'angle
+ *
+ * `zones.ts` décrit les secteurs en `atan2(z, x)` : 0 sur l'axe +X, sens
+ * direct. La `SphereGeometry` de three paramètre par `phi`, avec
+ * `x = −r·sinθ·cos φ` et `z = r·sinθ·sin φ`, donc `atan2(z, x) = π − φ`. D'où
+ * `phiStart = π − to` et `phiLength = to − from`. C'est **le seul endroit** du
+ * projet qui fait cette conversion.
+ */
+function Zones({ gradientMap }: { gradientMap: THREE.Texture }) {
+  const unlocked = useGameStore((state) => state.unlockedZones);
+  return (
+    <group>
+      {ZONES.map((zone) => (
+        <ZoneSector key={zone.id} zone={zone} unlocked={!!unlocked[zone.id]} gradientMap={gradientMap} />
+      ))}
+    </group>
+  );
+}
+
+function ZoneSector({
+  zone,
+  unlocked,
+  gradientMap,
+}: {
+  zone: ZoneDef;
+  unlocked: boolean;
+  gradientMap: THREE.Texture;
+}) {
+  const selectZone = useGameStore((state) => state.selectZone);
+  const placing = useGameStore((state) => state.placingBuilding);
+
+  const phiStart = Math.PI - zone.to;
+  const phiLength = zone.to - zone.from;
+  const mid = (zone.from + zone.to) / 2;
+  const markerR = (WORLD_RADIUS + ZONE_OUTER_RADIUS) / 2;
+  const markerX = Math.cos(mid) * markerR;
+  const markerZ = Math.sin(mid) * markerR;
+
+  // Verrouillé, le secteur est cliquable pour ouvrir sa fiche. Annexé, il
+  // laisse passer la touche : c'est du sol constructible comme un autre.
+  const tap =
+    unlocked || placing
+      ? undefined
+      : (e: { stopPropagation: () => void }) => {
+          e.stopPropagation();
+          selectZone(zone.id);
+          sfx.tap();
+        };
+
+  return (
+    <group>
+      <mesh position={PLANET_CENTER} receiveShadow onPointerDown={tap}>
+        <sphereGeometry
+          args={[
+            PLANET_RADIUS, 48, 16, phiStart, phiLength,
+            ZONE_THETA_INNER, ZONE_THETA_OUTER - ZONE_THETA_INNER,
+          ]}
+        />
+        {unlocked ? (
+          <meshToonMaterial color={zone.palette.ground} gradientMap={gradientMap} />
+        ) : (
+          // Gris franc et mat : « pas encore à vous », pas « pas fini ».
+          <meshStandardMaterial color="#39323f" roughness={1} flatShading />
+        )}
+      </mesh>
+
+      {unlocked ? (
+        <ZoneDecor zone={zone} gradientMap={gradientMap} />
+      ) : (
+        <OnSurface x={markerX} z={markerZ} lift={0.05}>
+          {/* Cadenas : la seule chose lumineuse d'un secteur verrouillé. */}
+          <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[1.6, 1.9, 40]} />
+            <meshBasicMaterial color="#8b8494" transparent opacity={0.55} depthWrite={false} />
+          </mesh>
+          <group position={[0, 1.2, 0]}>
+            <mesh position={[0, 0.55, 0]}>
+              <torusGeometry args={[0.34, 0.1, 10, 20, Math.PI]} />
+              <meshStandardMaterial color="#cfc9d8" emissive="#cfc9d8" emissiveIntensity={0.55} />
+            </mesh>
+            <mesh>
+              <boxGeometry args={[0.95, 0.75, 0.42]} />
+              <meshStandardMaterial color="#cfc9d8" emissive="#cfc9d8" emissiveIntensity={0.35} />
+            </mesh>
+            <mesh position={[0, -0.05, 0.24]}>
+              <cylinderGeometry args={[0.11, 0.11, 0.2, 10]} />
+              <meshStandardMaterial color="#3b3546" />
+            </mesh>
+          </group>
+        </OnSurface>
+      )}
+    </group>
+  );
+}
+
+/**
+ * Le décor propre à un biome.
+ *
+ * Déterministe à partir de l'identifiant de la zone : la Toundra a toujours
+ * les mêmes pics de glace au même endroit, d'une partie à l'autre. Rien n'est
+ * bloquant ici — le décor annexé est décoratif, la place est déjà payée.
+ */
+function ZoneDecor({ zone, gradientMap }: { zone: ZoneDef; gradientMap: THREE.Texture }) {
+  const items = useMemo(() => {
+    let seed = 0;
+    for (let i = 0; i < zone.id.length; i++) seed = (seed * 31 + zone.id.charCodeAt(i)) | 0;
+    const rand = () => {
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    return Array.from({ length: 14 }).map(() => {
+      const a = zone.from + rand() * (zone.to - zone.from);
+      const r = WORLD_RADIUS + 1.2 + rand() * (ZONE_OUTER_RADIUS - WORLD_RADIUS - 2.4);
+      return {
+        x: Math.cos(a) * r,
+        z: Math.sin(a) * r,
+        scale: 0.7 + rand() * 0.8,
+        rot: rand() * Math.PI * 2,
+        tall: rand() > 0.5,
+      };
+    });
+  }, [zone]);
+
+  return (
+    <group>
+      {items.map((item, i) => (
+        <OnSurface key={i} x={item.x} z={item.z}>
+          <group scale={item.scale} rotation={[0, item.rot, 0]}>
+            {zone.decor === 'obsidian' && (
+              <>
+                <mesh position={[0, 0.7, 0]} rotation={[0.1, 0, 0.12]} castShadow>
+                  <coneGeometry args={[0.34, 1.5, 4]} />
+                  <meshStandardMaterial color={zone.palette.rock} flatShading roughness={0.6} />
+                </mesh>
+                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]}>
+                  <circleGeometry args={[0.75, 12]} />
+                  <meshBasicMaterial color={zone.palette.glow} transparent opacity={0.28} depthWrite={false} />
+                </mesh>
+              </>
+            )}
+            {zone.decor === 'ice' && (
+              <>
+                <mesh position={[0, 0.75, 0]} castShadow>
+                  <coneGeometry args={[0.3, 1.6, 6]} />
+                  <meshStandardMaterial
+                    color={zone.palette.accent}
+                    emissive={zone.palette.glow}
+                    emissiveIntensity={0.45}
+                    flatShading
+                  />
+                </mesh>
+                <mesh position={[0.35, 0.4, 0.2]} scale={0.55} castShadow>
+                  <coneGeometry args={[0.3, 1.4, 6]} />
+                  <meshStandardMaterial color={zone.palette.accent} flatShading />
+                </mesh>
+              </>
+            )}
+            {zone.decor === 'spore' && (
+              <>
+                <mesh position={[0, 0.45, 0]} castShadow>
+                  <cylinderGeometry args={[0.14, 0.22, 0.9, 8]} />
+                  <meshToonMaterial color="#e8dcc8" gradientMap={gradientMap} />
+                </mesh>
+                <mesh position={[0, 1, 0]} scale={[1, 0.55, 1]} castShadow>
+                  <sphereGeometry args={[0.72, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+                  <meshStandardMaterial
+                    color={zone.palette.accent}
+                    emissive={zone.palette.glow}
+                    emissiveIntensity={0.55}
+                  />
+                </mesh>
+              </>
+            )}
+            {zone.decor === 'dune' && (
+              <>
+                <mesh position={[0, 0.18, 0]} scale={[1.6, 0.45, 1.1]} receiveShadow>
+                  <sphereGeometry args={[0.85, 14, 10]} />
+                  <meshToonMaterial color={zone.palette.rock} gradientMap={gradientMap} />
+                </mesh>
+                {item.tall && (
+                  <mesh position={[0.3, 0.75, 0]} rotation={[0, 0, 0.2]} castShadow>
+                    <octahedronGeometry args={[0.45, 0]} />
+                    <meshStandardMaterial
+                      color={zone.palette.glow}
+                      emissive={zone.palette.glow}
+                      emissiveIntensity={0.6}
+                      flatShading
+                    />
+                  </mesh>
+                )}
+              </>
+            )}
+          </group>
+        </OnSurface>
+      ))}
+    </group>
+  );
+}
+
 /** Bourrelet de falaise + halo atmosphérique. */
 function Atmosphere() {
   return (
     <group>
       {/* Corniche : cache le changement de matière au bord du plateau et donne
           à la planète une arête franche, façon dessin animé. */}
+      {/* Corniche du plateau de départ. Elle reste : une fois un secteur
+          annexé, elle marque la frontière entre le vieux village et la zone
+          neuve — un relief, pas un mur, on la franchit. */}
       <mesh position={[0, RIM_Y, 0]} rotation={[-Math.PI / 2, 0, 0]} castShadow>
-        <torusGeometry args={[WORLD_RADIUS, 0.34, 10, 96]} />
+        <torusGeometry args={[WORLD_RADIUS, 0.28, 10, 96]} />
         <meshStandardMaterial color="#8a6343" flatShading roughness={1} />
+      </mesh>
+
+      {/* Corniche extérieure, au bord des zones annexables. */}
+      <mesh position={[0, ZONE_RIM_Y, 0]} rotation={[-Math.PI / 2, 0, 0]} castShadow>
+        <torusGeometry args={[ZONE_OUTER_RADIUS, 0.4, 10, 112]} />
+        <meshStandardMaterial color="#6b5560" flatShading roughness={1} />
       </mesh>
 
       {/* Atmosphère : sphères plus larges vues de l'intérieur (BackSide), donc

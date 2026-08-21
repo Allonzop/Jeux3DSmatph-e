@@ -2,7 +2,8 @@ import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from '../store';
-import { WORLD_RADIUS, surfaceY, applySurfaceRotation } from '../world';
+import { surfaceY, applySurfaceRotation } from '../world';
+import { maxRadiusAt } from '../zones';
 import { ToonHumanoid } from '../characters/ToonHumanoid';
 import { heroDef } from '../characters/defs';
 import { mulberry32 } from '../characters/rng';
@@ -89,10 +90,13 @@ export function Hero() {
       let nx = heroPos[0] + dx * SPEED * delta;
       let nz = heroPos[2] + dz * SPEED * delta;
 
+      // La limite depend du secteur : elle recule dans les zones annexees, et
+      // reste a WORLD_RADIUS partout ailleurs (voir zones.ts).
       const dist = Math.sqrt(nx * nx + nz * nz);
-      if (dist > WORLD_RADIUS) {
-        nx = (nx / dist) * WORLD_RADIUS;
-        nz = (nz / dist) * WORLD_RADIUS;
+      const limit = maxRadiusAt(nx, nz, useGameStore.getState().unlockedZones);
+      if (dist > limit) {
+        nx = (nx / dist) * limit;
+        nz = (nz / dist) * limit;
       }
       setHeroPos([nx, heroPos[1], nz]);
 

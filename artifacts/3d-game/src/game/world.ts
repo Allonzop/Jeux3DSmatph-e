@@ -152,9 +152,11 @@ export function checkPlacement(
   z: number,
   otherBuildings: [number, number, number][],
   cleared?: Record<string, true>,
+  /** Rayon constructible dans cette direction — voir `maxRadiusAt` (zones.ts). */
+  limit: number = WORLD_RADIUS,
 ): PlacementCheck {
   const dist = Math.sqrt(x * x + z * z);
-  if (dist > WORLD_RADIUS - EDGE_MARGIN) return { valid: false, reason: 'edge' };
+  if (dist > limit - EDGE_MARGIN) return { valid: false, reason: 'edge' };
   if (dist < CORE_CLEAR_RADIUS) return { valid: false, reason: 'core' };
   for (const b of otherBuildings) {
     const dx = x - b[0];
