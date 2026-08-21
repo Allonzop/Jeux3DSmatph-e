@@ -43,6 +43,18 @@ function EnemyNode({ enemy }: { enemy: Enemy }) {
   // Register this enemy's live position for turret targeting (non-reactive).
   useEffect(() => {
     enemyPositions.set(enemy.id, new THREE.Vector3(enemy.pos[0], enemy.pos[1], enemy.pos[2]));
+    // Eclat d'arrivee : les monstres surgissaient du neant au bord de la
+    // carte. Une gerbe a leur couleur dit d'ou la vague sort, au moment ou
+    // elle sort — c'est le seul instant ou le joueur peut encore choisir de
+    // quel cote aller.
+    spawnBurst(
+      enemy.pos[0],
+      surfaceY(enemy.pos[0], enemy.pos[2]) + 0.6 + type.altitude,
+      enemy.pos[2],
+      type.tint,
+      0.9,
+      0.45,
+    );
     // L'etat partage sert aux tours : le ralentissement qu'elles appliquent, et
     // l'altitude, qui decide si une tour au sol peut viser ce monstre.
     enemyStates.set(enemy.id, { slow: 0, slowUntil: 0, altitude: type.altitude, kind: enemy.kind });

@@ -11,6 +11,7 @@ import { XpBar } from './XpBar';
 import { ComboMeter } from './ComboMeter';
 import { LevelUp } from './LevelUp';
 import { Popups } from './Popups';
+import { ThreatMarkers } from './ThreatMarkers';
 import { ResourceIcon, HammerIcon, SpeakerIcon } from './icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { sfx, isMuted, toggleMute } from '../sfx';
@@ -199,6 +200,7 @@ export function HUD() {
       {!placingBuilding && <Tutorial />}
 
       <Popups />
+      <ThreatMarkers />
       <WaveOutcome />
       <LevelUp />
       <BuildSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />

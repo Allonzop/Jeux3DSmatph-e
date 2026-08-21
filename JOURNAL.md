@@ -94,6 +94,16 @@ rôle, où chaque entrée dit ce qu'elle fait, ce qu'elle coûte et combien on p
 en poser. Un objectif courant est toujours affiché (`objectives.ts`). Barre
 d'XP, radar de vague, compteur d'enchaînement, bouton de coupure du son.
 
+**Flèches de menace** (`ui/ThreatMarkers.tsx`, ajouté après la première
+fusion). La caméra suit le héros et l'écran d'un téléphone cadre à peine la
+moitié du plateau : la moitié d'une vague approchait hors champ, et on
+découvrait l'attaque au bruit du noyau qui encaisse. Chaque monstre hors cadre
+pousse maintenant une flèche sur le bord de l'écran, à la couleur de son
+profil, avec sa distance au cristal — six au plus, les plus proches du cristal,
+au-delà le bord devient une frise illisible. Les monstres poussent aussi une
+gerbe à leur couleur au moment où ils apparaissent : c'est le seul instant où
+le joueur peut encore choisir de quel côté aller.
+
 ### Quatre bugs trouvés en chemin
 
 1. **Le panneau de vague ne s'affichait jamais pendant un combat.**
