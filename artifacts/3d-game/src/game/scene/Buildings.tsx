@@ -1189,16 +1189,27 @@ function BuildingTesla(props: BuildingProps) {
       }
       // Arc tendu du sommet de la bobine jusqu'a la cible : position au
       // milieu, echelle Y = longueur, orientation par quaternion.
-      const dx = target.x - props.pos[0];
-      const dz = target.z - props.pos[2];
-      const dy = surfaceY(target.x, target.z) + 0.7 - (surfaceY(props.pos[0], props.pos[2]) + ARC_HEIGHT);
-      _ePos.set(dx, dy, dz);
-      const len = _ePos.length();
+      //
+      // **La cible doit passer en coordonnees locales.** L'arc est un enfant
+      // du groupe du batiment, qui est incline par la courbure de la planete
+      // *et* agrandi par `BUILDING_SCALE`. Un ecart calcule dans le monde et
+      // applique tel quel dans ce repere pointait a cote et s'etirait du
+      // facteur d'echelle : au centre de la carte ca passait inapercu, a huit
+      // unites du noyau l'arc devenait un trait vertical en travers de
+      // l'ecran. `worldToLocal` fait la conversion une fois pour toutes.
+      const parent = arc.parent;
+      if (!parent) continue;
+      _ePos.set(target.x, surfaceY(target.x, target.z) + 0.7, target.z);
+      parent.worldToLocal(_ePos);
+      _arcDir.set(_ePos.x, _ePos.y - ARC_HEIGHT, _ePos.z);
+      const len = _arcDir.length();
       arc.visible = true;
-      arc.position.set(dx / 2, ARC_HEIGHT + dy / 2, dz / 2);
+      arc.position.set(_ePos.x / 2, ARC_HEIGHT + (_ePos.y - ARC_HEIGHT) / 2, _ePos.z / 2);
       arc.scale.set(1, Math.max(0.001, len), 1);
-      _arcDir.copy(_ePos).normalize();
-      arc.quaternion.setFromUnitVectors(_up, _arcDir);
+      if (len > 1e-4) {
+        _arcDir.divideScalar(len);
+        arc.quaternion.setFromUnitVectors(_up, _arcDir);
+      }
     }
 
     if (found.length === 0) {

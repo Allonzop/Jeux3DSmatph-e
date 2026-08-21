@@ -131,13 +131,21 @@ function Hunter({
 
       if (targetDist <= HUNTER_RANGE) {
         if (beamRef.current) {
+          // Meme piege que les arcs du tesla : le rayon est un enfant d'un
+          // groupe incline par la courbure de la planete. Un ecart calcule
+          // dans le monde et pose tel quel dans ce repere vise a cote des que
+          // le chasseur s'eloigne du centre. On passe par `worldToLocal`.
           beamRef.current.visible = true;
-          _aim.set(tx - pos.current.x, 0, tz - pos.current.z);
+          _aim.set(tx, surfaceY(tx, tz) + BEAM_Y, tz);
+          group.worldToLocal(_aim);
+          _aim.y -= BEAM_Y;
           const len = _aim.length();
-          beamRef.current.position.set(_aim.x / 2, BEAM_Y, _aim.z / 2);
+          beamRef.current.position.set(_aim.x / 2, BEAM_Y + _aim.y / 2, _aim.z / 2);
           beamRef.current.scale.set(1, Math.max(0.001, len), 1);
-          _aim.normalize();
-          beamRef.current.quaternion.setFromUnitVectors(_up, _aim);
+          if (len > 1e-4) {
+            _aim.divideScalar(len);
+            beamRef.current.quaternion.setFromUnitVectors(_up, _aim);
+          }
         }
         dmgAcc.current += HUNTER_DPS * delta;
         tickTimer.current += delta;
