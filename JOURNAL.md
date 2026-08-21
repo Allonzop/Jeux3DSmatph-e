@@ -74,6 +74,43 @@ niveau 5 rapportaient 72 boulons/seconde, de quoi payer une tourelle toutes les
 quatre secondes. Les niveaux 1 à 3 ne bougent pas : c'est le début de partie,
 et le buff du 20/08 répondait à un vrai problème.
 
+### Un piège de la boucle d'auto-fusion, découvert en poussant
+
+**Ne pas repousser sur la même branche tant que la fusion précédente n'a pas
+fini.** Deux poussées rapprochées se font la course : `auto-merge.yml`
+sérialise les exécutions (`concurrency: auto-merge`), mais la première termine
+en supprimant la branche — or, entre-temps, la branche a avancé. Elle fusionne
+donc le commit qu'elle avait lu au départ, puis efface une référence qui
+pointait déjà plus loin ; la seconde exécution ne trouve plus rien à fetcher, et
+le commit intermédiaire disparaît du dépôt distant sans qu'aucune étape
+n'échoue visiblement.
+
+Vu en vrai ce soir : un commit de journal poussé quinze secondes après un
+commit de code n'est jamais arrivé dans `main`, alors que la poussée avait
+réussi et que la branche avait bien été créée.
+
+**Le réflexe :** après un `git push`, vérifier que le commit est bien dans
+`origin/main` (`git merge-base --is-ancestor <sha> origin/main`) avant d'en
+pousser un autre. Une séance de routine ne pousse qu'une fois, elle n'est donc
+pas concernée — mais un sprint à plusieurs lots l'est.
+
+### Un bug visuel trouvé sur la dernière capture
+
+Les arcs de la Bobine Tesla et le rayon des Chasseurs spatiaux étaient tracés
+dans le mauvais repère. L'arc est un enfant du groupe du bâtiment, lui-même
+incliné par la courbure de la planète **et** agrandi par `BUILDING_SCALE` : un
+écart calculé en coordonnées du monde et posé tel quel dans ce repère pointe à
+côté et s'étire du facteur d'échelle. Au centre de la carte, où l'inclinaison
+est presque nulle, ça passait inaperçu ; à huit unités du noyau, l'arc devenait
+un trait blanc vertical en travers de l'écran.
+
+`worldToLocal` sur le parent règle les deux cas. Le rayon du héros, lui, le
+faisait déjà — c'est sa méthode qu'il fallait recopier.
+
+**À retenir :** dès qu'on tend une géométrie entre deux points dans cette
+scène, la cible doit passer par `worldToLocal` du parent. Rien n'est en repère
+monde ici, tout est incliné par la planète.
+
 ### Lot 4 — le héros s'améliore, et frappe fort
 
 « Ajouter la possibilité d'améliorer notre bonhomme et potentiellement lui
