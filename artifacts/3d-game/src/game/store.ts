@@ -209,8 +209,15 @@ export const useGameStore = create<GameState>()(
         // A lost wave keeps its index: the player retries it, never skips
         // ahead to a harder one just for having failed.
         const nextWave = state.waveFailed ? state.waveNumber : state.waveNumber + 1;
-        const enemyCount = nextWave === 1 ? 3 : nextWave === 2 ? 5 : 5 + nextWave * 2;
-        
+        // Une seule formule linéaire : +2 monstres à chaque vague (3, 5, 7, 9…).
+        // L'ancienne version passait par des cas spéciaux pour les vagues 1 et
+        // 2 (3 puis 5) avant de basculer sur `5 + nextWave * 2` à partir de la
+        // vague 3, ce qui produisait un bond de 5 à 11 monstres — un mur
+        // infranchissable signalé dans BACKLOG.md. `1 + nextWave * 2` retombe
+        // exactement sur 3 et 5 pour les deux premières vagues sans cas
+        // particulier, et continue la même progression sans à-coup ensuite.
+        const enemyCount = 1 + nextWave * 2;
+
         const newEnemies: Enemy[] = [];
         for (let i = 0; i < enemyCount; i++) {
           const angle = Math.random() * Math.PI * 2;

@@ -84,8 +84,14 @@ supérieur au prochain lancement. Ajout d'un drapeau `waveFailed` dans
 de la vague en cours a été gagnée, sinon il relance la même. Voir JOURNAL.md.
 Le bouton reste « Lancer la vague » — pas de libellé « Retry » distinct,
 comme pour le bouton déplacer/placer déjà signalé le 17/08.)*
-Nerf de la difficulté (Spike à la vague 3) : La troisième vague agit comme un mur infranchissable (softlock de progression).
-Action : Revoir le fichier de configuration du WaveSpawner pour la Vague 3. Réduire les HP, les dégâts ou le nombre d'ennemis spawnés pour lisser la courbe de difficulté entre la Vague 2 et la Vague 4.
+~~Nerf de la difficulté (Spike à la vague 3) : La troisième vague agit comme un mur infranchissable (softlock de progression).
+Action : Revoir le fichier de configuration du WaveSpawner pour la Vague 3. Réduire les HP, les dégâts ou le nombre d'ennemis spawnés pour lisser la courbe de difficulté entre la Vague 2 et la Vague 4.~~
+*(2026-08-21 : fait — le nombre d'ennemis passait de 5 (vague 2) à 11 (vague
+3), un bond de +120 % contre +2 pour les autres transitions : la formule
+codait les vagues 1 et 2 en cas spéciaux (3, 5) puis basculait sur une autre
+formule à partir de la vague 3. Remplacée par une seule formule linéaire
+(3, 5, 7, 9…) dans `store.ts`. Les PV par monstre (`100 + vague*20`) n'avaient
+pas ce problème, non touchés. Voir JOURNAL.md.)*
 Instructions pour l'Agent IA : Merci d'analyser ces points, de proposer les modifications de code correspondantes (notamment sur les scripts de BuilderController, EconomyManager, WaveManager et les Prefabs associés) et d'ouvrir les Pull Requests nécessaires par feature.
 
 ## Fait

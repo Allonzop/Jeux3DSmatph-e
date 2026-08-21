@@ -22,9 +22,9 @@ export type BuildingData = {
  * retirait 10 points fixes sur 100, si bien que les deux premières vagues (3
  * puis 5 monstres) étaient mathématiquement ingagnables par l'adversaire.
  *
- * Vague de 3  → 50 par monstre : on peut en laisser passer 1, il faut en tuer 2.
- * Vague de 5  → 33 par monstre : on peut en laisser passer 2, il faut en tuer 3.
- * Vague de 11 → 17 par monstre : on peut en laisser passer 5, il faut en tuer 6.
+ * Vague de 3 → 50 par monstre : on peut en laisser passer 1, il faut en tuer 2.
+ * Vague de 5 → 33 par monstre : on peut en laisser passer 2, il faut en tuer 3.
+ * Vague de 7 → 25 par monstre : on peut en laisser passer 3, il faut en tuer 4.
  */
 export function coreBreachDamage(enemyCount: number, coreMaxHp: number): number {
   const survivable = Math.floor(enemyCount / 2);

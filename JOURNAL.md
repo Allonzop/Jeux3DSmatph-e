@@ -11,6 +11,96 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-21 — Spike de la vague 3 lissé
+
+**Choix de la tâche.** Le backlog n'a toujours qu'une seule entrée à case non
+cochée, « équilibrage du combat » — écartée pour la même raison que les
+séances précédentes (15/08, 18/08, 19/08, 20/08) : jugement « au ressenti »
+sur un vrai appareil, hors de portée de cet agent. Le reste vient du bloc
+FEEDBACK d'Allonzo du 15/08. Choisi le point §4 « Nerf de la difficulté
+(Spike à la vague 3) » : c'est le plus précis et vérifiable des points
+encore ouverts (contrairement à la grille de placement, la levée du cap
+d'instance ou la courbe de pacing, qui demandent une conception plus large).
+Lecture de `startWave` (`store.ts`) : `enemyCount = nextWave === 1 ? 3 :
+nextWave === 2 ? 5 : 5 + nextWave * 2` — deux cas spéciaux pour les vagues 1
+et 2, puis bascule sur une autre formule à partir de la vague 3, produisant
+un bond de 5 à 11 monstres (+120 %) contre +2 pour toutes les autres
+transitions. C'est exactement le « mur infranchissable » décrit dans le
+FEEDBACK, et une formule pure sans dépendance de rendu — bien cadré pour une
+séance.
+
+**Fait**
+
+- `store.ts` (`startWave`) : remplacé la formule à deux cas spéciaux par une
+  seule formule linéaire, `enemyCount = 1 + nextWave * 2`. Elle retombe
+  exactement sur les mêmes valeurs pour les vagues 1 et 2 (3 et 5, aucun
+  changement de comportement en début de partie) et continue la même
+  progression sans à-coup ensuite : 3, 5, 7, 9, 11… au lieu de 3, 5, 11, 13,
+  15…
+- `gamedata.ts` : mis à jour l'exemple de la vague 3 dans le commentaire de
+  `coreBreachDamage` (11 → 7 monstres, 17 → 25 dgt par monstre) pour qu'il
+  reste exact.
+- Pas touché aux PV par monstre (`100 + nextWave * 20`, dans `startWave`) :
+  cette formule est déjà linéaire, sans le même défaut.
+
+**Vérifié comment**
+
+- `pnpm install` (nécessaire, `node_modules` absent au démarrage de la
+  séance) puis `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé.
+- **Le nombre d'ennemis réel par vague, hors de portée des deux commandes
+  standard** (aucune des deux ne rejoue plusieurs vagues d'affilée) : script
+  Playwright ad hoc réutilisant `openGame`/`makeSave`/`serveStatic` de
+  `lib.mjs`, avec une tourelle niveau 5. Ajout temporaire d'un
+  `console.log('[wave-check] nextWave=… enemyCount=…')` dans `startWave`,
+  capturé via `page.on('console')`, puis retiré avant ce commit. Vagues 1 et
+  2 lancées et gagnées, vague 3 lancée : comptes observés **3, 5, 7** (au
+  lieu de 3, 5, 11 avant ce changement) — confirme la formule en conditions
+  réelles, pas seulement sur le papier. La vague 3 elle-même a ensuite été
+  perdue avec cette tourelle (dégâts fixes à 50/s, cible unique, aucun
+  scaling par niveau dans `gamedata.ts`) : attendu, hors du périmètre de
+  cette tâche — c'est justement ce que couvre « équilibrage du combat »,
+  laissée de côté plus haut.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png`, ouvert :
+  aucune régression sur les six bâtiments (changement de formule pure, pas de
+  rendu touché).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` : 5/5
+  — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- *Détecter victoire/défaite dans le script de test en cherchant `/repouss/i`
+  ou `/défaite/i` n'importe où sur la page, tout de suite après avoir cliqué
+  « Lancer la vague »* — première version du script : le toast d'issue de la
+  vague précédente reste affiché jusqu'à 7 s (auto-fermeture dans
+  `WaveOutcome.tsx`) ou jusqu'à un clic dessus. En cliquant sur « Lancer la
+  vague » dès la fin d'une vague puis en vérifiant immédiatement, le texte du
+  **toast précédent** (encore visible) déclenchait une fausse détection de
+  victoire, masquant que la vague suivante avait en fait été perdue. Corrigé
+  en (1) attendant que le texte de vague/défaite disparaisse de la page avant
+  de recliquer, et (2) en ciblant la victoire par numéro de vague précis
+  (`Vague ${n} repoussée`, lu depuis le `console.log` de debug) plutôt qu'un
+  motif générique. **Pour un test qui enchaîne plusieurs vagues, ne jamais
+  vérifier l'issue tout de suite après avoir relancé : le toast précédent
+  ment.**
+
+**Reste ouvert**
+
+- Voir `BACKLOG.md` : équilibrage du combat (nécessite un vrai appareil), et
+  le reste du bloc FEEDBACK d'Allonzo du 15/08 — agrandissement de la carte,
+  souplesse du placement, feedback visuel constructible/bloqué, levée du cap
+  d'instance sur Hutte/Tourelle, spawn "Chasseurs spatiaux" du Bar
+  (conception complète, pas une régression), courbe de pacing exponentielle.
+- Le lissage de la vague 3 ne suffit pas à la rendre gagnable avec une seule
+  tourelle (dégâts fixes 50/s, cible unique) — observé pendant la
+  vérification ci-dessus. C'est un symptôme d'équilibrage combat au sens
+  large (portée/dégâts du héros et de la tourelle), déjà identifié dans le
+  backlog comme nécessitant un jugement sur un vrai appareil, pas une
+  régression introduite par ce changement.
+
+---
+
 ## 2026-08-20 — Production de Boulons de la Hutte doublée
 
 **Choix de la tâche.** Le backlog n'a toujours qu'une seule entrée à case
