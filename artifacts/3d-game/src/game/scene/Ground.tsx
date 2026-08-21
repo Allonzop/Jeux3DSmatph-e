@@ -258,7 +258,10 @@ function PlanetBody({ gradientMap }: { gradientMap: THREE.Texture }) {
     <group position={PLANET_CENTER}>
       {/* Herbe : sommet de la sphère, exactement la zone jouable. */}
       <mesh receiveShadow>
-        <sphereGeometry args={[PLANET_RADIUS, 96, 64, 0, Math.PI * 2, 0, PLATEAU_THETA + 0.02]} />
+        {/* 64×20 sur la seule calotte : les segments s'appliquent à l'intervalle
+            demandé, pas à la sphère entière, donc 96×64 y mettait douze mille
+            triangles pour une surface qu'on regarde de très loin. */}
+        <sphereGeometry args={[PLANET_RADIUS, 64, 20, 0, Math.PI * 2, 0, PLATEAU_THETA + 0.02]} />
         <meshToonMaterial color="#6ede8a" gradientMap={gradientMap} />
       </mesh>
 
@@ -299,7 +302,7 @@ function Atmosphere() {
           normal, la même coque restait un voile gris uniforme, invisible.
           `depthWrite={false}` pour ne rien masquer. */}
       <mesh position={PLANET_CENTER}>
-        <sphereGeometry args={[PLANET_RADIUS + 1.1, 64, 40]} />
+        <sphereGeometry args={[PLANET_RADIUS + 1.1, 48, 32]} />
         <meshBasicMaterial
           color="#22d3ee"
           transparent
@@ -310,22 +313,11 @@ function Atmosphere() {
         />
       </mesh>
       <mesh position={PLANET_CENTER}>
-        <sphereGeometry args={[PLANET_RADIUS + 3.2, 48, 32]} />
+        <sphereGeometry args={[PLANET_RADIUS + 3.2, 40, 24]} />
         <meshBasicMaterial
           color="#1d4ed8"
           transparent
           opacity={0.22}
-          side={THREE.BackSide}
-          blending={THREE.AdditiveBlending}
-          depthWrite={false}
-        />
-      </mesh>
-      <mesh position={PLANET_CENTER}>
-        <sphereGeometry args={[PLANET_RADIUS + 7, 40, 28]} />
-        <meshBasicMaterial
-          color="#4c1d95"
-          transparent
-          opacity={0.14}
           side={THREE.BackSide}
           blending={THREE.AdditiveBlending}
           depthWrite={false}

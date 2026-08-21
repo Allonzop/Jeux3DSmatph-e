@@ -106,6 +106,8 @@ export interface GameState {
   startWave: () => void;
   damageCore: (amount: number) => void;
   damageEnemy: (id: string, amount: number) => void;
+  /** Même chose sur plusieurs monstres, en une seule écriture. */
+  damageEnemies: (ids: string[], amount: number) => void;
   removeEnemy: (id: string) => void;
   setEnemyPos: (id: string, pos: [number, number, number]) => void;
   addParticle: (p: Omit<Particle, 'progress' | 'id'>) => void;
@@ -363,6 +365,47 @@ export const useGameStore = create<GameState>()(
         const after = get().enemies.find(e => e.id === id);
         if (before && before.hp > 0 && after && after.hp <= 0) {
           get().addXp(ENEMY_TYPES[before.kind]?.xp ?? ENEMY_TYPES.grognard.xp);
+        }
+        if (wasActive && !get().waveActive) {
+          get().notifyTutorial('waveEnd');
+          rewardVictory(set, get);
+        }
+      },
+
+      /**
+       * Dégâts de zone : mortier, cryo-diffuseur.
+       *
+       * Appeler `damageEnemy` en boucle marchait, mais chaque appel remplace
+       * le tableau `enemies` du magasin, donc re-rend tout l'arbre des
+       * monstres. Un cryo qui couvre vingt monstres produisait quatre-vingts
+       * rendus complets par seconde — exactement ce que proscrit
+       * `.agents/memory/r3f-game-perf.md`. Une seule passe, une seule
+       * écriture, la même expérience versée.
+       */
+      damageEnemies: (ids, amount) => {
+        if (ids.length === 0 || amount <= 0) return;
+        const wasActive = get().waveActive;
+        const targets = new Set(ids);
+        const killed: EnemyKind[] = [];
+
+        set((state) => {
+          const enemies = state.enemies.map((e) => {
+            if (!targets.has(e.id) || e.hp <= 0) return e;
+            const hp = Math.max(0, e.hp - amount);
+            if (hp === 0) killed.push(e.kind);
+            return { ...e, hp };
+          });
+          const waveActive = enemies.some((e) => e.hp > 0);
+          return {
+            enemies,
+            waveActive: state.waveActive ? waveActive : false,
+            waveKills: state.waveKills + killed.length,
+            totalKills: state.totalKills + killed.length,
+          };
+        });
+
+        for (const kind of killed) {
+          get().addXp(ENEMY_TYPES[kind]?.xp ?? ENEMY_TYPES.grognard.xp);
         }
         if (wasActive && !get().waveActive) {
           get().notifyTutorial('waveEnd');

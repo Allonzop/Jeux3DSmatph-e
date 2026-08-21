@@ -7,6 +7,7 @@ import { mulberry32 } from '../characters/rng';
 import type { CharacterDef } from '../characters/types';
 import { useGameStore } from '../store';
 import { surfaceY, applySurfaceRotation } from '../world';
+import { damp } from './utils';
 
 // Vecteur de travail partage — jamais d'allocation dans useFrame.
 const _dir = new THREE.Vector3();
@@ -130,7 +131,7 @@ function Villager({ def, start }: { def: CharacterDef; start: [number, number, n
           let diff = targetRot - currentRot;
           while (diff < -Math.PI) diff += Math.PI * 2;
           while (diff > Math.PI) diff -= Math.PI * 2;
-          bodyRef.current.rotation.y += diff * 0.1;
+          bodyRef.current.rotation.y += diff * damp(0.1, delta);
         }
       }
     }

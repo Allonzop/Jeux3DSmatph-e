@@ -1,6 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useGameStore } from '../store';
 import { surfaceY } from '../world';
+import { damp } from './utils';
 import { shake } from '../effects';
 import * as THREE from 'three';
 
@@ -25,7 +26,7 @@ export function Camera() {
     // 45° l'horizon, l'anneau et les lunes entrent dans l'image sans que les
     // batiments se cachent les uns les autres.
     _target.set(heroPos[0], heroPos[1] + ground + 13.5, heroPos[2] + 13);
-    camera.position.lerp(_target, 0.05);
+    camera.position.lerp(_target, damp(0.05, delta));
 
     // Secousse : un monstre qui atteint le noyau doit se sentir. L'amplitude
     // est posee par `addShake` (effects.ts) et retombe ici — deux frequences

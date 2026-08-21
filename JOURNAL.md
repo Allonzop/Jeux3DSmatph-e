@@ -11,6 +11,208 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-21 (soir) — Sprint : planète 3D, bestiaire, arsenal, progression, UI
+
+**Séance exceptionnelle.** Allonzo a ouvert un sprint sur un surplus de crédits
+et fourni un compte-rendu d'évaluation complet (onboarding, rétention, gameplay,
+économie, environnement) avec pour consigne d'en traiter le maximum d'un coup —
+au lieu de la règle habituelle « une tâche par séance ». Deux garde-fous posés
+par lui : ne pas toucher aux mécaniques fondamentales du moteur ni à la boucle
+de base, et ne rien réorganiser du système de journaux ni de la routine de 2 h.
+Cette entrée et les cases cochées dans `BACKLOG.md` sont donc le seul contact
+avec le système de journaux — écrire ici fait partie de la routine, pas de sa
+réorganisation. `AGENTS.md`, `.agents/ROUTINE.md`, `.agents/memory/` et les
+workflows GitHub n'ont pas été touchés.
+
+### Ce qui a été fait
+
+**La carte est devenue une planète.** `world.ts` gagne `surfaceY`,
+`surfacePos`, `surfaceRotation` et `applySurfaceRotation` : le disque plat est
+rendu comme la calotte d'une sphère de rayon 26 (`PLANET_RADIUS`), qui plonge
+de quatre unités au bord du plateau. **Le jeu continue de raisonner en (x, z)
+plat** — déplacements, portées, placement, ciblage gardent exactement les mêmes
+maths qu'avant ; la sphère n'intervient qu'au rendu. C'est ce qui permet de
+tenir la consigne « ne pas toucher au cœur » tout en changeant l'envergure de
+la carte. `Ground.tsx` est refait : une seule sphère, verte au sommet et
+rocheuse ailleurs (même rayon, donc aucune couture visible), halo
+atmosphérique additif, géante gazeuse annelée et trois lunes au loin, géodes et
+champignons géants ajoutés au décor déterministe.
+
+**Bestiaire** (`src/game/enemies.ts`, nouveau). Sept profils : Grognard (le
+monstre d'origine, référence d'équilibrage), Fileur (rapide et fragile),
+Colosse (tank lent), Écumeur (vole — les tours au sol ne le touchent pas),
+Bombeur (dégâts au noyau presque doublés), Spectre (intouchable une seconde sur
+trois), Chaman (soigne ses voisins). Chacun ne change **qu'une** chose au
+comportement de base : c'est ce qui les rend reconnaissables et contrables.
+Composition de vague déterministe, annoncée avant le lancement par un radar
+dans le HUD. **Les vagues 1 et 2 restent 100 % Grognards** — c'est le scénario
+de `wave.mjs --check` et le moment où le joueur apprend les commandes.
+
+**Arsenal** (`gamedata.ts`). Trois tours de plus : Mortier à plasma (obus qui
+voyagent vraiment et explosent en zone), Cryo-diffuseur (ralentit sa bulle,
+volants compris, ne tue presque rien), Bobine Tesla (plusieurs cibles à la
+fois, seule tour qui abat les volants). Et le cap d'un exemplaire par bâtiment
+est levé : les exemplaires supplémentaires prennent un identifiant dérivé
+(`tourelle#2`), **le premier gardant l'identifiant nu, donc aucune sauvegarde
+existante n'a besoin de migration** et `makeSave` des outils continue de
+marcher tel quel. Une seule règle : passer par `buildingData(id)` au lieu de
+`BUILDINGS[id]`.
+
+**Évolution visuelle par niveau.** Chaque bâtiment grandit de 5 % par niveau,
+porte une couronne de jetons lumineux (un par niveau) et gagne des anneaux de
+socle aux rangs 3 et 5 ; par-dessus, chacun a ses propres pièces (cheminée puis
+annexe puis fanion pour la hutte, canons supplémentaires pour la tourelle,
+paraboles pour l'antenne, bobines pour le tesla…).
+
+**Progression et game feel.** Niveau de commandant avec courbe d'XP, titres et
+récompenses (`progress.ts`), enchaînements de mises à mort, chiffres de dégâts
+flottants, gerbes d'éclats, secousse de caméra, et des sons **entièrement
+synthétisés par WebAudio** — aucun fichier audio ajouté au dépôt, dans le même
+esprit que la 3D sans texture. Tous les effets vivent dans des pools de module
+(`effects.ts`), hors React et hors Zustand, comme l'impose
+`.agents/memory/r3f-game-perf.md`.
+
+**Économie.** Les gisements rares sont nettement ralentis (matière floue 4 → 2
+toutes les 14 s, énergie de rire 3 → 1 toutes les 24 s ; les boulons ne bougent
+pas, la boucle de base doit rester généreuse). Nouveaux puits : les trois tours
+coûtent lourd en matière floue et en énergie de rire, et le noyau se renforce
+en trois rangs — chaque rang accorde un monstre de tolérance de plus. Monter
+les **points de vie** du noyau n'aurait rien changé : `coreBreachDamage` est
+proportionnelle, donc doubler les pv double aussi les dégâts par monstre.
+
+**À quoi servent les bâtiments.** Chacun porte un rôle et une phrase qui le dit,
+affichée partout où il apparaît. Le Bar recrute à nouveau des Chasseurs
+spatiaux (`scene/Hunters.tsx`) — un par niveau, ils patrouillent autour de lui
+et vont au-devant des monstres, avec une laisse pour ne pas suivre une cible à
+l'autre bout de la planète. L'Antenne allonge la portée et les dégâts du héros.
+Le Marché majore le butin de chaque vague.
+
+**Interface.** Tutoriel redécoupé en **treize cartes d'une phrase** au lieu de
+cinq pavés, avec un fil d'avancement. La rangée de pastilles de construction
+(qui ne tenait plus à neuf bâtiments) est remplacée par une feuille groupée par
+rôle, où chaque entrée dit ce qu'elle fait, ce qu'elle coûte et combien on peut
+en poser. Un objectif courant est toujours affiché (`objectives.ts`). Barre
+d'XP, radar de vague, compteur d'enchaînement, bouton de coupure du son.
+
+### Quatre bugs trouvés en chemin
+
+1. **Le panneau de vague ne s'affichait jamais pendant un combat.**
+   `AnimatePresence mode="wait"` attendait la fin de sortie du bouton « Lancer
+   la vague », qui ne se signalait pas : le bouton restait figé à sa place, avec
+   son libellé d'avant la vague, et le panneau (monstres restants, pv du noyau)
+   n'apparaissait pas. Corrigé en retirant `mode="wait"`. Le même code existait
+   avant cette séance ; je n'ai **pas** pu prouver qu'il était déjà cassé (voir
+   les impasses plus bas), donc ne pas noter ça comme une régression du sprint.
+2. **Pendant une pose, toucher un bâtiment existant ouvrait sa fiche au lieu de
+   poser.** Le capteur de pose est la surface de la planète, donc *sous* les
+   bâtiments. Ça cassait aussi le déplacement, qui passe par le même mode :
+   impossible de déplacer un bâtiment vers un emplacement voisin d'un autre.
+   Corrigé en retirant le gestionnaire de touche des bâtiments pendant une pose
+   — R3F ne lance de rayon que sur les objets qui en portent un.
+3. **Le suivi de caméra était compté par image, pas par seconde** (`lerp(cible,
+   0.05)`). À 60 images/s la caméra rattrape le héros en une seconde ; à 5
+   images/s il lui faut douze secondes et le héros sort du cadre. Sur la cible
+   du jeu — des téléphones — c'est exactement là que ça casse. `damp()` dans
+   `scene/utils.ts` rend le même comportement à toute cadence ; appliqué aussi
+   au lissage du héros, des villageois et des chasseurs.
+4. **La carte de montée de niveau prenait tout l'écran en plein combat.** Les
+   niveaux se gagnent surtout en tuant : la fanfare tombait pendant une vague,
+   avalait les touches quatre secondes et faisait perdre. Elle se réduit à un
+   bandeau tant qu'une vague est en cours.
+
+### Vérifié
+
+```
+pnpm run typecheck                                   6 projets, aucune erreur
+node tools/game-check/wave.mjs --check               les deux scénarios OK
+cd artifacts/character-studio && studio selftest      5/5, 20 personnages
+studio audit (kit)          0 quasi-doublon, registres 100 %, 0 avertissement
+```
+
+Captures ouvertes et regardées à chaque étape (village, arsenal, vague 9 et 11
+en plein combat, tutoriel, feuille de construction, pose d'un deuxième
+exemplaire, marche jusqu'au bord du plateau). Le placement d'un `tourelle#2` a
+été joué de bout en bout dans un vrai navigateur : bouton « Placer » → mode de
+pose → touche au sol → l'exemplaire apparaît dans `buildingPositions`.
+
+`tools/game-check/shot.mjs` gagne deux scénarios pour ça : `--arsenal` (les
+quatre tours, des exemplaires multiples, tout à haut niveau) et `--wave <n>`
+(lance la vague n et capture en plein combat — le Spectre n'apparaît qu'à la
+huitième, l'atteindre en jouant prendrait un quart d'heure de rendu logiciel).
+`--village` n'est pas touché : c'est la référence des comparaisons.
+
+Le magasin est désormais exposé sous `window.__villageStore`, sans quoi
+`--wave` serait impossible : la sauvegarde ne porte que quatre champs.
+
+### Essayé sans succès — ne pas refaire
+
+- **Un anneau planétaire autour de la planète jouable.** Posé à plat dans le
+  plan équatorial, il passe entièrement *sous* l'horizon et ne se voit pas.
+  Redressé pour barrer le ciel, sa moitié proche passe entre la caméra et le
+  village et repeint toute la carte en violet. Un anneau de ce diamètre a
+  forcément un côté proche : **aucune inclinaison ne sauve les deux**. Remplacé
+  par une géante gazeuse annelée très loin derrière, qui donne la même lecture
+  sans jamais croiser la zone de jeu.
+- **Des lunes sur orbites calculées.** Elles passent sous l'horizon la moitié
+  du temps : le décor le plus visible du jeu était absent une capture sur deux.
+  Posées à des points fixes du ciel lointain.
+- **Placer les corps célestes en hauteur** (y positif). Ils sortent du champ.
+  Depuis 14 unités au-dessus d'une sphère de rayon 26, l'horizon tombe à 49°
+  sous l'horizontale et la caméra ne cadre qu'une bande de 30° juste au-dessus
+  de lui : tout ce qui est plus haut que la caméra est hors cadre. Les corps du
+  ciel doivent être **très loin et très bas** (y ≈ −20 à −35, z ≈ −50 à −90).
+- **`useGameStore(nextObjective)` comme sélecteur.** `nextObjective` fabrique
+  un objet neuf à chaque appel : le magasin croit que l'état change à chaque
+  rendu et la boucle ne s'arrête jamais (React #185, écran d'erreur du jeu).
+  S'abonner aux champs qui comptent et recalculer dans un `useMemo`.
+- **Écrire « Repoussez la vague » dans l'objectif courant.** `wave.mjs` lit le
+  texte de la page et conclut à une victoire dès qu'il y trouve « repouss » :
+  le test annonçait une victoire à la seconde où la vague commençait. Le mot
+  est réservé à la carte de victoire. **Vérifier ça avant d'ajouter du texte
+  d'interface**, la même chose vaut pour « défaite ».
+- **Reconstruire le dépôt à `HEAD` dans un worktree** pour savoir si le bug
+  `mode="wait"` existait déjà. Le build du worktree rend une page blanche (le
+  JS se charge, rien ne s'affiche, aucune erreur console au-delà de deux 404
+  sur `/favicon.svg`). Pas creusé — hors sujet ce soir. Retenir que
+  `pnpm --filter @workspace/3d-game run build` lancé à la main ne donne pas le
+  même résultat que `tools/game-check/build.mjs`, qui pose `BASE_PATH` :
+  **toujours passer par les outils pour construire ce qu'on va vérifier.**
+
+### Ce que le compte-rendu d'Allonzo demandait et qui reste ouvert
+
+- **Agrandir la zone jouable.** `WORLD_RADIUS` reste à 14. La planète change
+  l'envergure *visuelle*, pas la surface de jeu. Agrandir vraiment veut dire
+  reprendre la caméra, la vitesse du héros et la portée des tours ensemble —
+  une séance entière.
+- **Assouplir la grille de placement.** `BUILDING_MIN_GAP` (3.4) et les rayons
+  de blocage du décor n'ont pas bougé.
+- **Courbe de progression « quinze premières minutes ultra-rapides ».** Le jeu
+  n'a aucun timer de construction, donc la moitié de la demande est déjà
+  satisfaite ; les premiers niveaux de commandant tombent en moins d'une vague.
+  Mais les coûts en boulons n'ont pas été revus.
+
+### Où sont les nouveautés
+
+| Fichier | Quoi |
+|---|---|
+| `src/game/enemies.ts` | Le bestiaire : profils, composition de vague, radar |
+| `src/game/progress.ts` | Courbe d'XP, titres, récompenses de niveau |
+| `src/game/objectives.ts` | L'objectif courant, une échelle de conditions |
+| `src/game/effects.ts` | Pools d'éclats, chiffres flottants, secousse, combo |
+| `src/game/sfx.ts` | Les sons, synthétisés — aucun fichier audio |
+| `src/game/scene/Hunters.tsx` | Les Chasseurs spatiaux du Bar |
+| `src/game/scene/CombatEffects.tsx` | Rend les éclats, publie la projection 3D→écran |
+| `src/game/ui/BuildSheet.tsx` | La feuille de construction par rôle |
+| `src/game/ui/{XpBar,WaveRadar,ComboMeter,LevelUp,Popups}.tsx` | Le HUD |
+
+Les apparences des monstres et des chasseurs sont dans
+`src/game/characters/defs.ts` (`enemyDefs`, `hunterDefs`), pas dans
+`enemies.ts` : c'est ce qui permet au studio de personnages de les afficher et
+de les retoucher. Le lien entre les deux moitiés est l'`id`. Le studio a été
+mis à jour pour les inclure dans son kit.
+
+---
+
 ## 2026-08-21 — Spike de la vague 3 lissé
 
 **Choix de la tâche.** Le backlog n'a toujours qu'une seule entrée à case non

@@ -5,7 +5,7 @@ import { useGameStore } from '../store';
 import { ToonHumanoid } from '../characters/ToonHumanoid';
 import { hunterDefs } from '../characters/defs';
 import { mulberry32 } from '../characters/rng';
-import { enemyPositions, enemyStates } from './utils';
+import { enemyPositions, enemyStates, damp } from './utils';
 import { surfaceY, applySurfaceRotation } from '../world';
 import { HUNTER_DPS, HUNTER_RANGE } from '../gamedata';
 import { sfx } from '../sfx';
@@ -177,7 +177,7 @@ function Hunter({
           let diff = want - bodyRef.current.rotation.y;
           while (diff < -Math.PI) diff += Math.PI * 2;
           while (diff > Math.PI) diff -= Math.PI * 2;
-          bodyRef.current.rotation.y += diff * 0.12;
+          bodyRef.current.rotation.y += diff * damp(0.12, delta);
         }
       }
     }

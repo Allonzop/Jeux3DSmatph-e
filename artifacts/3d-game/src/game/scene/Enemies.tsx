@@ -59,6 +59,9 @@ function EnemyNode({ enemy }: { enemy: Enemy }) {
   const deathSquash = useRef(1);
   const spawnFade = useRef(0);
   const lastHp = useRef(enemy.hp);
+  /** Degats encaisses depuis le dernier chiffre affiche, et son horloge. */
+  const pendingDamage = useRef(0);
+  const popupTimer = useRef(0);
   const healTick = useRef(0);
   /** Le spectre retreci pendant sa phase de dematerialisation : intouchable. */
   const intangible = useRef(false);
@@ -85,15 +88,30 @@ function EnemyNode({ enemy }: { enemy: Enemy }) {
       return;
     }
 
-    // Chiffre de degats des que les points de vie baissent. Le test est fait
-    // ici plutot que dans `damageEnemy` pour rester hors du magasin.
+    // Chiffre de degats. Le test est fait ici plutot que dans `damageEnemy`
+    // pour rester hors du magasin.
+    //
+    // Les degats sont **cumules** entre deux affichages. Chaque source verse
+    // quatre fois par seconde ; avec trois tours et le heros sur la meme
+    // cible, la reserve de chiffres flottants (26) se vidait en une demi
+    // seconde et l'ecran devenait illisible. Un chiffre toutes les 0,45 s par
+    // monstre, portant la somme, se lit — et dit la meme chose.
     if (currentEnemy.hp < lastHp.current - 0.5) {
-      const lost = Math.round(lastHp.current - currentEnemy.hp);
-      const p = ref.current?.position;
-      if (p) spawnPopup(p.x, p.y + 1.4, p.z, `-${lost}`, lost >= 40 ? 'crit' : 'damage');
+      pendingDamage.current += lastHp.current - currentEnemy.hp;
       sfx.hit();
     }
     lastHp.current = currentEnemy.hp;
+
+    popupTimer.current += delta;
+    if (pendingDamage.current > 0 && popupTimer.current >= 0.45) {
+      const lost = Math.round(pendingDamage.current);
+      const p = ref.current?.position;
+      if (p && lost > 0) {
+        spawnPopup(p.x, p.y + 1.4, p.z, `-${lost}`, lost >= 90 ? 'crit' : 'damage');
+      }
+      pendingDamage.current = 0;
+      popupTimer.current = 0;
+    }
 
     const st = enemyStates.get(enemy.id);
 

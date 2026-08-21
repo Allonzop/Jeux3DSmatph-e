@@ -60,10 +60,18 @@ Clarté de l'UX/UI sur la map : La lisibilité entre les éléments interactifs 
 Action : Ajouter un feedback visuel clair (ex: shader de surbrillance/outline sur les objets interactifs). Implémenter un calque (layer/overlay) vert/rouge lors du drag & drop d'un bâtiment pour indiquer clairement les zones constructibles vs bloquées.
 
 🏗️ 2. Gestion des Bâtiments (Instanciation & Régressions)
-Levée de la limite d'instanciation : Actuellement, le joueur est bloqué à une seule instance par type de bâtiment (Hutte, Tourelle).
-Action : Supprimer le cap global (max_instances = 1) sur ces bâtiments de base. Permettre la construction de multiples Tourelles et Huttes, en gérant le coût incrémental si nécessaire.
-Correction de régression (Missing Scripts) : Certains bâtiments ont perdu leurs comportements/mécaniques spécifiques lors des dernières itérations.
-Action : Restaurer la logique du bâtiment "Bar" (Spawner). Il doit à nouveau pouvoir générer/gérer les entités "Chasseurs spatiaux" (Space Hunters).
+~~Levée de la limite d'instanciation : Actuellement, le joueur est bloqué à une seule instance par type de bâtiment (Hutte, Tourelle).
+Action : Supprimer le cap global (max_instances = 1) sur ces bâtiments de base. Permettre la construction de multiples Tourelles et Huttes, en gérant le coût incrémental si nécessaire.~~
+*(2026-08-21 soir : fait — chaque type porte un `maxInstances` dans
+`gamedata.ts` (3 huttes, 3 tourelles laser, 2 mortiers, 2 cryo, 2 tesla, 2
+fermes). Les exemplaires supplémentaires prennent un identifiant dérivé
+(`tourelle#2`), le premier gardant l'identifiant nu : aucune sauvegarde
+existante n'a besoin de migration. Voir JOURNAL.md.)*
+~~Correction de régression (Missing Scripts) : Certains bâtiments ont perdu leurs comportements/mécaniques spécifiques lors des dernières itérations.
+Action : Restaurer la logique du bâtiment "Bar" (Spawner). Il doit à nouveau pouvoir générer/gérer les entités "Chasseurs spatiaux" (Space Hunters).~~
+*(2026-08-21 soir : fait — `scene/Hunters.tsx`. Le Bar recrute un Chasseur
+spatial par niveau ; ils patrouillent autour de lui et vont au-devant des
+monstres pendant les vagues, avec une laisse de 9 unités. Voir JOURNAL.md.)*
 
 ⚖️ 3. Game Economy & Pacing (Ressources & Progression)
 ~~Buff du Tick Rate de la ressource de base (Boulons) : La récolte est beaucoup trop lente, même avec une Hutte améliorée.
@@ -93,6 +101,37 @@ formule à partir de la vague 3. Remplacée par une seule formule linéaire
 (3, 5, 7, 9…) dans `store.ts`. Les PV par monstre (`100 + vague*20`) n'avaient
 pas ce problème, non touchés. Voir JOURNAL.md.)*
 Instructions pour l'Agent IA : Merci d'analyser ces points, de proposer les modifications de code correspondantes (notamment sur les scripts de BuilderController, EconomyManager, WaveManager et les Prefabs associés) et d'ouvrir les Pull Requests nécessaires par feature.
+
+### [SPRINT 21/08 au soir] Compte-rendu d'évaluation — état
+
+Allonzo a fourni un second compte-rendu (onboarding, rétention, gameplay,
+économie, environnement) lors d'une séance de sprint. Traité :
+
+- [x] **Refonte du tutoriel** — treize cartes d'une phrase au lieu de cinq pavés.
+- [x] **Clarté générale** — objectif courant toujours affiché, rôle et utilité
+      de chaque bâtiment écrits partout où il apparaît, radar de vague.
+- [x] **Rétention et gratification** — niveaux de commandant, récompenses,
+      enchaînements, chiffres de dégâts, éclats, secousse, sons synthétisés.
+- [x] **Diversité de l'arsenal** — mortier de zone, cryo ralentisseur, tesla
+      multi-cible, et plusieurs exemplaires par type.
+- [x] **Variété du bestiaire** — sept profils (rapide, tank, volant, kamikaze,
+      spectre, soigneur), composition de vague annoncée à l'avance.
+- [x] **Feedback d'amélioration** — chaque niveau change l'apparence.
+- [x] **Surabondance des ressources** — gisements rares fortement ralentis,
+      nouveaux puits (trois tours, renforcement du noyau).
+- [x] **Utilité des bâtiments** — Bar, Antenne et Marché ont un effet réel.
+- [x] **Map 3D sphérique** — la carte est la calotte d'une planète.
+
+Reste ouvert (voir JOURNAL.md du 21/08 au soir pour le détail) :
+
+- [ ] **Agrandir la zone jouable.** `WORLD_RADIUS` reste à 14 : la planète
+      change l'envergure visuelle, pas la surface de jeu. Agrandir demande de
+      reprendre ensemble la caméra, la vitesse du héros et la portée des tours.
+- [ ] **Assouplir la grille de placement.** `BUILDING_MIN_GAP` (3.4) et les
+      rayons de blocage du décor n'ont pas bougé.
+- [ ] **Revoir les coûts en boulons du début de partie.** Le jeu n'a aucun
+      timer de construction, donc la « time curve » demandée est à moitié déjà
+      là ; ce sont les coûts qui n'ont pas été retouchés.
 
 ## Fait
 

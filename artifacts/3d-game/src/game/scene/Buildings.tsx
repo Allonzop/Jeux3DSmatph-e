@@ -179,8 +179,30 @@ function PlacementController() {
 function BuildingWrapper({ id, pos, color, children }: BuildingProps & { children: React.ReactNode }) {
   const level = useGameStore(state => state.buildingLevels[id] || 0);
   const selectBuilding = useGameStore(state => state.selectBuilding);
+  const placing = useGameStore(state => state.placingBuilding);
   const groupRef = useRef<THREE.Group>(null);
   const crownRef = useRef<THREE.Group>(null);
+
+  /**
+   * Pendant une pose, les batiments deja la ne repondent plus au doigt.
+   *
+   * Le capteur de pose est la surface de la planete, donc **sous** eux : viser
+   * un emplacement a cote d'un batiment existant ouvrait sa fiche au lieu de
+   * poser, et la pose etait perdue. Ca touchait aussi le deplacement, qui
+   * passe par le meme mode — deplacer un batiment vers un voisin etait
+   * impossible.
+   *
+   * R3F ne lance de rayon que sur les objets qui portent un gestionnaire :
+   * retirer le gestionnaire suffit a les rendre traversants, sans avoir a
+   * toucher aux geometries.
+   */
+  const tap = placing
+    ? undefined
+    : (e: ThreeEvent<PointerEvent>) => {
+        e.stopPropagation();
+        selectBuilding(id);
+        sfx.tap();
+      };
 
   // Les batiments faisaient environ 2 unites de large pour une camera qui en
   // cadre 26 de haut : 7 % de l'ecran, trop peu pour qu'une silhouette se lise
@@ -223,7 +245,7 @@ function BuildingWrapper({ id, pos, color, children }: BuildingProps & { childre
     <group position={surfacePos(pos[0], pos[2])} rotation={surfaceRotation(pos[0], pos[2])}>
       {level === 0 ? (
         <group
-          onPointerDown={(e) => { e.stopPropagation(); selectBuilding(id); sfx.tap(); }}
+          onPointerDown={tap}
         >
           {/* Rounded Dirt Mound */}
           <mesh position={[0, 0.1, 0]} scale={[1, 0.3, 1]} receiveShadow>
@@ -263,7 +285,7 @@ function BuildingWrapper({ id, pos, color, children }: BuildingProps & { childre
       ) : (
         <group
           ref={groupRef}
-          onPointerDown={(e) => { e.stopPropagation(); selectBuilding(id); sfx.tap(); }}
+          onPointerDown={tap}
         >
           {/* Socle octogonal : identifie chaque bâtiment par sa couleur même
               quand son toit sursature sous le bloom (voir le patch blanc du
@@ -365,10 +387,18 @@ function findTargets(
   return out;
 }
 
-/** Degats de zone autour d'un point — mortier, et explosion du bombeur. */
+/**
+ * Degats de zone autour d'un point — l'obus du mortier.
+ *
+ * Les identifiants sont collectes puis passes d'un bloc a `damageEnemies` :
+ * une seule ecriture dans le magasin, donc un seul rendu de l'arbre des
+ * monstres, au lieu d'un par monstre touche.
+ */
+const _splashIds: string[] = [];
+
 function splashDamage(x: number, z: number, radius: number, amount: number, hitsAir: boolean): number {
-  const { enemies, damageEnemy } = useGameStore.getState();
-  let hits = 0;
+  const enemies = useGameStore.getState().enemies;
+  _splashIds.length = 0;
   for (const enemy of enemies) {
     if (enemy.hp <= 0) continue;
     const live = enemyPositions.get(enemy.id);
@@ -379,10 +409,10 @@ function splashDamage(x: number, z: number, radius: number, amount: number, hits
     const dx = live.x - x;
     const dz = live.z - z;
     if (Math.sqrt(dx * dx + dz * dz) > radius) continue;
-    damageEnemy(enemy.id, amount);
-    hits += 1;
+    _splashIds.push(enemy.id);
   }
-  return hits;
+  useGameStore.getState().damageEnemies(_splashIds, amount);
+  return _splashIds.length;
 }
 
 // ---------------------------------------------------------------------------
@@ -1010,6 +1040,8 @@ function BuildingCryo(props: BuildingProps) {
   const domeRef = useRef<THREE.Mesh>(null);
   const ringRef = useRef<THREE.Mesh>(null);
   const dmgTimer = useRef(0);
+  /** Monstres dans la bulle a cet instant — reutilise, jamais realloue. */
+  const frozen = useRef<string[]>([]);
 
   useFrame(({ clock }, delta) => {
     if (!stats) return;
@@ -1024,9 +1056,10 @@ function BuildingCryo(props: BuildingProps) {
     // Le ralentissement est repose en continu avec une courte date
     // d'expiration : un monstre qui sort de la bulle se libere tout seul, sans
     // que la tour ait a suivre qui elle a gele.
-    const { enemies, damageEnemy } = useGameStore.getState();
+    const enemies = useGameStore.getState().enemies;
     dmgTimer.current += delta;
     const flush = dmgTimer.current >= DAMAGE_TICK;
+    frozen.current.length = 0;
 
     for (const enemy of enemies) {
       if (enemy.hp <= 0) continue;
@@ -1041,9 +1074,14 @@ function BuildingCryo(props: BuildingProps) {
         st.slow = Math.max(st.slow, stats.slow);
         st.slowUntil = t + 0.4;
       }
-      if (flush) damageEnemy(enemy.id, stats.dps * dmgTimer.current);
+      if (flush) frozen.current.push(enemy.id);
     }
-    if (flush) dmgTimer.current = 0;
+
+    if (flush) {
+      // Un seul versement pour toute la bulle : voir `damageEnemies`.
+      useGameStore.getState().damageEnemies(frozen.current, stats.dps * dmgTimer.current);
+      dmgTimer.current = 0;
+    }
   });
 
   return (
@@ -1160,10 +1198,11 @@ function BuildingTesla(props: BuildingProps) {
     dmgAcc.current += stats.dps * delta;
     tickTimer.current += delta;
     if (tickTimer.current >= DAMAGE_TICK) {
-      const damageEnemy = useGameStore.getState().damageEnemy;
       // Chaque cible prend les degats pleins : c'est ce qui rend le tesla
-      // decisif sur un paquet, et cher a monter.
-      for (const target of found) damageEnemy(target.id, dmgAcc.current);
+      // decisif sur un paquet, et cher a monter. Un seul versement pour toutes.
+      _teslaIds.length = 0;
+      for (const target of found) _teslaIds.push(target.id);
+      useGameStore.getState().damageEnemies(_teslaIds, dmgAcc.current);
       sfx.zap();
       dmgAcc.current = 0;
       tickTimer.current = 0;
@@ -1212,6 +1251,7 @@ function BuildingTesla(props: BuildingProps) {
 }
 
 // Vecteurs de travail des arcs du tesla.
+const _teslaIds: string[] = [];
 const _arcDir = new THREE.Vector3();
 const _up = new THREE.Vector3(0, 1, 0);
 

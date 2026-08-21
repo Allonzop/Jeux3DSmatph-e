@@ -88,10 +88,20 @@ export const enemyDefs: CharacterDef[] = [
     eyeShape: 'wide', mouth: 'o', personality: 'nervous' },
 
   // Tank : large, membres epais, carapace, demarche lourde.
+  //
+  // Casque a visiere et col roule plutot que capuche et masque : `studio audit`
+  // le donnait a 0.196 du villageois v7 (capuche + sac + masque, meme
+  // corpulence), sous le seuil de quasi-doublon. Un allie et un monstre qui se
+  // ressemblent a ce point, c'est une hesitation au milieu d'une vague. Le col
+  // roule fait au passage entrer `turtleneck` en jeu, le dernier accessoire du
+  // registre que personne ne portait.
+  //
+  // Le `glow` est passe de #e63946 a #ff6b6b : a 0.40 de luminance il tombait
+  // sous le seuil de bloom (0.45) et les parties emissives ne brillaient pas.
   { id: 'colosse', seed: 3003, bodyType: 'stocky', scale: 1.05, headScale: 0.85, limbThickness: 1.5,
-    primary: '#5c677d', secondary: '#33415c', accent: '#e63946',
-    skin: '#8d99ae', glow: '#e63946',
-    headwear: 'hood', back: 'shell', faceGear: 'mask',
+    primary: '#5c677d', secondary: '#33415c', accent: '#ff6b6b',
+    skin: '#8d99ae', glow: '#ff6b6b',
+    headwear: 'visorHelmet', back: 'shell', neck: 'turtleneck',
     eyeShape: 'sleepy', mouth: 'neutral', personality: 'heavy' },
 
   // Volant : reacteur dorsal, dome d'antenne, visiere teintee.

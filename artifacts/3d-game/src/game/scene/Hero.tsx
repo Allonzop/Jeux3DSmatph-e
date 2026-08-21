@@ -6,7 +6,7 @@ import { WORLD_RADIUS, surfaceY, applySurfaceRotation } from '../world';
 import { ToonHumanoid } from '../characters/ToonHumanoid';
 import { heroDef } from '../characters/defs';
 import { mulberry32 } from '../characters/rng';
-import { enemyPositions, enemyStates } from './utils';
+import { enemyPositions, enemyStates, damp } from './utils';
 import { ANTENNE_HERO_RANGE, ANTENNE_HERO_DPS } from '../gamedata';
 
 const SPEED = 4;
@@ -101,7 +101,7 @@ export function Hero() {
       // La hauteur vient de la planete : le jeu raisonne toujours en (x, z)
       // plat, seul le rendu suit la courbure.
       _visual.set(logicalPos[0], logicalPos[1] + surfaceY(logicalPos[0], logicalPos[2]), logicalPos[2]);
-      groupRef.current.position.lerp(_visual, 0.2);
+      groupRef.current.position.lerp(_visual, damp(0.2, delta));
       applySurfaceRotation(groupRef.current, groupRef.current.position.x, groupRef.current.position.z);
 
       if (isMoving && bodyRef.current) {
@@ -110,7 +110,7 @@ export function Hero() {
         let diff = targetRot - currentRot;
         while (diff < -Math.PI) diff += Math.PI * 2;
         while (diff > Math.PI) diff -= Math.PI * 2;
-        bodyRef.current.rotation.y += diff * 0.2;
+        bodyRef.current.rotation.y += diff * damp(0.2, delta);
       }
 
       // Dust emission (synced with the walk bounce cycle)
@@ -252,7 +252,26 @@ export function Hero() {
         ))}
       </group>
 
-      <group ref={bodyRef}>
+      {/* Marque au sol.
+          Sur un telephone, le heros fait une soixantaine de pixels de haut au
+          milieu d'un village de batiments deux fois plus gros, de villageois
+          qui lui ressemblent et de monstres colores : on le perdait de vue des
+          qu'on lachait le joystick. Cet anneau est le seul repere qui dit
+          « c'est vous ». Il ne bouge pas avec le cap du personnage, donc il
+          reste lisible quel que soit le sens de marche. */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
+        <ringGeometry args={[0.52, 0.66, 28]} />
+        <meshBasicMaterial color="#4cc9f0" transparent opacity={0.75} depthWrite={false} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]}>
+        <circleGeometry args={[0.52, 28]} />
+        <meshBasicMaterial color="#4cc9f0" transparent opacity={0.16} depthWrite={false} />
+      </mesh>
+
+      {/* Le rig est agrandi ici, pas dans `heroDef` : le studio de personnages
+          lit cette definition a la source, et AGENTS.md demande que le heros y
+          reste identique a l'original. */}
+      <group ref={bodyRef} scale={1.18}>
         <ToonHumanoid def={heroDef} moving={isHeroMoving} />
       </group>
     </group>

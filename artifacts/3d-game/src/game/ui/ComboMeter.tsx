@@ -36,22 +36,24 @@ export function ComboMeter() {
           initial={{ opacity: 0, scale: 0.6, x: 20 }}
           animate={{ opacity: 1, scale: 1, x: 0 }}
           exit={{ opacity: 0, scale: 0.7 }}
-          className="pointer-events-none flex flex-col items-end"
+          className="pointer-events-none flex flex-col items-end pr-0.5 max-w-full"
         >
           <motion.span
             key={count}
             initial={{ scale: 1.5 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 420, damping: 12 }}
-            className="font-black leading-none drop-shadow-[0_0_16px_rgba(255,210,76,0.85)]"
+            className="font-black leading-none whitespace-nowrap drop-shadow-[0_0_16px_rgba(255,210,76,0.85)]"
             style={{
-              fontSize: `clamp(1.6rem, ${5 + Math.min(count, 10) * 0.35}vw, 3rem)`,
+              // Plafond baisse a 2.2rem : a 3rem, le compteur et son libelle
+              // depassaient du cadre sur un ecran large et se coupaient net.
+              fontSize: `clamp(1.4rem, ${4 + Math.min(count, 10) * 0.3}vw, 2.2rem)`,
               color: count >= 8 ? '#ff7b00' : count >= 5 ? '#ffd24c' : '#ffffff',
             }}
           >
             ×{count}
           </motion.span>
-          <span className="text-amber-200/80 text-[0.6rem] font-black uppercase tracking-[0.2em]">
+          <span className="text-amber-200/80 text-[0.58rem] font-black uppercase tracking-[0.15em] whitespace-nowrap">
             enchaînement
           </span>
         </motion.div>

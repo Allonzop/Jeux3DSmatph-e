@@ -25,6 +25,22 @@ export function useToonGradient() {
   return getToonGradient();
 }
 
+/**
+ * Facteur d'interpolation independant de la cadence d'images.
+ *
+ * Le suivi de camera et le lissage du heros etaient ecrits `lerp(cible, 0.05)`
+ * — 5 % **par image**. A 60 images/s la camera rattrape le heros en une
+ * seconde ; a 5 images/s, il lui faut douze secondes, et le heros sort du
+ * cadre des qu'il court. C'est precisement sur les appareils lents que ca
+ * casse, c'est-a-dire la cible du jeu.
+ *
+ * `damp(0.05, delta)` rend le meme 5 % par image a 60 images/s, et la meme
+ * vitesse de rattrapage en secondes a n'importe quelle cadence.
+ */
+export function damp(perFrameAt60: number, delta: number): number {
+  return 1 - Math.pow(1 - perFrameAt60, Math.min(delta, 0.25) * 60);
+}
+
 // Live enemy world positions, written imperatively by each EnemyNode every
 // frame and read by turrets for targeting. Bypasses React/Zustand so enemy
 // movement never triggers React re-renders.
