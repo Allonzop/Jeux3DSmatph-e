@@ -5,6 +5,12 @@ import { ZONES } from '../zones';
 import { ResourceIcon, CloseIcon } from './icons';
 import { sfx } from '../sfx';
 
+const RESOURCE_NAME: Record<string, string> = {
+  boulons: 'boulons',
+  matiere_floue: 'matière floue',
+  energie_rire: 'énergie de rire',
+};
+
 /**
  * La fiche d'annexion d'un secteur.
  *
@@ -67,6 +73,25 @@ export function ZonePopup() {
 
           <div className="p-4 flex flex-col gap-3">
             <p className="text-white/65 text-[0.82rem] leading-snug">{zone.blurb}</p>
+
+            {/* Ce que l'annexion rapporte vraiment. Sans ces deux lignes, on
+                achetait du terrain vide — « y a rien à faire après ». */}
+            <div
+              className="rounded-xl border p-3 flex flex-col gap-2"
+              style={{ borderColor: `${zone.palette.glow}44`, backgroundColor: `${zone.palette.glow}12` }}
+            >
+              <div className="flex items-start gap-2">
+                <span className="text-base leading-none" style={{ color: zone.palette.glow }}>◆</span>
+                <span className="text-white text-[0.8rem] font-bold leading-snug">{zone.bonus.label}</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-base leading-none" style={{ color: zone.palette.glow }}>◆</span>
+                <span className="text-white/75 text-[0.78rem] leading-snug">
+                  Un gisement de {RESOURCE_NAME[zone.node.resource]} à récolter sur place
+                  <span className="text-white/40"> (+{zone.node.amount} toutes les {zone.node.cooldown} s)</span>
+                </span>
+              </div>
+            </div>
 
             <div className="rounded-xl bg-black/25 border border-white/5 p-3 flex flex-col gap-1.5 text-[0.75rem]">
               <div className="flex justify-between">
@@ -183,8 +208,17 @@ export function EmpirePanel({ onClose }: { onClose: () => void }) {
             <div className="min-w-0 flex-1">
               <div className="font-bold text-white text-[0.88rem] truncate">{zone.name}</div>
               <p className="text-white/50 text-[0.7rem] leading-snug">
-                {isOwned ? 'Annexé.' : levelOk ? zone.blurb : `S’ouvre au niveau ${zone.requiredLevel}.`}
+                {isOwned
+                  ? zone.bonus.label
+                  : levelOk
+                    ? zone.blurb
+                    : `S’ouvre au niveau ${zone.requiredLevel}.`}
               </p>
+              {isOwned && (
+                <p className="text-white/35 text-[0.66rem] leading-snug">
+                  Gisement de {RESOURCE_NAME[zone.node.resource]} sur place.
+                </p>
+              )}
             </div>
             {isOwned ? (
               <span className="shrink-0 text-[0.65rem] font-black uppercase text-emerald-300">À vous</span>
@@ -203,13 +237,18 @@ export function EmpirePanel({ onClose }: { onClose: () => void }) {
         );
       })}
 
+      {/* La suite, annoncée pour ce qu'elle est : une étape de développement,
+          pas une fonctionnalité verrouillée dans le jeu. La formulation
+          précédente laissait croire qu'il y avait quelque chose à débloquer. */}
       <div className="rounded-2xl border border-dashed border-white/12 bg-black/15 p-3">
         <div className="flex items-baseline justify-between">
           <span className="font-bold text-white/60 text-[0.9rem]">Deuxième planète</span>
-          <span className="text-[0.62rem] font-mono text-white/30 uppercase">à venir</span>
+          <span className="text-[0.62rem] font-mono text-white/30 uppercase">pas encore là</span>
         </div>
         <p className="text-white/35 text-[0.72rem] leading-snug mt-0.5">
-          Annexez les quatre secteurs de la Racine, et l’empire s’étendra plus loin.
+          {owned === ZONES.length
+            ? 'La Racine est entièrement à vous. La suite de l’empire arrive dans une prochaine mise à jour.'
+            : 'Elle n’existe pas encore dans le jeu — c’est la prochaine étape prévue. En attendant, la Racine a encore des secteurs à prendre.'}
         </p>
       </div>
     </div>

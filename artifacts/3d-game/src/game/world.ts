@@ -194,6 +194,8 @@ export function checkPlacement(
   limit: number = WORLD_RADIUS,
   /** Gabarit du batiment qu'on pose — voir `footprint` dans gamedata.ts. */
   footprint: number = DEFAULT_FOOTPRINT,
+  /** Gisements supplementaires a degager — ceux des secteurs annexes. */
+  extraNodes: [number, number][] = [],
 ): PlacementCheck {
   const dist = Math.sqrt(x * x + z * z);
   if (dist > limit - EDGE_MARGIN) return { valid: false, reason: 'edge' };
@@ -222,6 +224,13 @@ export function checkPlacement(
   for (const n of Object.values(RESOURCE_NODE_POSITIONS)) {
     const dx = x - n[0];
     const dz = z - n[2];
+    if (Math.sqrt(dx * dx + dz * dz) < NODE_RADIUS + footprint * DECOR_CLEARANCE) {
+      return { valid: false, reason: 'decor' };
+    }
+  }
+  for (const n of extraNodes) {
+    const dx = x - n[0];
+    const dz = z - n[1];
     if (Math.sqrt(dx * dx + dz * dz) < NODE_RADIUS + footprint * DECOR_CLEARANCE) {
       return { valid: false, reason: 'decor' };
     }

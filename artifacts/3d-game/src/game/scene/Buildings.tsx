@@ -14,7 +14,7 @@ import {
   surfaceY,
 } from '../world';
 import { Html, RoundedBox } from '@react-three/drei';
-import { maxRadiusAt, ZONE_OUTER_RADIUS } from '../zones';
+import { maxRadiusAt, zoneEffects, unlockedZoneNodes, ZONE_OUTER_RADIUS } from '../zones';
 import { spawnBurst, spawnPopup } from '../effects';
 import { sfx } from '../sfx';
 
@@ -26,6 +26,17 @@ const BUILDING_SCALE = 1.35;
 
 /** Cadence de versement des degats : meme DPS, 15 fois moins d'ecritures. */
 const DAMAGE_TICK = 0.25;
+
+/**
+ * Degats d'une tour, bonus de secteur compris.
+ *
+ * Les Plaines de Cendre majorent toutes les tours de 20 % une fois annexees
+ * (voir `zoneEffects`). Sans secteur annexe le multiplicateur vaut 1 : les
+ * chiffres de `gamedata.ts` restent la reference.
+ */
+function towerDps(base: number): number {
+  return base * zoneEffects(useGameStore.getState().unlockedZones).towerDamage;
+}
 
 type BuildingProps = {
   /** Identifiant d'exemplaire — `tourelle` ou `tourelle#2`. Voir gamedata.ts. */
@@ -107,6 +118,7 @@ function PlacementController() {
     const check = checkPlacement(
       x, z, others, state.clearedDecor, maxRadiusAt(x, z, state.unlockedZones),
       data?.footprint,
+      unlockedZoneNodes(state.unlockedZones).map(({ node }) => node.pos),
     );
     validRef.current = check.valid;
     hasPointRef.current = true;
@@ -869,7 +881,7 @@ function BuildingTourelle(props: BuildingProps) {
       if (beamRef.current) beamRef.current.visible = true;
       // Accumulate damage and flush ~4x/sec: same DPS, far fewer store
       // updates (each one re-renders the enemy tree via its hp bars).
-      dmgAcc.current += stats.dps * delta;
+      dmgAcc.current += towerDps(stats.dps) * delta;
       tickTimer.current += delta;
       if (tickTimer.current >= DAMAGE_TICK) {
         useGameStore.getState().damageEnemy(target.id, dmgAcc.current);
@@ -990,7 +1002,7 @@ function BuildingMortier(props: BuildingProps) {
         shell.current.active = false;
         shellRef.current.visible = false;
         const { toX, toZ } = shell.current;
-        const hits = splashDamage(toX, toZ, stats.splash, stats.dps * RELOAD, stats.hitsAir);
+        const hits = splashDamage(toX, toZ, stats.splash, towerDps(stats.dps) * RELOAD, stats.hitsAir);
         spawnBurst(toX, surfaceY(toX, toZ) + 0.4, toZ, '#ff7b00', stats.splash * 0.8, 0.5);
         if (hits > 0) sfx.boom();
       } else {
@@ -1136,7 +1148,7 @@ function BuildingCryo(props: BuildingProps) {
 
     if (flush) {
       // Un seul versement pour toute la bulle : voir `damageEnemies`.
-      useGameStore.getState().damageEnemies(frozen.current, stats.dps * dmgTimer.current);
+      useGameStore.getState().damageEnemies(frozen.current, towerDps(stats.dps) * dmgTimer.current);
       dmgTimer.current = 0;
     }
   });
@@ -1263,7 +1275,7 @@ function BuildingTesla(props: BuildingProps) {
       return;
     }
 
-    dmgAcc.current += stats.dps * delta;
+    dmgAcc.current += towerDps(stats.dps) * delta;
     tickTimer.current += delta;
     if (tickTimer.current >= DAMAGE_TICK) {
       // Chaque cible prend les degats pleins : c'est ce qui rend le tesla

@@ -1,9 +1,10 @@
-import React, { useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore, ResourceType } from '../store';
 import { useToonGradient } from './utils';
 import { RESOURCE_NODE_POSITIONS, surfacePos, surfaceRotation, surfaceY } from '../world';
+import { unlockedZoneNodes } from '../zones';
 import { spawnPopup } from '../effects';
 import { XP } from '../progress';
 import { sfx } from '../sfx';
@@ -47,10 +48,36 @@ const NODES: NodeDef[] = [
 ];
 
 export function ResourceNodes() {
+  const unlockedZones = useGameStore((state) => state.unlockedZones);
+
+  // Un gisement par secteur annexé, à sa couleur et à son rendement.
+  //
+  // C'est la réponse directe au « on les achète et y a rien à faire après » :
+  // un secteur annexé n'est plus seulement du terrain constructible, c'est un
+  // endroit où l'on revient. Les Cendres donnent des boulons en abondance, la
+  // Toundra et la Jungle de la matière floue, les Dunes de l'énergie de rire —
+  // les deux ressources rares que les gisements du plateau ont volontairement
+  // cessé de fournir en quantité.
+  const zoneNodes = useMemo(
+    () =>
+      unlockedZoneNodes(unlockedZones).map(({ zone, node }) => ({
+        id: node.resource,
+        key: `zone-${zone.id}`,
+        pos: [node.pos[0], 0.5, node.pos[1]] as [number, number, number],
+        color: zone.palette.glow,
+        amount: node.amount,
+        cooldown: node.cooldown,
+      })),
+    [unlockedZones],
+  );
+
   return (
     <group>
       {NODES.map((node) => (
         <ResourceNode key={node.id} def={node} />
+      ))}
+      {zoneNodes.map((node) => (
+        <ResourceNode key={node.key} def={node} />
       ))}
       <Particles />
     </group>

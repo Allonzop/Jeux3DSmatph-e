@@ -145,6 +145,43 @@ choisie.
   trop lent (ou trop rapide) une fois testé, resserrer `gamedata.ts`
   directement, c'est la seule source de vérité.
 
+### Lot 2 — annexer un secteur change enfin quelque chose
+
+« On les achète et y a rien à faire après. » C'était exact : un secteur annexé
+n'apportait que du terrain constructible, ce qui ne se ressent pas.
+
+Chaque zone porte maintenant **un effet permanent chiffré** et **son propre
+gisement** :
+
+| secteur | effet permanent | gisement |
+|---|---|---|
+| Plaines de Cendre | toutes les tours +20 % de dégâts | boulons, +30 / 6 s |
+| Toundra de Givre | tous les monstres 12 % plus lents | matière floue, +3 / 16 s |
+| Jungle de Spores | deux Chasseurs spatiaux de plus | matière floue, +5 / 13 s |
+| Dunes Dorées | butin de vague +30 % | énergie de rire, +3 / 20 s |
+
+Un seul effet par zone, dicible en une ligne sur la fiche — et la fiche
+l'annonce **avant** l'achat, avec le gisement. Les deux ressources rares
+reviennent par là : les gisements du plateau ont été volontairement ralentis au
+sprint précédent, les secteurs sont la nouvelle voie d'approvisionnement. Ça
+donne aussi une raison d'aller marcher là-bas, ce qui manquait complètement.
+
+Tout passe par une seule fonction, `zoneEffects(unlocked)`, lue par les tours,
+les monstres, le calcul de butin et les chasseurs. Sans secteur annexé, tous
+les multiplicateurs valent 1 : une partie neuve et les outils de vérification
+se comportent exactement comme avant.
+
+**La deuxième planète.** Le panneau disait « à venir — annexez les quatre
+secteurs et l'empire s'étendra plus loin », ce qui se lisait comme une
+fonctionnalité verrouillée qu'on cherche ensuite à débloquer. Reformulé sans
+ambiguïté : « pas encore là — elle n'existe pas encore dans le jeu, c'est la
+prochaine étape prévue ». Mieux vaut une promesse datée qu'une fausse serrure.
+
+Vérifié dans un navigateur : la fiche des Cendres annonce bien « +20 % de
+dégâts » et son gisement de boulons ; les quatre secteurs s'annexent ; le héros
+trouve un gisement sur place.
+
+
 ---
 
 ## 2026-08-21 (sprint 2) — Freeze de vague, son, cristal lisible, tuto en magenta

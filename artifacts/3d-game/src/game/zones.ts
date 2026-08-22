@@ -47,6 +47,34 @@ export type BiomePalette = {
   glow: string;
 };
 
+/**
+ * Ce qu'un secteur rapporte une fois annexé.
+ *
+ * Un seul effet par zone, chiffré et permanent. Le playtest était net :
+ * « on les achète et y a rien à faire après ». Du terrain constructible en
+ * plus, ce n'est pas une récompense qu'on ressent — il faut que quelque chose
+ * change dans le combat ou dans l'économie, et que ce soit dicible en une
+ * ligne sur la fiche.
+ */
+export type ZoneBonus =
+  /** Multiplie les dégâts de toutes les tours. */
+  | { kind: 'towerDamage'; value: number; label: string }
+  /** Ralentit tous les monstres, partout, en permanence. */
+  | { kind: 'enemySlow'; value: number; label: string }
+  /** Majore le butin de chaque vague gagnée. */
+  | { kind: 'loot'; value: number; label: string }
+  /** Recrute des Chasseurs spatiaux en plus de ceux du Bar. */
+  | { kind: 'hunters'; value: number; label: string };
+
+/** Le gisement propre au biome, récoltable comme les trois du plateau. */
+export type ZoneNode = {
+  resource: 'boulons' | 'matiere_floue' | 'energie_rire';
+  amount: number;
+  cooldown: number;
+  /** Position, en coordonnées de la carte. */
+  pos: [number, number];
+};
+
 export type ZoneDef = {
   id: string;
   name: string;
@@ -63,6 +91,10 @@ export type ZoneDef = {
   corePos: [number, number];
   /** Forme du décor propre au biome. Voir `ZoneDecor` dans Ground.tsx. */
   decor: 'obsidian' | 'ice' | 'spore' | 'dune';
+  /** L'effet permanent que son annexion débloque. */
+  bonus: ZoneBonus;
+  /** Le gisement qu'on vient y récolter. */
+  node: ZoneNode;
 };
 
 const Q = Math.PI / 2;
@@ -79,6 +111,8 @@ export const ZONES: ZoneDef[] = [
     requiredLevel: 3,
     corePos: [18, 0],
     decor: 'obsidian',
+    bonus: { kind: 'towerDamage', value: 0.2, label: 'Toutes les tours : +20 % de dégâts' },
+    node: { resource: 'boulons', amount: 30, cooldown: 6, pos: [17.5, 0] },
   },
   {
     id: 'givre',
@@ -91,6 +125,8 @@ export const ZONES: ZoneDef[] = [
     requiredLevel: 5,
     corePos: [0, 18],
     decor: 'ice',
+    bonus: { kind: 'enemySlow', value: 0.12, label: 'Tous les monstres : 12 % plus lents' },
+    node: { resource: 'matiere_floue', amount: 3, cooldown: 16, pos: [0, 17.5] },
   },
   {
     id: 'spores',
@@ -103,6 +139,8 @@ export const ZONES: ZoneDef[] = [
     requiredLevel: 8,
     corePos: [-18, 0],
     decor: 'spore',
+    bonus: { kind: 'hunters', value: 2, label: 'Deux Chasseurs spatiaux de plus' },
+    node: { resource: 'matiere_floue', amount: 5, cooldown: 13, pos: [-17.5, 0] },
   },
   {
     id: 'dunes',
@@ -115,6 +153,8 @@ export const ZONES: ZoneDef[] = [
     requiredLevel: 12,
     corePos: [0, -18],
     decor: 'dune',
+    bonus: { kind: 'loot', value: 0.3, label: 'Butin de vague : +30 %' },
+    node: { resource: 'energie_rire', amount: 3, cooldown: 20, pos: [0, -17.5] },
   },
 ];
 
@@ -160,3 +200,42 @@ export function outermostRadius(unlocked: Record<string, true>): number {
 /** Angle polaire des bornes de la couronne, pour découper la sphère. */
 export const ZONE_THETA_INNER = Math.asin(WORLD_RADIUS / PLANET_RADIUS);
 export const ZONE_THETA_OUTER = Math.asin(ZONE_OUTER_RADIUS / PLANET_RADIUS);
+
+
+/**
+ * Les effets cumulés des secteurs annexés.
+ *
+ * Une seule fonction, lue partout où un bonus s'applique : les tours pour
+ * leurs dégâts, `Enemies.tsx` pour la vitesse, `rewardVictory` pour le butin,
+ * `Hunters.tsx` pour l'effectif. Tout à zéro quand rien n'est annexé — donc
+ * une partie neuve, et les outils de vérification, se comportent exactement
+ * comme avant.
+ */
+export type ZoneEffects = {
+  /** Multiplicateur de dégâts des tours (1 = inchangé). */
+  towerDamage: number;
+  /** Ralentissement des monstres, de 0 à 1. */
+  enemySlow: number;
+  /** Multiplicateur de butin (1 = inchangé). */
+  loot: number;
+  /** Chasseurs spatiaux supplémentaires. */
+  extraHunters: number;
+};
+
+export function zoneEffects(unlocked: Record<string, true>): ZoneEffects {
+  const out: ZoneEffects = { towerDamage: 1, enemySlow: 0, loot: 1, extraHunters: 0 };
+  for (const zone of ZONES) {
+    if (!unlocked[zone.id]) continue;
+    const b = zone.bonus;
+    if (b.kind === 'towerDamage') out.towerDamage += b.value;
+    else if (b.kind === 'enemySlow') out.enemySlow += b.value;
+    else if (b.kind === 'loot') out.loot += b.value;
+    else out.extraHunters += b.value;
+  }
+  return out;
+}
+
+/** Les gisements des secteurs annexés, pour `ResourceNodes`. */
+export function unlockedZoneNodes(unlocked: Record<string, true>): { zone: ZoneDef; node: ZoneNode }[] {
+  return ZONES.filter((z) => unlocked[z.id]).map((zone) => ({ zone, node: zone.node }));
+}

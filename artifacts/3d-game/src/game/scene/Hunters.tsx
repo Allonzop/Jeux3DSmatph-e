@@ -8,6 +8,7 @@ import { mulberry32 } from '../characters/rng';
 import { enemyPositions, enemyStates, damp } from './utils';
 import { surfaceY, applySurfaceRotation } from '../world';
 import { HUNTER_DPS, HUNTER_RANGE } from '../gamedata';
+import { zoneEffects } from '../zones';
 import { sfx } from '../sfx';
 
 /**
@@ -39,10 +40,13 @@ const BEAM_Y = 0.85;
 export function Hunters() {
   const barLevel = useGameStore((state) => state.buildingLevels['bar'] || 0);
   const barPos = useGameStore((state) => state.buildingPositions['bar']);
+  const unlockedZones = useGameStore((state) => state.unlockedZones);
 
   if (barLevel <= 0 || !barPos) return null;
 
-  const count = Math.min(barLevel, hunterDefs.length);
+  // La Jungle de Spores en recrute deux de plus, mais il faut un Bar : les
+  // renforts rejoignent une garnison, ils n'en creent pas une.
+  const count = Math.min(barLevel + zoneEffects(unlockedZones).extraHunters, hunterDefs.length);
   return (
     <group>
       {Array.from({ length: count }).map((_, i) => (

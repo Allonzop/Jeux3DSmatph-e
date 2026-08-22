@@ -6,6 +6,7 @@ import { enemyPositions, enemyStates } from './utils';
 import { ToonHumanoid } from '../characters/ToonHumanoid';
 import { ENEMY_TYPES, enemyAppearance, CHAMAN_HEAL_RADIUS, CHAMAN_HEAL_PER_SEC } from '../enemies';
 import { surfaceY, applySurfaceRotation } from '../world';
+import { zoneEffects } from '../zones';
 import { spawnBurst, spawnPopup, addShake, registerKill } from '../effects';
 import { sfx } from '../sfx';
 
@@ -231,7 +232,11 @@ function EnemyNode({ enemy }: { enemy: Enemy }) {
             st.slow = 0;
           }
         }
-        const moveSpeed = BASE_SPEED * type.speed * (1 - slow) * delta;
+        // Le froid de la Toundra de Givre s'ajoute au ralentissement des
+        // cryo-diffuseurs, plafonne a 85 % pour qu'un monstre avance toujours.
+        const zoneChill = zoneEffects(useGameStore.getState().unlockedZones).enemySlow;
+        const total = Math.min(0.85, slow + zoneChill);
+        const moveSpeed = BASE_SPEED * type.speed * (1 - total) * delta;
         pos.x += _dir.x * moveSpeed;
         pos.z += _dir.z * moveSpeed;
 

@@ -12,7 +12,7 @@ import {
 } from './gamedata';
 import { composeWave, ENEMY_TYPES, type EnemyKind } from './enemies';
 import { clearableKind, checkPlacement, type ClearableKind } from './world';
-import { ZONES, maxRadiusAt } from './zones';
+import { ZONES, maxRadiusAt, zoneEffects } from './zones';
 import { heroTrack, type HeroTrackId } from './hero';
 import { xpForLevel, levelUpReward, XP } from './progress';
 import { resetPowers } from './heroPowers';
@@ -210,8 +210,10 @@ function rewardVictory(
   const state = get();
   if (state.coreHp <= 0 || state.waveNumber === 0) return;
   const ratio = state.waveEnemyCount > 0 ? state.waveKills / state.waveEnemyCount : 1;
-  // Le Marche majore le butin — c'est ce que promet son `blurb`.
-  const lootBonus = 1 + MARCHE_LOOT_BONUS * (state.buildingLevels['marche'] || 0);
+  // Le Marche majore le butin, et les Dunes Dorees aussi une fois annexees.
+  const lootBonus =
+    (1 + MARCHE_LOOT_BONUS * (state.buildingLevels['marche'] || 0))
+    * zoneEffects(state.unlockedZones).loot;
   const gains = waveVictoryReward(state.waveNumber, ratio, lootBonus);
   set((s) => ({
     resources: {
