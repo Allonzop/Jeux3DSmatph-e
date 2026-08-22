@@ -4,6 +4,8 @@ import { useGameStore, ResourceType } from '../store';
 import { HERO_TRACKS, trackBonus, POWERS } from '../hero';
 import { titleForLevel } from '../progress';
 import { ResourceIcon, CloseIcon } from './icons';
+import { CharacterPortrait } from './CharacterPortrait';
+import { heroDef } from '../characters/defs';
 import { sfx } from '../sfx';
 
 /**
@@ -46,10 +48,13 @@ export function HeroPanel({ open, onClose }: { open: boolean; onClose: () => voi
             <div className="shrink-0 px-4 pt-3 pb-2">
               <div className="mx-auto w-10 h-1 rounded-full bg-white/20 mb-3" />
               <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-white font-black uppercase tracking-wider text-sm">Commandant</h2>
-                  <div className="text-amber-300 text-[0.7rem] font-bold">
-                    Niveau {playerLevel} · {titleForLevel(playerLevel)}
+                <div className="flex items-center gap-3">
+                  <CharacterPortrait def={heroDef} size={64} />
+                  <div>
+                    <h2 className="text-white font-black uppercase tracking-wider text-sm">Commandant</h2>
+                    <div className="text-amber-300 text-[0.7rem] font-bold">
+                      Niveau {playerLevel} · {titleForLevel(playerLevel)}
+                    </div>
                   </div>
                 </div>
                 <button

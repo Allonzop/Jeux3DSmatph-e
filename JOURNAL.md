@@ -212,6 +212,37 @@ au-dessus du cadavre et dans le HUD. Deux fois la même information, au moment
 où l'écran en a le moins besoin. Seul le compteur du HUD reste.
 
 
+### Lot 4 — les personnages ont enfin un portrait
+
+« Sur certains aperçus de bâtiment on pourrait avoir des aperçus des
+personnages plus détaillés, un peu à la Clash of Clans. » Les fiches ne
+montraient qu'une icône SVG plate, alors que tout le jeu est bâti autour de ses
+personnages et qu'on ne les voyait jamais de près.
+
+`ui/CharacterPortrait.tsx` rend un `ToonHumanoid` dans un petit canevas, en
+rotation lente — une figurine. La fiche d'un bâtiment montre son occupant (le
+Bar montre un Chasseur spatial : c'est lui qu'il recrute), et la fiche du
+commandant montre le héros.
+
+**Un second contexte WebGL, avec une règle.** Les navigateurs mobiles n'en
+tolèrent qu'une poignée. Il n'y en a donc jamais qu'un à la fois, monté avec la
+fiche et démonté avec elle — vérifié dans un navigateur : 2 canevas fiche
+ouverte, 1 après fermeture. Une galerie de portraits côte à côte ferait sauter
+la limite ; ne pas généraliser sans y penser.
+
+**Deux corrections de cadrage, trouvées à l'écran.** Le rig est construit les
+pieds à l'origine : un cadrage centré sur zéro met le personnage dans la moitié
+basse et lui coupe la tête. Et les `CharacterDef` portent des échelles de 0,56
+(Fileur) à 1,05 (Colosse), pensées pour la scène — telles quelles, un portrait
+sur deux sortait minuscule. Le portrait normalise donc l'échelle : leur taille
+relative se lit dans le jeu, pas dans une vignette de 84 pixels.
+
+Au passage, la table « quel villageois habite quel bâtiment » a quitté
+`scene/Villagers.tsx` pour `gamedata.ts` : l'interface en a besoin autant que
+la scène, et il n'y a pas de raison qu'elle importe un module de scène pour
+lire une correspondance.
+
+
 ---
 
 ## 2026-08-21 (sprint 2) — Freeze de vague, son, cristal lisible, tuto en magenta

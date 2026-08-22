@@ -387,6 +387,24 @@ export function turretStats(instanceId: string, level: number): TurretStats | nu
   return data.levels[level - 1]?.turret ?? null;
 }
 
+/**
+ * Qui habite quoi.
+ *
+ * Index dans `villagerDefs` (characters/defs.ts) de l'habitant que chaque
+ * batiment fait venir. Vit ici plutot que dans `scene/Villagers.tsx` parce que
+ * l'interface s'en sert aussi : la fiche d'un batiment montre le portrait de
+ * son occupant, et il n'y a aucune raison que l'UI importe un module de scene
+ * pour lire une table de correspondance.
+ */
+export const BUILDING_RESIDENT: Record<string, number> = {
+  hutte: 1,
+  ferme: 2,
+  marche: 3,
+  bar: 4,
+  antenne: 5,
+  tourelle: 6,
+};
+
 /** Libelle court du role, pour les pastilles de l'interface. */
 export const ROLE_LABEL: Record<BuildingRole, string> = {
   production: 'Production',

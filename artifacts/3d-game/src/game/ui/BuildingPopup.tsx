@@ -4,9 +4,12 @@ import {
   buildingData,
   instanceNumber,
   ROLE_LABEL,
+  BUILDING_RESIDENT,
   type BuildingRole,
   type TurretStats,
 } from '../gamedata';
+import { villagerDefs, hunterDefs } from '../characters/defs';
+import { CharacterPortrait } from './CharacterPortrait';
 import { ResourceIcon, BuildingIcon, CloseIcon, MoveIcon } from './icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { sfx } from '../sfx';
@@ -115,6 +118,16 @@ export function BuildingPopup() {
       resources.energie_rire >= (nextLevelData.cost.energie_rire || 0);
   }
 
+  // L'occupant du bâtiment, s'il en a un. Rien pour les tours ajoutées après
+  // la tourelle laser : elles n'abritent personne.
+  const residentIndex = BUILDING_RESIDENT[data.id];
+  const resident =
+    data.id === 'bar'
+      ? hunterDefs[0]
+      : residentIndex !== undefined
+        ? villagerDefs[residentIndex]
+        : null;
+
   const shownLevelData = level > 0 ? currentLevelData : nextLevelData;
   const hasPassive = Object.keys(shownLevelData?.passive || {}).length > 0;
 
@@ -180,9 +193,19 @@ export function BuildingPopup() {
             </div>
           </div>
 
-          {/* À quoi ça sert — la premiere chose lue, avant les chiffres. */}
-          <div className="px-5 pt-4">
-            <p className="text-white/70 text-sm leading-snug">{data.blurb}</p>
+          {/* À quoi ça sert — la premiere chose lue, avant les chiffres —
+              et qui l'occupe, en 3D. Le Bar montre un Chasseur spatial : c'est
+              lui qu'il recrute, pas un villageois. */}
+          <div className="px-5 pt-4 flex items-start gap-3">
+            {resident && <CharacterPortrait def={resident} size={84} />}
+            <div className="min-w-0 flex-1">
+              {resident && (
+                <div className="text-white/40 text-[0.6rem] font-black uppercase tracking-[0.16em] mb-1">
+                  {data.id === 'bar' ? 'Recrute' : 'Occupant'}
+                </div>
+              )}
+              <p className="text-white/70 text-sm leading-snug">{data.blurb}</p>
+            </div>
           </div>
 
           {/* Body */}

@@ -6,6 +6,7 @@ import { villagerDefs } from '../characters/defs';
 import { mulberry32 } from '../characters/rng';
 import type { CharacterDef } from '../characters/types';
 import { useGameStore } from '../store';
+import { BUILDING_RESIDENT } from '../gamedata';
 import { surfaceY, applySurfaceRotation } from '../world';
 import { damp } from './utils';
 
@@ -30,14 +31,6 @@ function spawnFor(index: number): [number, number, number] {
  * en fait venir un. Le village se peuple parce qu'on le batit — la croissance
  * de la population devient la recompense visible de la construction.
  */
-const VILLAGER_BY_BUILDING: Record<string, number> = {
-  hutte: 1,
-  ferme: 2,
-  marche: 3,
-  bar: 4,
-  antenne: 5,
-  tourelle: 6,
-};
 
 export function Villagers() {
   const buildingLevels = useGameStore((state) => state.buildingLevels);
@@ -49,7 +42,7 @@ export function Villagers() {
       { def: villagerDefs[0], start: spawnFor(0) },
     ];
 
-    for (const [buildingId, villagerIndex] of Object.entries(VILLAGER_BY_BUILDING)) {
+    for (const [buildingId, villagerIndex] of Object.entries(BUILDING_RESIDENT)) {
       if ((buildingLevels[buildingId] || 0) <= 0) continue;
       const def = villagerDefs[villagerIndex];
       if (!def) continue;
