@@ -18,6 +18,50 @@ réorganisation des `.md`, pas de scripts d'agent, et **travail poussé par
 lots** pour que rien ne soit perdu et que la routine de 2 h trouve un dépôt
 propre.
 
+### Le piège qui a mangé cinq poussées de suite
+
+**`git push origin <branche>` pousse la branche locale, pas `HEAD`.** Évident
+écrit comme ça, invisible en pratique — et il n'y a eu aucun message d'erreur,
+nulle part.
+
+Ce qui s'est passé : en resynchronisant en début de séance j'ai fait
+`git checkout main` puis `git reset --hard origin/main`. Les cinq lots ont donc
+été commités **sur `main` en local**, pendant que la branche
+`claude/tower-defense-sprint-96lzf6` restait sur le commit de la veille. Chaque
+`git push -u origin claude/…` poussait cette branche-là, inchangée. Le workflow
+d'auto-fusion se déclenchait, refusionnait un commit déjà dans `main`,
+concluait **« success »**, et supprimait la branche. Cinq fois. Le jeu déployé
+n'a pas bougé d'un octet pendant deux heures de travail.
+
+Trois choses trompent, et il faut les connaître :
+
+1. `git log --oneline -1` juste après un commit montre bien le nouveau commit —
+   mais c'est celui de la branche courante, qui n'est pas celle qu'on pousse.
+2. `git push` répond `* [new branch]` avec un air de succès complet : la
+   branche *est* créée, elle porte simplement le mauvais commit.
+3. Le workflow rapporte `conclusion: success`. Il n'a rien fait de faux : on
+   lui a demandé de fusionner un commit déjà fusionné.
+
+**Le seul contrôle qui ne ment pas**, après chaque poussée :
+
+```
+git merge-base --is-ancestor "$(git rev-parse HEAD)" origin/main
+```
+
+Il faut qu'il finisse par répondre vrai. C'est lui qui a fini par lever le
+lièvre — après avoir tourné dix minutes dans le vide, ce qui est précisément le
+signal. Ne jamais conclure d'une poussée réussie ; conclure de ce test.
+
+**Et la règle en amont :** rester sur la branche désignée. Pour se
+resynchroniser sans la quitter :
+
+```
+git fetch origin main && git reset --hard origin/main   # depuis claude/…
+```
+
+plutôt que `git checkout main`. On travaille alors toujours sur la branche
+qu'on poussera.
+
 ### Lot 1 — deux bugs de fond
 
 **Le placement des bâtiments au doigt.** « Sur mon iPhone 13, quand ce n'est
