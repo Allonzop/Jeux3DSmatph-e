@@ -11,6 +11,96 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-22 — Coûts en boulons du début de partie rabotés
+
+**Choix de la tâche.** Le backlog n'a qu'une seule entrée non cochée dans la
+liste principale, « Régler l'équilibrage du combat au ressenti » — écartée
+pour la même raison que toutes les séances depuis le 15/08 (15/08, 18/08,
+19/08, 20/08, 21/08 × 2) : elle exige un jugement « au ressenti » sur un vrai
+appareil, hors de portée de cet agent, et ni `shot.mjs` ni `wave.mjs` ne
+mesurent le ressenti ni les performances. Descendu à la section « Reste
+ouvert » du sprint du 21/08 : deux entrées, « agrandir la zone jouable » et
+« revoir les coûts en boulons du début de partie ». La première est
+explicitement documentée dans le journal du 21/08 comme demandant de
+reprendre ensemble caméra, vitesse du héros et portée des tours — trop large
+et trop risqué pour une séance normale. La seconde est un point isolé,
+purement numérique (des coûts dans `gamedata.ts`) et directement mesurable en
+conditions réelles, dans le même esprit que le buff de production du 20/08 :
+choisie.
+
+**Fait**
+
+- `gamedata.ts` : le coût en boulons du **niveau 1** (le déblocage) de chaque
+  bâtiment est rabaissé d'environ 40 %, arrondi. Rien d'autre ne bouge —
+  niveaux 2 et plus, production passive, coûts en matière floue/énergie de
+  rire — pour garder la pente qui ralentit ensuite (la demande d'Allonzo,
+  « ultra-rapide au début puis progressif », modèle Clash of Clans). La hutte
+  (50) n'a pas été touchée : c'est déjà le premier geste de la partie, payable
+  avec les 50 boulons de départ.
+
+  | bâtiment | avant | après |
+  |---|---|---|
+  | ferme | 150 | 90 |
+  | bar | 250 | 150 |
+  | antenne | 600 | 350 |
+  | marché | 1000 | 600 |
+  | tourelle laser | 300 | 180 |
+  | mortier | 700 | 420 |
+  | cryo | 900 | 540 |
+  | tesla | 1200 | 720 |
+
+- Vérifié qu'aucun autre fichier ne référence ces valeurs en dur (recherche
+  `boulons: <ancienne valeur>` sur tout le dépôt, hors `node_modules`) : les
+  seuls autres résultats sont des niveaux 2+ non concernés et une formule sans
+  rapport dans `hero.ts`.
+
+**Vérifié comment**
+
+- `pnpm install` (nécessaire, `node_modules` absent au démarrage de la
+  séance) puis `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (le scénario `--tourelle` part avec des ressources déjà
+  hautes, insensible au coût de niveau 1).
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png`, ouvert :
+  aucune régression sur les six bâtiments (changement de données pures, pas
+  de rendu touché).
+- **Le gain réel, mesuré en conditions réelles** (aucune des deux commandes
+  standard ne mesure un temps d'attente) : script Playwright ad hoc
+  réutilisant `openGame`/`makeSave`/`serveStatic` de `lib.mjs`, partie neuve
+  (50 boulons, aucun bâtiment), hutte bâtie via `window.__villageStore`
+  (exposé depuis le sprint du 21/08), puis lecture de `localStorage` toutes
+  les 3 s. Le nouveau coût de la tourelle (180) est devenu payable à
+  **t = 45,1 s**, contre ~75 s attendus pour l'ancien coût (300) à la même
+  cadence de production (4 boulons/s) — l'écart mesuré colle exactement au
+  calcul (300−180)/4 = 30 s de moins. Script jetable, non ajouté au dépôt.
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` : 5/5
+  — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté cette séance côté implémentation : la cause était déjà
+  identifiée dans le backlog lui-même (« ce sont les coûts qui n'ont pas été
+  retouchés »), pas de fausse piste sur le code.
+- Envisagé de baisser aussi les coûts en matière floue/énergie de rire des
+  tours de niveau 1, pour aller plus loin dans l'esprit de la demande. Écarté
+  : la tâche du backlog dit explicitement « les coûts **en boulons** », et la
+  matière floue/l'énergie de rire ont leur propre boucle (déblayage de décor,
+  Ferme, Marché) déjà réglée lors du sprint du 21/08 — les retoucher ici
+  aurait débordé du périmètre d'une seule tâche.
+
+**Reste ouvert**
+
+- Voir `BACKLOG.md` : équilibrage du combat (nécessite un vrai appareil), et
+  agrandir la zone jouable (`WORLD_RADIUS` reste à 14 — demande de reprendre
+  ensemble caméra, vitesse du héros et portée des tours, une séance à elle
+  seule).
+- Les coûts abaissés sont un premier chiffre raisonnable (~40 %, uniforme),
+  pas calibré finement bâtiment par bâtiment : si Allonzo le trouve encore
+  trop lent (ou trop rapide) une fois testé, resserrer `gamedata.ts`
+  directement, c'est la seule source de vérité.
+
+---
+
 ## 2026-08-21 (sprint 2) — Freeze de vague, son, cristal lisible, tuto en magenta
 
 Second sprint ouvert par Allonzo sur son forfait, à partir d'un retour de

@@ -197,6 +197,11 @@ const laser = (range: number, dps: number): TurretStats => ({
   mode: 'laser', range, dps, splash: 0, targets: 1, slow: 0, hitsAir: false,
 });
 
+// Le cout en boulons du niveau 1 (le deblocage) de chaque batiment est rabote
+// d'environ 40 % par rapport a ce qu'il etait avant cette passe. Le jeu n'a
+// aucun timer de construction : l'attente du debut de partie, c'est le temps
+// d'accumuler des boulons. Rien d'autre n'a bouge — couts des niveaux 2 et
+// plus, production passive — pour garder la pente qui ralentit ensuite.
 export const BUILDINGS: Record<string, BuildingData> = {
   hutte: {
     id: 'hutte',
@@ -231,7 +236,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     maxInstances: 2,
     footprint: 1.35,
     levels: [
-      { cost: { boulons: 150 }, passive: {}, effect: 'Se met à produire au niveau 2.' },
+      { cost: { boulons: 90 }, passive: {}, effect: 'Se met à produire au niveau 2.' },
       { cost: { boulons: 450, matiere_floue: 5 }, passive: { matiere_floue: 0.2 } },
       { cost: { boulons: 1200, matiere_floue: 15 }, passive: { matiere_floue: 0.5 } },
       { cost: { boulons: 3000, matiere_floue: 40 }, passive: { matiere_floue: 1 } }
@@ -247,7 +252,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     maxInstances: 1,
     footprint: 1.45,
     levels: [
-      { cost: { boulons: 250 }, passive: {}, effect: '1 Chasseur spatial' },
+      { cost: { boulons: 150 }, passive: {}, effect: '1 Chasseur spatial' },
       { cost: { boulons: 700, matiere_floue: 10 }, passive: {}, effect: '2 Chasseurs spatiaux' },
       { cost: { boulons: 2000, matiere_floue: 30 }, passive: {}, effect: '3 Chasseurs spatiaux' },
       { cost: { boulons: 4500, matiere_floue: 60 }, passive: {}, effect: '4 Chasseurs spatiaux' }
@@ -263,7 +268,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     maxInstances: 1,
     footprint: 1.1,
     levels: [
-      { cost: { boulons: 600, matiere_floue: 15 }, passive: {}, effect: 'Héros : +1,1 portée, +12 dégâts/sec' },
+      { cost: { boulons: 350, matiere_floue: 15 }, passive: {}, effect: 'Héros : +1,1 portée, +12 dégâts/sec' },
       { cost: { boulons: 1500, matiere_floue: 35 }, passive: {}, effect: 'Héros : +2,2 portée, +24 dégâts/sec' },
       { cost: { boulons: 3500, matiere_floue: 70 }, passive: {}, effect: 'Héros : +3,3 portée, +36 dégâts/sec' },
       { cost: { boulons: 7000, matiere_floue: 120 }, passive: {}, effect: 'Héros : +4,4 portée, +48 dégâts/sec' }
@@ -279,7 +284,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     maxInstances: 1,
     footprint: 1.6,
     levels: [
-      { cost: { boulons: 1000, matiere_floue: 25 }, passive: { energie_rire: 0.05 }, effect: 'Butin de vague +15 %' },
+      { cost: { boulons: 600, matiere_floue: 25 }, passive: { energie_rire: 0.05 }, effect: 'Butin de vague +15 %' },
       { cost: { boulons: 2500, matiere_floue: 50 }, passive: { energie_rire: 0.12 }, effect: 'Butin de vague +30 %' },
       { cost: { boulons: 5000, matiere_floue: 100, energie_rire: 10 }, passive: { energie_rire: 0.25 }, effect: 'Butin de vague +45 %' }
     ]
@@ -301,7 +306,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     maxInstances: 3,
     footprint: 1.15,
     levels: [
-      { cost: { boulons: 300 }, passive: {}, turret: laser(8, 50) },
+      { cost: { boulons: 180 }, passive: {}, turret: laser(8, 50) },
       { cost: { boulons: 800, matiere_floue: 10 }, passive: {}, turret: laser(8.6, 70) },
       { cost: { boulons: 2000, matiere_floue: 25 }, passive: {}, turret: laser(9.2, 95) },
       { cost: { boulons: 4000, matiere_floue: 50 }, passive: {}, turret: laser(9.8, 125) },
@@ -318,7 +323,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     maxInstances: 2,
     footprint: 1.25,
     levels: [
-      { cost: { boulons: 700, matiere_floue: 20 }, passive: {},
+      { cost: { boulons: 420, matiere_floue: 20 }, passive: {},
         turret: { mode: 'mortier', range: 9, dps: 42, splash: 2.4, targets: 1, slow: 0, hitsAir: false } },
       { cost: { boulons: 1800, matiere_floue: 45 }, passive: {},
         turret: { mode: 'mortier', range: 9.8, dps: 62, splash: 2.8, targets: 1, slow: 0, hitsAir: false } },
@@ -338,7 +343,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     maxInstances: 2,
     footprint: 1.15,
     levels: [
-      { cost: { boulons: 900, matiere_floue: 30 }, passive: {},
+      { cost: { boulons: 540, matiere_floue: 30 }, passive: {},
         turret: { mode: 'cryo', range: 5, dps: 8, splash: 5, targets: 99, slow: 0.35, hitsAir: true },
         effect: 'Ralentit de 35 % dans un rayon de 5' },
       { cost: { boulons: 2200, matiere_floue: 70 }, passive: {},
@@ -359,7 +364,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     maxInstances: 2,
     footprint: 1.2,
     levels: [
-      { cost: { boulons: 1200, matiere_floue: 40, energie_rire: 4 }, passive: {},
+      { cost: { boulons: 720, matiere_floue: 40, energie_rire: 4 }, passive: {},
         turret: { mode: 'tesla', range: 6.5, dps: 40, splash: 0, targets: 2, slow: 0, hitsAir: true },
         effect: '2 cibles simultanées' },
       { cost: { boulons: 2800, matiere_floue: 80, energie_rire: 8 }, passive: {},

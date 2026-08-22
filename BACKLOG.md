@@ -134,9 +134,9 @@ Reste ouvert (voir JOURNAL.md du 21/08 au soir pour le détail) :
       ce rayon exactement : l'anneau au sol est l'encombrement réel. Mesuré :
       +27 % d'emplacements valides pour les plus larges, +192 % pour l'antenne,
       personne n'en perd. Voir JOURNAL.md.)*
-- [ ] **Revoir les coûts en boulons du début de partie.** Le jeu n'a aucun
-      timer de construction, donc la « time curve » demandée est à moitié déjà
-      là ; ce sont les coûts qui n'ont pas été retouchés.
+- [x] **Revoir les coûts en boulons du début de partie.** *(2026-08-22 :
+      fait — coût en boulons du niveau 1 de chaque bâtiment rabote d'environ
+      40 %. Voir JOURNAL.md.)*
 
 ### [SPRINT 2 — 21/08 au soir] Retour de playtest — état
 
@@ -169,8 +169,9 @@ Second compte-rendu de playtest, traité en quatre lots poussés au fil de l'eau
       monstres : 2184 ms → 719 ms, soit le coût d'une image au repos.
 
 Ce qui reste ouvert vient du sprint précédent : agrandir la zone jouable du
-plateau central (les secteurs annexés l'agrandissent déjà vers l'extérieur),
-assouplir la grille de placement, et revoir les coûts en boulons du début.
+plateau central (les secteurs annexés l'agrandissent déjà vers l'extérieur).
+La grille de placement et les coûts en boulons du début ont depuis été
+traités, voir plus haut.
 
 ## Fait
 
