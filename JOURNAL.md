@@ -243,6 +243,36 @@ la scène, et il n'y a pas de raison qu'elle importe un module de scène pour
 lire une correspondance.
 
 
+### Lot 5 — le bord du monde est expliqué, la face cachée existe
+
+« On voit encore les limites de la sphère : quand on a tous les territoires, on
+ne peut pas en faire le tour quand même. »
+
+**Ce qui n'a pas été fait, et pourquoi.** Faire réellement le tour demande de
+déplacer le héros en coordonnées sphériques. Tout le jeu raisonne en (x, z)
+plat — mouvement, portées, ciblage des tours, validation de placement,
+`enemyPositions` — et au-delà de l'équateur la projection cesse d'être
+bijective : deux points de la sphère tombent sur le même (x, z). Ce n'est pas
+de l'habillage, c'est le moteur, et c'est explicitement hors du cadre posé par
+Allonzo. Noté dans `BACKLOG.md` pour ce que ça vaut.
+
+**Ce qui était traitable.** La limite était un mur invisible au milieu d'un
+terrain qui continuait : on s'arrêtait sans savoir pourquoi. Elle est
+maintenant expliquée par le décor — une faille circulaire sombre, une crête de
+soixante-quatre éclats de roche déchiquetés, et un voile de tempête en rotation
+lente. On s'arrête parce qu'on voit pourquoi.
+
+Et la face opposée n'est plus une coque de roche uniforme : calotte polaire,
+mers gelées, cratères et massifs, répartis de façon déterministe sur toute la
+calotte sud. De loin, la planète a l'air entière, et la zone jouable ressemble
+à une région d'un monde plutôt qu'à un disque découpé. Tout est décoratif —
+aucune collision, la limite reste celle de `maxRadiusAt`.
+
+Deux refs mortes retirées au passage dans `PlacementController` (`validRef`,
+`hasPointRef`) : elles étaient écrites et plus jamais lues depuis que la
+validité passe par `pendingPlacement`.
+
+
 ---
 
 ## 2026-08-21 (sprint 2) — Freeze de vague, son, cristal lisible, tuto en magenta

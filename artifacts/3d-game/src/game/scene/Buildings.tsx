@@ -83,14 +83,11 @@ function PlacementController() {
   const ghostRef = useRef<THREE.Group>(null);
   const ringMatRef = useRef<THREE.MeshBasicMaterial>(null);
   const zoneMatRef = useRef<THREE.MeshBasicMaterial>(null);
-  const validRef = useRef(false);
-  const hasPointRef = useRef(false);
   /** Dernier point visé, publié dans le magasin au relâchement seulement. */
   const lastPoint = useRef<{ x: number; z: number; valid: boolean } | null>(null);
 
   // Reset ghost when entering/leaving placement mode
   useEffect(() => {
-    hasPointRef.current = false;
     lastPoint.current = null;
     if (ghostRef.current) ghostRef.current.visible = false;
   }, [placingBuilding]);
@@ -120,8 +117,6 @@ function PlacementController() {
       data?.footprint,
       unlockedZoneNodes(state.unlockedZones).map(({ node }) => node.pos),
     );
-    validRef.current = check.valid;
-    hasPointRef.current = true;
     if (ghostRef.current) {
       ghostRef.current.visible = true;
       const [gx, gy, gz] = surfacePos(x, z, 0.02);

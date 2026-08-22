@@ -173,6 +173,35 @@ plateau central (les secteurs annexés l'agrandissent déjà vers l'extérieur).
 La grille de placement et les coûts en boulons du début ont depuis été
 traités, voir plus haut.
 
+### [PLAYTEST 22/08] Retour du lendemain — état
+
+- [x] **Les zones ne servaient à rien une fois achetées.** Chacune donne
+      maintenant un effet permanent chiffré et son propre gisement.
+- [x] **« Deuxième planète » se lisait comme une serrure à ouvrir.** Reformulé
+      en étape de développement annoncée, pas en contenu verrouillé.
+- [x] **Le tutoriel disait « l'icône orange »** alors que la rangée de
+      pastilles avait disparu et que le bouton clignote en magenta. Corrigé, et
+      règle posée : le tutoriel ne nomme plus jamais une couleur.
+- [x] **Placement des bâtiments au doigt.** Pose en deux temps (viser, puis
+      « Poser ici ») et mât de visée qui dépasse du pouce.
+- [x] **« Pendant les vagues c'est le bordel. »** L'interface se dévoile par
+      paliers de niveau, et l'enchaînement ne s'affiche plus en double.
+- [x] **Transition d'entrée en vague.** Bandeau « ATTAQUE — VAGUE N » avec la
+      composition annoncée.
+- [x] **Aperçus de personnages dans les fiches**, façon Clash of Clans.
+- [x] **Limites de la sphère.** Le bord est expliqué par le décor et la face
+      cachée a un relief. *Faire réellement le tour n'est pas fait* — voir
+      ci-dessous.
+
+- [ ] **Faire le tour de la planète.** Demande de déplacer le héros en
+      coordonnées sphériques : tout le jeu raisonne en (x, z) plat, et au-delà
+      de l'équateur deux points de la sphère tombent sur le même (x, z). C'est
+      une refonte du déplacement, du ciblage et du placement — pas un réglage.
+      À traiter comme un chantier à part entière, ou à laisser de côté au
+      profit d'une deuxième planète.
+- [ ] **Deuxième planète.** L'empire spatial promis. Le panneau Empire est le
+      point d'entrée tout trouvé ; `zones.ts` montre comment découper un monde.
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

@@ -48,6 +48,7 @@ export function Ground() {
   return (
     <group>
       <PlanetBody gradientMap={gradientMap} />
+      <FarSide gradientMap={gradientMap} />
       <Zones gradientMap={gradientMap} />
       <Atmosphere />
       <PlanetRing />
@@ -551,6 +552,204 @@ function ZoneDecor({ zone, gradientMap }: { zone: ZoneDef; gradientMap: THREE.Te
   );
 }
 
+/**
+ * Le bord du monde.
+ *
+ * Retour de playtest : « on voit encore les limites de la sphère, quand on a
+ * tous les territoires on ne peut pas en faire le tour ». C'est exact, et ça
+ * le restera un moment : faire réellement le tour demande de déplacer le héros
+ * en coordonnées sphériques, or **tout le jeu raisonne en (x, z) plat** —
+ * mouvement, portées, ciblage, placement. C'est le moteur, pas de l'habillage.
+ *
+ * Ce qui était traitable, c'est que la limite ne soit plus un mur invisible au
+ * milieu d'un terrain qui continue. Elle est désormais expliquée par le décor :
+ * une faille circulaire, une crête déchiquetée, et un voile de tempête qui
+ * tourne. On s'arrête parce qu'on voit pourquoi, et non parce qu'un mur
+ * transparent nous retient.
+ *
+ * Le tout est purement décoratif — aucune collision, aucune règle de jeu. La
+ * limite reste celle de `maxRadiusAt` (zones.ts).
+ */
+function WorldEdge() {
+  const hazeRef = useRef<THREE.Group>(null);
+
+  useFrame((_, delta) => {
+    if (hazeRef.current) hazeRef.current.rotation.y += delta * 0.06;
+  });
+
+  // Crête d'éclats plantés tout autour, à l'extérieur de la dernière corniche.
+  const spikes = useMemo(() => {
+    const n = 64;
+    return Array.from({ length: n }).map((_, i) => {
+      const a = (i / n) * Math.PI * 2;
+      // Variation déterministe : une crête parfaitement régulière fait clôture.
+      const wobble = Math.sin(a * 7.3) * 0.5 + Math.sin(a * 3.1) * 0.35;
+      const r = ZONE_OUTER_RADIUS + 1.1 + wobble * 0.4;
+      return {
+        x: Math.cos(a) * r,
+        z: Math.sin(a) * r,
+        h: 1.5 + Math.abs(wobble) * 1.6,
+        tilt: wobble * 0.22,
+        rot: a,
+      };
+    });
+  }, []);
+
+  return (
+    <group>
+      {/* La faille : un anneau sombre juste au-delà de la limite jouable. */}
+      <mesh position={[0, surfaceY(ZONE_OUTER_RADIUS + 1.6, 0), 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[ZONE_OUTER_RADIUS + 0.4, ZONE_OUTER_RADIUS + 2.6, 128]} />
+        <meshBasicMaterial color="#0a0710" side={THREE.DoubleSide} />
+      </mesh>
+
+      {/* La crête. */}
+      {spikes.map((sp, i) => (
+        <OnSurface key={i} x={sp.x} z={sp.z}>
+          <mesh
+            position={[0, sp.h / 2, 0]}
+            rotation={[sp.tilt, sp.rot, sp.tilt * 0.6]}
+            castShadow
+          >
+            <coneGeometry args={[0.55, sp.h, 4]} />
+            <meshStandardMaterial color="#463a4f" flatShading roughness={1} />
+          </mesh>
+        </OnSurface>
+      ))}
+
+      {/* Le voile de tempête : deux anneaux additifs en rotation lente, qui
+          brouillent la transition vers la face inexplorée. Sans eux, le
+          changement de matière se lit comme une couture. */}
+      <group ref={hazeRef} position={[0, surfaceY(ZONE_OUTER_RADIUS + 3, 0) + 1.2, 0]}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[ZONE_OUTER_RADIUS + 1, ZONE_OUTER_RADIUS + 6, 96]} />
+          <meshBasicMaterial
+            color="#4c1d95"
+            transparent
+            opacity={0.3}
+            side={THREE.DoubleSide}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 1.4, 0]}>
+          <ringGeometry args={[ZONE_OUTER_RADIUS + 2, ZONE_OUTER_RADIUS + 9, 96]} />
+          <meshBasicMaterial
+            color="#1e3a8a"
+            transparent
+            opacity={0.2}
+            side={THREE.DoubleSide}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+/**
+ * La face inexplorée.
+ *
+ * Au-delà de la crête, la sphère n'était qu'une coque de roche uniforme : elle
+ * se lisait comme « la carte s'arrête là » plutôt que comme « le reste du
+ * monde ». Mers gelées, calotte polaire et cratères lui donnent un relief —
+ * de loin, la planète a l'air entière, et la zone jouable ressemble à une
+ * région d'un monde plutôt qu'à un disque découpé.
+ *
+ * Tout est déterministe et purement décoratif : on ne s'y rend jamais.
+ */
+function FarSide({ gradientMap }: { gradientMap: THREE.Texture }) {
+  const features = useMemo(() => {
+    let seed = 0x51de;
+    const rand = () => {
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    // Répartis sur la calotte sud, entre le bord des zones et le pôle.
+    return Array.from({ length: 26 }).map(() => {
+      const theta = ZONE_THETA_OUTER + 0.14 + rand() * (Math.PI - ZONE_THETA_OUTER - 0.5);
+      const phi = rand() * Math.PI * 2;
+      const kind = rand();
+      return {
+        theta,
+        phi,
+        scale: 1.6 + rand() * 3.4,
+        // Trois familles : cratère, mer gelée, massif.
+        kind: kind < 0.45 ? 'crater' : kind < 0.75 ? 'sea' : 'ridge',
+        tone: rand(),
+      };
+    });
+  }, []);
+
+  return (
+    <group position={PLANET_CENTER}>
+      {/* Calotte polaire. */}
+      <mesh rotation={[Math.PI, 0, 0]}>
+        <sphereGeometry args={[PLANET_RADIUS + 0.06, 40, 16, 0, Math.PI * 2, 0, 0.42]} />
+        <meshToonMaterial color="#cfe4ee" gradientMap={gradientMap} />
+      </mesh>
+
+      {features.map((f, i) => {
+        // Même conversion que les secteurs : le repère de la sphère de three
+        // place le sommet en +Y, on descend par theta et on tourne par phi.
+        const st = Math.sin(f.theta);
+        const ct = Math.cos(f.theta);
+        const pos: [number, number, number] = [
+          -Math.cos(f.phi) * st * PLANET_RADIUS,
+          ct * PLANET_RADIUS,
+          Math.sin(f.phi) * st * PLANET_RADIUS,
+        ];
+        // Orienté selon la normale, qui est la direction du centre au point.
+        const normal = new THREE.Vector3(...pos).normalize();
+        const quat = new THREE.Quaternion().setFromUnitVectors(
+          new THREE.Vector3(0, 1, 0),
+          normal,
+        );
+
+        if (f.kind === 'sea') {
+          return (
+            <group key={i} position={pos} quaternion={quat}>
+              <mesh scale={[f.scale, 0.28, f.scale * 0.8]} position={[0, -0.25, 0]}>
+                <sphereGeometry args={[1, 18, 12]} />
+                <meshStandardMaterial
+                  color={f.tone > 0.5 ? '#2b4a63' : '#39546b'}
+                  roughness={0.35}
+                  metalness={0.15}
+                />
+              </mesh>
+            </group>
+          );
+        }
+        if (f.kind === 'crater') {
+          return (
+            <group key={i} position={pos} quaternion={quat}>
+              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
+                <ringGeometry args={[f.scale * 0.5, f.scale * 0.72, 20]} />
+                <meshStandardMaterial color="#8a7590" roughness={1} side={THREE.DoubleSide} />
+              </mesh>
+              <mesh rotation={[-Math.PI / 2, 0, 0]}>
+                <circleGeometry args={[f.scale * 0.5, 20]} />
+                <meshStandardMaterial color="#453a4d" roughness={1} />
+              </mesh>
+            </group>
+          );
+        }
+        return (
+          <group key={i} position={pos} quaternion={quat}>
+            <mesh position={[0, f.scale * 0.16, 0]} scale={[f.scale * 0.5, f.scale * 0.34, f.scale * 0.28]}>
+              <icosahedronGeometry args={[1, 0]} />
+              <meshStandardMaterial color="#5a4a63" flatShading roughness={1} />
+            </mesh>
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
 /** Bourrelet de falaise + halo atmosphérique. */
 function Atmosphere() {
   return (
@@ -570,6 +769,8 @@ function Atmosphere() {
         <torusGeometry args={[ZONE_OUTER_RADIUS, 0.4, 10, 112]} />
         <meshStandardMaterial color="#6b5560" flatShading roughness={1} />
       </mesh>
+
+      <WorldEdge />
 
       {/* Atmosphère : sphères plus larges vues de l'intérieur (BackSide), donc
           on n'en voit que la moitié lointaine — un halo derrière la planète,
