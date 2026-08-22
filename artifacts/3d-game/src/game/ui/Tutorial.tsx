@@ -15,6 +15,20 @@ import { TUTORIAL_COLOR, TUTORIAL_BORDER, TUTORIAL_GLOW } from './tutorialTheme'
  * s'impose : un titre de trois mots, une phrase de dix mots au plus, une seule
  * idee. Ce qui ne rentre pas devient la carte suivante.
  *
+ * ## Une regle : le tutoriel ne nomme jamais une couleur
+ *
+ * Une carte disait « touchez l'icone orange, tout en bas ». Il n'y avait plus
+ * d'icone orange en bas depuis que la rangee de pastilles a ete remplacee par
+ * un bouton « Construire » — et le bouton en question clignote en magenta.
+ * Le joueur cherchait une couleur qui n'existait pas, au milieu d'une carte
+ * elle-meme magenta. Le texte n'avait pas suivi la refonte de l'interface.
+ *
+ * Une couleur se change en une ligne dans un theme ; un libelle et une
+ * position, non. **Les cartes designent donc ce qu'elles visent par son
+ * libelle exact et son coin de l'ecran, jamais par sa teinte.** C'est ce qui
+ * rend le tutoriel insensible aux changements de palette — et il y en aura
+ * d'autres.
+ *
  * Le decoupage est purement d'affichage. Le magasin garde ses cinq etapes
  * (`tutorialStep`) et ses quatre evenements declencheurs : les sauvegardes en
  * cours de tutoriel restent valides, et `TutorialHighlight` continue de
@@ -46,15 +60,17 @@ const CARDS: Card[][] = [
   // Etape 2 — batir
   [
     { title: 'La hutte', text: 'Elle fabrique des boulons pendant que vous jouez.' },
-    { title: 'Choisissez-la', text: 'Touchez l’icône orange, tout en bas.' },
-    { title: 'Posez-la', text: 'Touchez le sol vert, puis « Construire ».', waits: true },
+    { title: 'Ouvrez le chantier', text: 'Bouton « Construire », en bas à gauche.' },
+    { title: 'Choisissez la hutte', text: 'Onglet « Production », puis « Placer ».' },
+    { title: 'Visez', text: 'Glissez le doigt sur le sol, puis « Poser ici ».' },
+    { title: 'Payez-la', text: 'Enfin « Construire » dans sa fiche.', waits: true },
   ],
   // Etape 3 — la vague
   [
     { title: 'Les monstres', text: 'Ils foncent droit sur le cristal.' },
     { title: 'Vous tirez seul', text: 'Approchez-vous : le héros vise le plus proche.' },
     { title: 'La règle', text: 'Plus de la moitié passe = cristal détruit.' },
-    { title: 'Lancez !', text: 'Bouton orange, en bas à droite.', waits: true },
+    { title: 'Lancez !', text: 'Bouton « Lancer la vague », en bas à droite.', waits: true },
   ],
   // Etape 4 — c'est fini
   [

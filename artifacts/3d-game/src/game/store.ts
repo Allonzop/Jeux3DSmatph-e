@@ -74,6 +74,17 @@ export interface GameState {
   buildingPositions: Record<string, [number, number, number]>;
   /** building id currently being placed by tapping the ground */
   placingBuilding: string | null;
+  /**
+   * Emplacement visé, en attente de confirmation.
+   *
+   * La pose se faisait au `pointerdown` : sur téléphone, le doigt masque la
+   * cible et il n'y a aucun `pointermove` avant le tap, donc on posait à
+   * l'aveugle. Le geste est maintenant en deux temps — on glisse pour viser,
+   * on relâche, puis un bouton confirme. Ce champ porte le point visé entre
+   * les deux, et **n'est écrit qu'au relâchement** : le suivi du doigt reste
+   * impératif, il ne passe jamais par le magasin.
+   */
+  pendingPlacement: { x: number; z: number; valid: boolean } | null;
   /** guided tutorial step: 0 move, 1 harvest, 2 build, 3 wave, 4 finished toast, 5 done */
   tutorialStep: number;
   /** result of the last finished wave, shown as an outcome toast then cleared */
@@ -123,6 +134,7 @@ export interface GameState {
   startPlacing: (id: string) => void;
   cancelPlacing: () => void;
   placeBuilding: (id: string, pos: [number, number, number]) => void;
+  setPendingPlacement: (at: { x: number; z: number; valid: boolean } | null) => void;
   startWave: () => void;
   damageCore: (amount: number) => void;
   damageEnemy: (id: string, amount: number) => void;
@@ -232,6 +244,7 @@ const initialGameState = () => ({
   selectedBuilding: null,
   buildingPositions: {} as Record<string, [number, number, number]>,
   placingBuilding: null,
+  pendingPlacement: null,
   tutorialStep: 0,
   lastWaveOutcome: null,
   breachDamage: 0,
@@ -302,12 +315,14 @@ export const useGameStore = create<GameState>()(
       setHeroDir: (dir) => set({ heroDir: dir }),
       selectBuilding: (id) => set({ selectedBuilding: id }),
 
-      startPlacing: (id) => set({ placingBuilding: id, selectedBuilding: null }),
-      cancelPlacing: () => set({ placingBuilding: null }),
+      startPlacing: (id) => set({ placingBuilding: id, selectedBuilding: null, pendingPlacement: null }),
+      cancelPlacing: () => set({ placingBuilding: null, pendingPlacement: null }),
+      setPendingPlacement: (at) => set({ pendingPlacement: at }),
       placeBuilding: (id, pos) =>
         set((state) => ({
           buildingPositions: { ...state.buildingPositions, [id]: pos },
           placingBuilding: null,
+          pendingPlacement: null,
           // Open the build popup right away so the player can construct it.
           selectedBuilding: id,
         })),

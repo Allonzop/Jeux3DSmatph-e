@@ -11,6 +11,52 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-22 — Placement au doigt, textes du tutoriel désynchronisés
+
+Nouveau retour de playtest d'Allonzo. Même cadre : pas de moteur, pas de
+réorganisation des `.md`, pas de scripts d'agent, et **travail poussé par
+lots** pour que rien ne soit perdu et que la routine de 2 h trouve un dépôt
+propre.
+
+### Lot 1 — deux bugs de fond
+
+**Le placement des bâtiments au doigt.** « Sur mon iPhone 13, quand ce n'est
+pas des bâtiments de défense, la sensibilité de placement est un peu galère. »
+
+Rien dans le code ne traitait les défenses différemment — la différence était
+ailleurs. La pose se faisait au `pointerdown` : le bâtiment atterrissait au
+premier contact, sans qu'on ait jamais vu le fantôme. Sur téléphone il n'y a
+pas de survol avant le tap, et le pouce couvre à peu près un centimètre carré
+d'écran, soit exactement l'anneau au sol. **Les tours semblaient plus faciles
+parce que leur cercle de portée dépassait de la main** ; c'était le seul retour
+visuel qui survivait au doigt.
+
+Deux corrections : le geste passe en deux temps — on glisse pour viser, on
+relâche, un bouton « Poser ici » confirme (et « Annuler » revient) — et le
+fantôme gagne un mât vertical de trois unités surmonté d'un cristal, visible
+au-dessus de la main quelle que soit la taille du bâtiment. Le point visé n'est
+écrit dans le magasin qu'au relâchement : le suivi du doigt reste impératif,
+une seule écriture par geste.
+
+Joué dans un navigateur : glisser puis relâcher ne pose rien et publie le point
+(−1,8 ; 4,0) marqué valide ; « Poser ici » fait passer le compte de bâtiments
+de 0 à 1.
+
+**Le tutoriel désignait une couleur qui n'existe plus.** Une carte disait
+« touchez l'icône orange, tout en bas ». La rangée de pastilles avait été
+remplacée par un bouton « Construire » lors de la refonte du panneau, et ce
+bouton clignote en magenta depuis le sprint précédent : le joueur cherchait une
+couleur absente, au milieu d'une carte elle-même magenta.
+
+Le texte corrigé, mais surtout **une règle posée** : le tutoriel ne nomme plus
+jamais une couleur, il désigne par le libellé exact et le coin de l'écran. Une
+couleur se change en une ligne dans un thème, un libellé et une position non —
+c'est ce qui rend le tutoriel insensible aux prochaines refontes. L'étape 2
+passe de trois à cinq cartes, et suit maintenant le vrai parcours : Construire
+→ onglet Production → Placer → viser → payer. La ligne de la hutte clignote
+dans la feuille pendant cette étape, et la feuille s'ouvre directement sur
+l'onglet où elle se trouve.
+
 ## 2026-08-22 — Coûts en boulons du début de partie rabotés
 
 **Choix de la tâche.** Le backlog n'a qu'une seule entrée non cochée dans la

@@ -45,6 +45,8 @@ export function HUD() {
   const startWave = useGameStore(state => state.startWave);
   const placingBuilding = useGameStore(state => state.placingBuilding);
   const cancelPlacing = useGameStore(state => state.cancelPlacing);
+  const pendingPlacement = useGameStore(state => state.pendingPlacement);
+  const placeBuilding = useGameStore(state => state.placeBuilding);
   const tutorialStep = useGameStore(state => state.tutorialStep);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [heroOpen, setHeroOpen] = useState(false);
@@ -83,17 +85,43 @@ export function HUD() {
             style={{ top: 'calc(6.5rem + var(--safe-top))' }}
           >
             <div className="bg-black/75 backdrop-blur-md border border-white/15 rounded-xl px-4 py-2 text-white text-[clamp(0.75rem,3vw,0.875rem)] font-bold text-center whitespace-nowrap">
-              Touchez le sol vert : {buildingData(placingBuilding)?.name}
+              {pendingPlacement ? buildingData(placingBuilding)?.name : `Glissez pour viser : ${buildingData(placingBuilding)?.name}`}
             </div>
-            <div className="text-white/50 text-[0.65rem] font-bold uppercase tracking-wider">
-              vert = possible · rouge = occupé
+            <div className="text-white/50 text-[0.65rem] font-bold uppercase tracking-wider text-center">
+              {pendingPlacement
+                ? pendingPlacement.valid
+                  ? 'emplacement libre'
+                  : 'emplacement occupé — visez ailleurs'
+                : 'vert = possible · rouge = occupé'}
             </div>
-            <button
-              onClick={() => { sfx.tap(); cancelPlacing(); }}
-              className="pointer-events-auto bg-red-500/80 hover:bg-red-500 text-white font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-xl border border-red-300/30"
-            >
-              Annuler
-            </button>
+
+            {/* Confirmation.
+                La pose se faisait au premier contact : sur téléphone le pouce
+                masque la cible, et il n'y a pas de survol avant le tap. On
+                glisse pour viser, on relâche, et c'est ce bouton qui pose. */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { sfx.tap(); cancelPlacing(); }}
+                className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white/80 font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl border border-white/15"
+              >
+                Annuler
+              </button>
+              <button
+                disabled={!pendingPlacement?.valid}
+                onClick={() => {
+                  if (!pendingPlacement?.valid) return;
+                  placeBuilding(placingBuilding, [pendingPlacement.x, 0, pendingPlacement.z]);
+                  sfx.build();
+                }}
+                className={`pointer-events-auto font-black text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all ${
+                  pendingPlacement?.valid
+                    ? 'bg-emerald-400 text-black shadow-[0_3px_0_#047857] active:translate-y-0.5'
+                    : 'bg-white/8 text-white/30 border border-white/10'
+                }`}
+              >
+                Poser ici
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

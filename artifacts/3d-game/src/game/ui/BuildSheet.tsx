@@ -12,6 +12,7 @@ import {
 } from '../gamedata';
 import { ResourceIcon, BuildingIcon, CloseIcon } from './icons';
 import { EmpirePanel } from './ZonePopup';
+import { TUTORIAL_COLOR, TUTORIAL_RING_GLOW } from './tutorialTheme';
 import { sfx } from '../sfx';
 
 /**
@@ -73,7 +74,11 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
   const buildingPositions = useGameStore((s) => s.buildingPositions);
   const startPlacing = useGameStore((s) => s.startPlacing);
   const selectBuilding = useGameStore((s) => s.selectBuilding);
-  const [tab, setTab] = useState<Tab>('defense');
+  const tutorialStep = useGameStore((s) => s.tutorialStep);
+  // Pendant l'etape « batissez une hutte », la feuille s'ouvre directement sur
+  // l'onglet ou elle se trouve : le tutoriel dit « onglet Production », autant
+  // que ce soit deja fait quand il l'annonce.
+  const [tab, setTab] = useState<Tab>(tutorialStep === 2 ? 'production' : 'defense');
 
   const groups = ROLE_ORDER.map((role) => ({
     role,
@@ -157,8 +162,16 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
                 return (
                   <div
                     key={data.id}
-                    className="rounded-2xl border border-white/10 bg-black/25 p-3 flex gap-3"
-                    style={{ boxShadow: `inset 3px 0 0 ${data.color}` }}
+                    className={`rounded-2xl border bg-black/25 p-3 flex gap-3 ${
+                      tutorialStep === 2 && data.id === 'hutte'
+                        ? 'animate-pulse'
+                        : 'border-white/10'
+                    }`}
+                    style={
+                      tutorialStep === 2 && data.id === 'hutte'
+                        ? { borderColor: TUTORIAL_COLOR, boxShadow: TUTORIAL_RING_GLOW }
+                        : { boxShadow: `inset 3px 0 0 ${data.color}` }
+                    }
                   >
                     <div
                       className="w-11 h-11 shrink-0 rounded-xl bg-black/40 border border-white/5 flex items-center justify-center"

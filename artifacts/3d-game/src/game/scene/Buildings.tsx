@@ -66,16 +66,21 @@ export function Buildings() {
 // ---- Free placement: tap the ground to place the selected building ----
 function PlacementController() {
   const placingBuilding = useGameStore(state => state.placingBuilding);
-  const placeBuilding = useGameStore(state => state.placeBuilding);
+  const setPendingPlacement = useGameStore(state => state.setPendingPlacement);
+  const beaconRef = useRef<THREE.Group>(null);
+  const beaconMatRef = useRef<THREE.MeshBasicMaterial>(null);
   const ghostRef = useRef<THREE.Group>(null);
   const ringMatRef = useRef<THREE.MeshBasicMaterial>(null);
   const zoneMatRef = useRef<THREE.MeshBasicMaterial>(null);
   const validRef = useRef(false);
   const hasPointRef = useRef(false);
+  /** Dernier point visé, publié dans le magasin au relâchement seulement. */
+  const lastPoint = useRef<{ x: number; z: number; valid: boolean } | null>(null);
 
   // Reset ghost when entering/leaving placement mode
   useEffect(() => {
     hasPointRef.current = false;
+    lastPoint.current = null;
     if (ghostRef.current) ghostRef.current.visible = false;
   }, [placingBuilding]);
 
@@ -119,6 +124,10 @@ function PlacementController() {
     if (zoneMatRef.current) {
       zoneMatRef.current.color.set(check.valid ? '#4ade80' : '#ef4444');
     }
+    if (beaconMatRef.current) {
+      beaconMatRef.current.color.set(check.valid ? '#4ade80' : '#ef4444');
+    }
+    lastPoint.current = { x, z, valid: check.valid };
     return check.valid;
   };
 
@@ -132,11 +141,16 @@ function PlacementController() {
         onPointerMove={updateGhost}
         onPointerDown={(e) => {
           e.stopPropagation();
-          const valid = updateGhost(e);
-          if (valid) {
-            placeBuilding(placingBuilding, [e.point.x, 0, e.point.z]);
-            sfx.build();
-          }
+          updateGhost(e);
+          sfx.tap();
+        }}
+        onPointerUp={(e) => {
+          // **Rien n'est posé ici.** On publie le point visé, et c'est le
+          // bouton de confirmation du HUD qui décide. Une seule écriture dans
+          // le magasin par geste : le suivi du doigt, lui, reste impératif.
+          e.stopPropagation();
+          updateGhost(e);
+          setPendingPlacement(lastPoint.current);
         }}
       >
         {/* Le capteur couvre desormais jusqu'au bord des zones annexables :
@@ -169,6 +183,23 @@ function PlacementController() {
             <meshBasicMaterial ref={zoneMatRef} color="#4ade80" transparent opacity={0.4} depthWrite={false} />
           </mesh>
         )}
+
+        {/* Balise verticale.
+            Un pouce couvre à peu près un centimètre carré d'écran : posé sur
+            l'anneau au sol, il le cache entièrement. Les tours passaient pour
+            « plus faciles à placer » uniquement parce que leur cercle de
+            portée dépassait de la main — rien dans le code ne les traitait
+            différemment. Ce mât monte au-dessus du doigt et se voit toujours. */}
+        <group ref={beaconRef}>
+          <mesh position={[0, 1.6, 0]}>
+            <cylinderGeometry args={[0.06, 0.06, 3.2, 6]} />
+            <meshBasicMaterial ref={beaconMatRef} color="#4ade80" transparent opacity={0.7} depthWrite={false} />
+          </mesh>
+          <mesh position={[0, 3.4, 0]}>
+            <octahedronGeometry args={[0.34, 0]} />
+            <meshBasicMaterial color={color} transparent opacity={0.9} depthWrite={false} />
+          </mesh>
+        </group>
       </group>
     </group>
   );
