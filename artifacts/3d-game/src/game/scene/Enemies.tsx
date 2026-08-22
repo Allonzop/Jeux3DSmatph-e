@@ -8,6 +8,7 @@ import { ENEMY_TYPES, enemyAppearance, CHAMAN_HEAL_RADIUS, CHAMAN_HEAL_PER_SEC }
 import { surfaceY, applySurfaceRotation } from '../world';
 import { zoneEffects } from '../zones';
 import { spawnBurst, spawnPopup, addShake, registerKill } from '../effects';
+import { hudHas } from '../hudTiers';
 import { sfx } from '../sfx';
 
 // Scratch vector reused across frames — never allocate inside useFrame.
@@ -130,11 +131,11 @@ function EnemyNode({ enemy }: { enemy: Enemy }) {
         const p = ref.current?.position;
         if (p) spawnBurst(p.x, p.y + 0.6, p.z, type.tint, 1.1);
         sfx.kill();
+        // L'enchainement se lit dans le HUD (`ui/ComboMeter.tsx`). Il etait
+        // aussi projete en gros au-dessus du cadavre : deux fois la meme
+        // information, au moment ou l'ecran en a le moins besoin.
         const count = registerKill(state.clock.elapsedTime);
-        if (count >= 2) {
-          sfx.combo(count);
-          if (p) spawnPopup(p.x, p.y + 1.6, p.z, `x${count}`, 'crit', 1.1);
-        }
+        if (count >= 2) sfx.combo(count);
       }
       return;
     }
@@ -157,7 +158,9 @@ function EnemyNode({ enemy }: { enemy: Enemy }) {
     if (pendingDamage.current > 0 && popupTimer.current >= 0.45) {
       const lost = Math.round(pendingDamage.current);
       const p = ref.current?.position;
-      if (p && lost > 0) {
+      // Les chiffres n'apparaissent qu'a partir du niveau 3 : les premieres
+      // vagues se jouent sans, le temps que le reste soit en main.
+      if (p && lost > 0 && hudHas(useGameStore.getState().playerLevel, 'damageNumbers')) {
         spawnPopup(p.x, p.y + 1.4, p.z, `-${lost}`, lost >= 90 ? 'crit' : 'damage');
       }
       pendingDamage.current = 0;

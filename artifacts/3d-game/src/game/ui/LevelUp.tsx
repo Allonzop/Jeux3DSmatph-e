@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, Resources } from '../store';
 import { titleForLevel } from '../progress';
+import { hudUnlockedAt, HUD_FEATURE_LABEL } from '../hudTiers';
 import { ResourceIcon } from './icons';
 import { sfx } from '../sfx';
 
@@ -37,6 +38,8 @@ export function LevelUp() {
     const t = setTimeout(() => clearLevelUp(), waveActive ? 2600 : 4200);
     return () => clearTimeout(t);
   }, [levelUp, waveActive, clearLevelUp]);
+
+  const unlocked = levelUp ? hudUnlockedAt(levelUp.level) : null;
 
   if (waveActive) {
     return (
@@ -144,6 +147,19 @@ export function LevelUp() {
                   ))}
               </div>
             </div>
+
+            {/* Ce que ce niveau allume dans l'interface, annonce ici plutot
+                que par une notification de plus. Voir `hudTiers.ts`. */}
+            {unlocked && (
+              <div className="mt-3 rounded-xl border border-cyan-300/30 bg-cyan-400/10 px-3 py-2">
+                <div className="text-cyan-200/70 text-[0.6rem] font-black uppercase tracking-[0.18em]">
+                  Affichage débloqué
+                </div>
+                <div className="text-white text-[0.82rem] font-bold mt-0.5">
+                  {HUD_FEATURE_LABEL[unlocked]}
+                </div>
+              </div>
+            )}
 
             <div className="mt-3 text-white/35 text-[0.65rem]">Touchez pour continuer</div>
           </motion.div>

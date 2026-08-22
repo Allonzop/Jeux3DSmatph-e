@@ -4,6 +4,7 @@ import { useGameStore } from '../store';
 import { ENEMY_TYPES } from '../enemies';
 import { enemyPositions } from '../scene/utils';
 import { projection } from '../effects';
+import { hudHas } from '../hudTiers';
 
 /**
  * Les flèches de menace, au bord de l'écran.
@@ -31,6 +32,7 @@ const INSET = 56;
 
 export function ThreatMarkers() {
   const refs = useRef<(HTMLDivElement | null)[]>([]);
+  const playerLevel = useGameStore((s) => s.playerLevel);
   const labelRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
   useEffect(() => {
@@ -135,6 +137,10 @@ export function ThreatMarkers() {
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
   }, []);
+
+  // Palier d'affichage : voir `hudTiers.ts`. Le crochet ci-dessus tourne quand
+  // meme — il ne fait rien tant qu'aucune vague n'est active.
+  if (!hudHas(playerLevel, 'threatMarkers')) return null;
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">

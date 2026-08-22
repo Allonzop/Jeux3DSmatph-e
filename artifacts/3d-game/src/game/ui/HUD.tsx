@@ -15,6 +15,7 @@ import { HeroPanel } from './HeroPanel';
 import { PowerButtons } from './PowerButtons';
 import { ComboMeter } from './ComboMeter';
 import { LevelUp } from './LevelUp';
+import { WaveIntro } from './WaveIntro';
 import { Popups } from './Popups';
 import { ThreatMarkers } from './ThreatMarkers';
 import { ResourceIcon, HammerIcon, SpeakerIcon } from './icons';
@@ -244,6 +245,7 @@ export function HUD() {
       <Popups />
       <ThreatMarkers />
       <WaveOutcome />
+      <WaveIntro />
       <LevelUp />
       <BuildSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
       <HeroPanel open={heroOpen} onClose={() => setHeroOpen(false)} />

@@ -182,6 +182,36 @@ dégâts » et son gisement de boulons ; les quatre secteurs s'annexent ; le hé
 trouve un gisement sur place.
 
 
+### Lot 3 — l'entrée en combat s'annonce, et l'écran se dévoile par paliers
+
+**L'annonce de vague** (`ui/WaveIntro.tsx`). Le passage en combat ne se voyait
+qu'à un changement de panneau en bas à droite : on lançait une vague sans le
+remarquer, et les monstres tombaient sur un joueur encore en train de bâtir.
+Deux lames rouges balaient l'écran en sens inverse, « ATTAQUE — VAGUE 7 » et la
+composition annoncée, une seconde et demie. Ça ne bloque rien
+(`pointer-events-none`) : on peut déjà courir se placer pendant que ça défile,
+ce qui est précisément le bon réflexe. Le déclencheur est le passage de
+`waveActive` à vrai, pas le clic du bouton — une vague lancée autrement
+s'annonce pareil.
+
+**L'interface se dévoile au fil des niveaux** (`hudTiers.ts`). « Pendant les
+vagues c'est un peu le bordel, on ne comprend pas ce qui se passe ; il faudrait
+une solution progressive. » Tout arrivait dès la première vague : chiffres de
+dégâts, enchaînements, flèches de menace, bandeaux de niveau, gains de
+ressources. Chacun aide isolément ; les cinq ensemble sur un écran de téléphone
+se neutralisent.
+
+Ils s'allument maintenant l'un après l'autre — chiffres de dégâts au niveau 3,
+flèches de menace au 4, compteur d'enchaînement au 6. Les deux premières vagues
+ne montrent que l'objectif, l'état du noyau et le nombre de monstres restants.
+Le déblocage est annoncé **dans la carte de montée de niveau**, au moment même
+où il tombe : pas une notification de plus à absorber.
+
+Et une redondance supprimée : l'enchaînement s'affichait à la fois en gros
+au-dessus du cadavre et dans le HUD. Deux fois la même information, au moment
+où l'écran en a le moins besoin. Seul le compteur du HUD reste.
+
+
 ---
 
 ## 2026-08-21 (sprint 2) — Freeze de vague, son, cristal lisible, tuto en magenta

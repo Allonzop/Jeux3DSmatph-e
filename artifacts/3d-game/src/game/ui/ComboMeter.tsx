@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { comboAt } from '../effects';
+import { useGameStore } from '../store';
+import { hudHas } from '../hudTiers';
 
 /**
  * Le compteur d'enchainement.
@@ -16,6 +18,7 @@ import { comboAt } from '../effects';
 export function ComboMeter() {
   const [count, setCount] = useState(0);
   const elapsed = useRef(0);
+  const playerLevel = useGameStore((s) => s.playerLevel);
 
   useEffect(() => {
     const started = performance.now();
@@ -26,7 +29,8 @@ export function ComboMeter() {
     return () => clearInterval(id);
   }, []);
 
-  const visible = count >= 2;
+  // Palier d'affichage : voir `hudTiers.ts`.
+  const visible = count >= 2 && hudHas(playerLevel, 'comboMeter');
 
   return (
     <AnimatePresence>
