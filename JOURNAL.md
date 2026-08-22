@@ -317,6 +317,51 @@ Deux refs mortes retirées au passage dans `PlacementController` (`validRef`,
 validité passe par `pendingPlacement`.
 
 
+### Lot 6 — la revue de bugs demandée, et un outil pour la rejouer
+
+« Le jeu mérite une review de bugs et de petits réglages d'optimisation. »
+
+**Un vrai bug trouvé, dans mon propre code du jour.** `zoneEffects(unlocked)`
+rendait un objet neuf à chaque appel, et elle est appelée **par monstre et par
+tour, à chaque image** : c'est elle qui décide de la vitesse des uns et des
+dégâts des autres. Une vingtaine de monstres et une poignée de tours, ça fait
+près de deux mille allocations par seconde en pleine vague — exactement ce que
+proscrit `.agents/memory/r3f-game-perf.md`, introduit par le lot 2 quelques
+heures plus tôt. `unlockedZones` étant une référence stable dans le magasin,
+une comparaison d'identité suffit à mettre le résultat en cache ; il l'est
+désormais, ainsi que `unlockedZoneNodes`, appelée à chaque mouvement du doigt
+pendant une pose.
+
+Balayage systématique des fichiers touchés dans la journée à la recherche de
+`new THREE.*`, `.map()` et `.filter()` à l'intérieur d'un `useFrame` : plus
+rien après ce correctif.
+
+**Et un outil pour que la revue soit rejouable** : `tools/game-check/smoke.mjs`.
+`wave.mjs --check` protège le cœur du jeu, `shot.mjs` montre une image — mais
+ni l'un ni l'autre n'ouvre un panneau, ne tourne la caméra, ne pose un bâtiment
+ni ne déclenche un pouvoir. La moitié du jeu n'était jamais exécutée entre deux
+séances. Le script joue quatre parcours dans un vrai navigateur et sort en 1 à
+la première erreur console :
+
+```
+node tools/game-check/smoke.mjs
+OK    partie neuve + tutoriel
+OK    tous les panneaux
+OK    vague 12 + zones + pouvoirs
+OK    caméra tournée + pose
+```
+
+Les parcours désignent les boutons par leur libellé. C'est fragile par
+construction, et c'est l'intérêt : renommer « Poser ici » sans y penser fait
+échouer le test plutôt que casser le jeu en silence.
+
+Note : `tools/game-check/README.md` ne mentionne pas ce nouvel outil, ni les
+options `--arsenal` et `--wave` ajoutées la veille. La consigne d'Allonzo est
+de ne pas toucher aux fichiers `.md` hors journal et backlog, donc la
+documentation vit dans l'en-tête de chaque script. À reprendre le jour où la
+consigne se lève.
+
+
 ---
 
 ## 2026-08-21 (sprint 2) — Freeze de vague, son, cristal lisible, tuto en magenta

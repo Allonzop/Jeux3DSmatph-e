@@ -222,7 +222,26 @@ export type ZoneEffects = {
   extraHunters: number;
 };
 
+/**
+ * Cache d'identité.
+ *
+ * `zoneEffects` est appelée **par monstre et par tour, à chaque image** : elle
+ * décide de la vitesse des uns et des dégâts des autres. Telle qu'écrite
+ * d'abord, elle rendait un objet neuf à chaque appel — une vingtaine de
+ * monstres et une poignée de tours, c'est près de deux mille allocations par
+ * seconde en pleine vague, exactement ce que proscrit
+ * `.agents/memory/r3f-game-perf.md`.
+ *
+ * `unlockedZones` est une référence stable dans le magasin : elle n'est
+ * remplacée qu'à l'annexion d'un secteur. Une comparaison d'identité suffit
+ * donc à savoir si le résultat est encore bon, et il l'est presque toujours.
+ */
+let cachedFor: Record<string, true> | null = null;
+let cached: ZoneEffects = { towerDamage: 1, enemySlow: 0, loot: 1, extraHunters: 0 };
+
 export function zoneEffects(unlocked: Record<string, true>): ZoneEffects {
+  if (unlocked === cachedFor) return cached;
+
   const out: ZoneEffects = { towerDamage: 1, enemySlow: 0, loot: 1, extraHunters: 0 };
   for (const zone of ZONES) {
     if (!unlocked[zone.id]) continue;
@@ -232,10 +251,23 @@ export function zoneEffects(unlocked: Record<string, true>): ZoneEffects {
     else if (b.kind === 'loot') out.loot += b.value;
     else out.extraHunters += b.value;
   }
+
+  cachedFor = unlocked;
+  cached = out;
   return out;
 }
 
-/** Les gisements des secteurs annexés, pour `ResourceNodes`. */
+/**
+ * Les gisements des secteurs annexés, pour `ResourceNodes` et la validation de
+ * placement. Même cache d'identité que `zoneEffects` : la validation l'appelle
+ * à chaque mouvement du doigt pendant une pose.
+ */
+let cachedNodesFor: Record<string, true> | null = null;
+let cachedNodes: { zone: ZoneDef; node: ZoneNode }[] = [];
+
 export function unlockedZoneNodes(unlocked: Record<string, true>): { zone: ZoneDef; node: ZoneNode }[] {
-  return ZONES.filter((z) => unlocked[z.id]).map((zone) => ({ zone, node: zone.node }));
+  if (unlocked === cachedNodesFor) return cachedNodes;
+  cachedNodesFor = unlocked;
+  cachedNodes = ZONES.filter((z) => unlocked[z.id]).map((zone) => ({ zone, node: zone.node }));
+  return cachedNodes;
 }
