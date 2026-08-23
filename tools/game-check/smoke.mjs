@@ -115,9 +115,20 @@ await scenario('caméra tournée + pose', makeSave({ resources: { boulons: 9999,
   await page.waitForTimeout(1200);
   await page.evaluate(() => window.__villageStore.getState().startPlacing('tourelle'));
   await page.waitForTimeout(800);
-  await page.mouse.move(215, 560); await page.mouse.down();
-  await page.mouse.move(160, 600, { steps: 6 }); await page.mouse.up();
-  await page.waitForTimeout(900);
+  // Le décor est déterministe mais réparti sur tout le plateau : un point fixe
+  // peut tomber dessus si la taille du plateau change. On essaie une poignée
+  // de cibles proches jusqu'à en trouver une valide, plutôt que de dépendre
+  // d'un seul pixel qui a marché une fois.
+  const targets = [[160, 600], [270, 600], [215, 650], [130, 550], [300, 550]];
+  let valid = false;
+  for (const [tx, ty] of targets) {
+    await page.mouse.move(215, 560); await page.mouse.down();
+    await page.mouse.move(tx, ty, { steps: 6 }); await page.mouse.up();
+    await page.waitForTimeout(700);
+    valid = await page.evaluate(() => !!window.__villageStore.getState().pendingPlacement?.valid);
+    if (valid) break;
+  }
+  if (!valid) throw new Error('aucune cible de pose valide trouvée près du héros');
   await page.locator('button:has-text("Poser ici")').click().catch(() => {});
   await page.waitForTimeout(1200);
   const n = await page.evaluate(() => Object.keys(window.__villageStore.getState().buildingPositions).length);

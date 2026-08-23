@@ -1,7 +1,7 @@
 // Shared world geometry: island size, deterministic scatter, placement rules.
 // Single source of truth so Ground, Hero, Enemies and placement validation agree.
 
-export const WORLD_RADIUS = 14; // playable plateau radius (was 8.5)
+export const WORLD_RADIUS = 16; // playable plateau radius (was 14, 8.5 before that)
 export const EDGE_MARGIN = 1; // keep buildings away from the cliff edge
 export const CORE_CLEAR_RADIUS = 4; // nothing scattered/built near the crystal core
 /**
@@ -257,7 +257,7 @@ export function checkPlacement(
 // `rotation={surfaceRotation(x,z)}`. Rien d'autre ne change.
 //
 // Le rayon est choisi pour que la courbure se voie franchement au bord du
-// plateau (≈ 4 unités de chute à r = WORLD_RADIUS, soit une pente de 33°)
+// plateau (≈ 5,5 unités de chute à r = WORLD_RADIUS, soit une pente de 38°)
 // sans que le centre du village, là où se joue l'essentiel, ne parte en biais.
 export const PLANET_RADIUS = 26;
 

@@ -124,9 +124,13 @@ Allonzo a fourni un second compte-rendu (onboarding, rétention, gameplay,
 
 Reste ouvert (voir JOURNAL.md du 21/08 au soir pour le détail) :
 
-- [ ] **Agrandir la zone jouable.** `WORLD_RADIUS` reste à 14 : la planète
-      change l'envergure visuelle, pas la surface de jeu. Agrandir demande de
-      reprendre ensemble la caméra, la vitesse du héros et la portée des tours.
+- [x] **Agrandir la zone jouable.** *(2026-08-23 : `WORLD_RADIUS` porté de 14 à
+      16 (+31 % de surface). La caméra n'a pas eu besoin d'être reprise — elle
+      suit le héros à distance fixe, indépendante de la taille du plateau, ce
+      que la note d'origine ne savait pas encore. Portée des tours et vitesse
+      du héros **pas** retouchées : elles couvrent maintenant une part
+      légèrement plus petite du plateau — à recalibrer si ça se sent trop
+      clairsemé en jeu. Voir JOURNAL.md.)*
 - [x] **Assouplir la grille de placement.** *(21/08 : fait — chaque bâtiment
       porte son `footprint` dans `gamedata.ts` et deux bâtiments se gênent si
       la distance de leurs centres est sous la somme de leurs rayons, au lieu

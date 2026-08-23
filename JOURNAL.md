@@ -11,6 +11,113 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-23 — Le plateau central s'agrandit
+
+**Choix de la tâche.** Une seule case non cochée en tête de `BACKLOG.md`,
+« équilibrage du combat au ressenti » — écartée pour la même raison que
+toutes les séances depuis le 15/08 (9 fois de suite maintenant) : elle exige
+un jugement de FPS/ressenti sur un vrai appareil, hors de portée de cet
+agent, et ni `shot.mjs` ni `wave.mjs` ne mesurent ça. Avant de descendre à
+« agrandir la zone jouable » (2e entrée ouverte, notée deux fois comme
+« demande de reprendre ensemble caméra, vitesse du héros et portée des
+tours, toute une séance »), j'ai rejoué le jeu en entier — `smoke.mjs`,
+`wave.mjs --check`, captures village/wide/empty/arsenal/vague 9, audit du
+kit de personnages, lecture des `useFrame` à la recherche d'allocations, et
+un test de bout en bout du bouton « déplacer un bâtiment » (jamais couvert
+par `smoke.mjs`) — sans rien trouver de cassé à corriger à la place. Les
+deux autres entrées ouvertes (« faire le tour de la planète », « deuxième
+planète ») sont explicitement hors périmètre : refonte de moteur ou
+fonctionnalité neuve, pas une tâche de séance.
+
+**Ce qui a changé la donne.** Plutôt que de prendre pour argent comptant la
+note « il faut reprendre caméra + vitesse + portée ensemble », j'ai relu le
+code : `scene/Camera.tsx` suit le héros à un décalage fixe (13 unités
+derrière, damping independant de la cadence) — **elle ne dépend pas de
+`WORLD_RADIUS`**, contrairement à ce que la note laissait supposer. Le
+décor (`world.ts`, `buildScatter`) se répartit déjà entre `WORLD_RADIUS -
+0.5` et le bord, donc il regénère sa disposition automatiquement à toute
+taille. `PLATEAU_THETA` (la courbure visible au bord) se recalcule aussi
+tout seul. Le seul vrai plafond dur est `PLANET_RADIUS` (26) et les
+positions figées des cœurs/gisements de zone dans `zones.ts` (18 et 17,5) :
+`WORLD_RADIUS` doit rester nettement en dessous pour ne pas les chevaucher.
+
+**Fait**
+
+- `world.ts` : `WORLD_RADIUS` porté de 14 à **16** (+31 % de surface au sol,
+  (16/14)² ). Choisi pour garder une marge confortable (2 unités) sous les
+  positions de cœur/gisement de zone les plus proches (18, 17,5), plutôt que
+  pousser jusqu'à leur limite. Commentaires mis à jour (chute au bord :
+  ≈ 5,5 unités, pente 38° au lieu de 33°).
+- `zones.ts` : commentaire de tête mis à jour (14 → 16). Aucune constante
+  de zone touchée — `ZONE_OUTER_RADIUS` (22) et les positions de secteur
+  restent valides sans modification, elles étaient déjà calibrées avec une
+  marge suffisante au-delà de 16.
+- **Rien touché à la caméra, à la vitesse du héros ni à la portée des
+  tours** — voir « reste ouvert ».
+- `tools/game-check/smoke.mjs` : le scénario « caméra tournée + pose »
+  utilisait un point d'écran fixe pour poser une tourelle. Le décor étant
+  généré avec une graine fixe mais une plage de rayon dépendante de
+  `WORLD_RADIUS`, agrandir le plateau redistribue toutes les positions de
+  décor — ce point précis est tombé sur un rocher qui n'y était pas avant
+  (confirmé via `checkPlacement` : `reason: 'decor'`, pas une régression de
+  logique). Corrigé en essayant une poignée de cibles proches jusqu'à en
+  trouver une valide, au lieu de dépendre d'un seul pixel qui marchait par
+  chance — le scénario reste aussi strict (échoue si aucune des cibles ne
+  fonctionne), juste plus robuste à un décor qui bouge.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (les scénarios utilisent les positions historiques de
+  bâtiment, proches du centre, non affectées par le rayon du plateau).
+- `node tools/game-check/smoke.mjs` : 4/4 parcours OK (le 4e a d'abord
+  échoué avec le point d'écran fixe, corrigé — voir ci-dessus, puis revérifié
+  au vert).
+- `node tools/game-check/shot.mjs --village` et `--wide`, ouverts : le
+  plateau est visiblement plus spacieux, plus de décor visible avant
+  d'atteindre l'anneau du bord, courbure un peu plus marquée mais rien qui
+  clippe ni qui se chevauche. Comparé aux captures d'avant changement.
+- Un script Playwright ad hoc a confirmé que le bouton « déplacer un
+  bâtiment » fonctionne toujours de bout en bout (position mise à jour,
+  niveau conservé, aucune erreur console) — ce chemin n'est couvert par
+  aucun des outils standard et n'avait pas été retesté depuis son ajout le
+  17/08, malgré les changements de placement, de zones et de caméra depuis.
+  Script jetable, non ajouté au dépôt.
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` : 5/5
+  — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- *Reproduire l'échec du 4e scénario de `smoke.mjs` en supposant une
+  régression de logique de placement* — écarté après avoir demandé la
+  raison exacte à `window.__villagePlacement.check(...)` :
+  `{ valid: false, reason: 'decor' }`. Ce n'était pas un bug, juste un point
+  d'écran fixe devenu malchanceux parce que la plage du décor dépend de
+  `WORLD_RADIUS`. **Pour ce genre d'échec, toujours interroger
+  `window.__villagePlacement.check` avec les coordonnées en cause avant de
+  chercher plus loin — ça donne la raison exacte en un appel, au lieu de
+  deviner.**
+- Pas tenté d'agrandir jusqu'à la limite dure (`WORLD_RADIUS` proche de 18,
+  où les positions de cœur de zone commencent) : gardé une marge de 2
+  unités par prudence, sans mesure formelle de ce que cette marge doit
+  valoir. Si Allonzo veut pousser plus loin, les cœurs de zone (`zones.ts`,
+  `corePos`) et leurs gisements devront être redéplacés en même temps.
+
+**Reste ouvert**
+
+- **Portée des tours et vitesse du héros pas recalibrées.** Le plateau est
+  16 % plus large en rayon (14 → 16) ; les tours et le héros gardent leur
+  portée d'avant. Sur un plateau vide, ça laisse un peu plus de terrain hors
+  de portée qu'avant. C'est délibérément laissé de côté — la note d'origine
+  avait raison de vouloir prudence ici, seule la partie caméra était un faux
+  problème. Si Allonzo trouve le jeu trop clairsemé sur le plateau agrandi,
+  revoir `HERO_RANGE`/`gamedata.ts` (portées de tour) directement.
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+
+
 ## 2026-08-22 — Placement au doigt, textes du tutoriel désynchronisés
 
 Nouveau retour de playtest d'Allonzo. Même cadre : pas de moteur, pas de

@@ -11,7 +11,7 @@ import type { Resources } from './store';
  *
  * ## Géométrie
  *
- * Le plateau de départ est le disque `r < WORLD_RADIUS` (14). Les quatre zones
+ * Le plateau de départ est le disque `r < WORLD_RADIUS` (16). Les quatre zones
  * sont des secteurs de la couronne `WORLD_RADIUS → ZONE_OUTER_RADIUS` (22),
  * chacun couvrant un quart de tour. Débloquer un secteur étend la zone jouable
  * **et** constructible à l'intérieur de ce quart, et nulle part ailleurs :
