@@ -306,11 +306,11 @@ export const BUILDINGS: Record<string, BuildingData> = {
     maxInstances: 3,
     footprint: 1.15,
     levels: [
-      { cost: { boulons: 180 }, passive: {}, turret: laser(8, 50) },
-      { cost: { boulons: 800, matiere_floue: 10 }, passive: {}, turret: laser(8.6, 70) },
-      { cost: { boulons: 2000, matiere_floue: 25 }, passive: {}, turret: laser(9.2, 95) },
-      { cost: { boulons: 4000, matiere_floue: 50 }, passive: {}, turret: laser(9.8, 125) },
-      { cost: { boulons: 8000, matiere_floue: 100 }, passive: {}, turret: laser(10.5, 160) }
+      { cost: { boulons: 180 }, passive: {}, turret: laser(9.1, 50) },
+      { cost: { boulons: 800, matiere_floue: 10 }, passive: {}, turret: laser(9.8, 70) },
+      { cost: { boulons: 2000, matiere_floue: 25 }, passive: {}, turret: laser(10.5, 95) },
+      { cost: { boulons: 4000, matiere_floue: 50 }, passive: {}, turret: laser(11.2, 125) },
+      { cost: { boulons: 8000, matiere_floue: 100 }, passive: {}, turret: laser(12, 160) }
     ]
   },
   mortier: {
@@ -324,13 +324,13 @@ export const BUILDINGS: Record<string, BuildingData> = {
     footprint: 1.25,
     levels: [
       { cost: { boulons: 420, matiere_floue: 20 }, passive: {},
-        turret: { mode: 'mortier', range: 9, dps: 42, splash: 2.4, targets: 1, slow: 0, hitsAir: false } },
+        turret: { mode: 'mortier', range: 10.3, dps: 42, splash: 2.4, targets: 1, slow: 0, hitsAir: false } },
       { cost: { boulons: 1800, matiere_floue: 45 }, passive: {},
-        turret: { mode: 'mortier', range: 9.8, dps: 62, splash: 2.8, targets: 1, slow: 0, hitsAir: false } },
+        turret: { mode: 'mortier', range: 11.2, dps: 62, splash: 2.8, targets: 1, slow: 0, hitsAir: false } },
       { cost: { boulons: 3800, matiere_floue: 90 }, passive: {},
-        turret: { mode: 'mortier', range: 10.6, dps: 88, splash: 3.2, targets: 1, slow: 0, hitsAir: false } },
+        turret: { mode: 'mortier', range: 12.1, dps: 88, splash: 3.2, targets: 1, slow: 0, hitsAir: false } },
       { cost: { boulons: 7000, matiere_floue: 160, energie_rire: 8 }, passive: {},
-        turret: { mode: 'mortier', range: 11.5, dps: 120, splash: 3.7, targets: 1, slow: 0, hitsAir: false } }
+        turret: { mode: 'mortier', range: 13.1, dps: 120, splash: 3.7, targets: 1, slow: 0, hitsAir: false } }
     ]
   },
   cryo: {
@@ -344,14 +344,14 @@ export const BUILDINGS: Record<string, BuildingData> = {
     footprint: 1.15,
     levels: [
       { cost: { boulons: 540, matiere_floue: 30 }, passive: {},
-        turret: { mode: 'cryo', range: 5, dps: 8, splash: 5, targets: 99, slow: 0.35, hitsAir: true },
-        effect: 'Ralentit de 35 % dans un rayon de 5' },
+        turret: { mode: 'cryo', range: 5.7, dps: 8, splash: 5.7, targets: 99, slow: 0.35, hitsAir: true },
+        effect: 'Ralentit de 35 % dans un rayon de 5,7' },
       { cost: { boulons: 2200, matiere_floue: 70 }, passive: {},
-        turret: { mode: 'cryo', range: 6, dps: 12, splash: 6, targets: 99, slow: 0.45, hitsAir: true },
-        effect: 'Ralentit de 45 % dans un rayon de 6' },
+        turret: { mode: 'cryo', range: 6.9, dps: 12, splash: 6.9, targets: 99, slow: 0.45, hitsAir: true },
+        effect: 'Ralentit de 45 % dans un rayon de 6,9' },
       { cost: { boulons: 5000, matiere_floue: 140, energie_rire: 6 }, passive: {},
-        turret: { mode: 'cryo', range: 7, dps: 18, splash: 7, targets: 99, slow: 0.55, hitsAir: true },
-        effect: 'Ralentit de 55 % dans un rayon de 7' }
+        turret: { mode: 'cryo', range: 8, dps: 18, splash: 8, targets: 99, slow: 0.55, hitsAir: true },
+        effect: 'Ralentit de 55 % dans un rayon de 8' }
     ]
   },
   tesla: {
@@ -365,16 +365,16 @@ export const BUILDINGS: Record<string, BuildingData> = {
     footprint: 1.2,
     levels: [
       { cost: { boulons: 720, matiere_floue: 40, energie_rire: 4 }, passive: {},
-        turret: { mode: 'tesla', range: 6.5, dps: 40, splash: 0, targets: 2, slow: 0, hitsAir: true },
+        turret: { mode: 'tesla', range: 7.4, dps: 40, splash: 0, targets: 2, slow: 0, hitsAir: true },
         effect: '2 cibles simultanées' },
       { cost: { boulons: 2800, matiere_floue: 80, energie_rire: 8 }, passive: {},
-        turret: { mode: 'tesla', range: 7.2, dps: 54, splash: 0, targets: 3, slow: 0, hitsAir: true },
+        turret: { mode: 'tesla', range: 8.2, dps: 54, splash: 0, targets: 3, slow: 0, hitsAir: true },
         effect: '3 cibles simultanées' },
       { cost: { boulons: 6000, matiere_floue: 150, energie_rire: 16 }, passive: {},
-        turret: { mode: 'tesla', range: 7.9, dps: 72, splash: 0, targets: 4, slow: 0, hitsAir: true },
+        turret: { mode: 'tesla', range: 9, dps: 72, splash: 0, targets: 4, slow: 0, hitsAir: true },
         effect: '4 cibles simultanées' },
       { cost: { boulons: 12000, matiere_floue: 260, energie_rire: 30 }, passive: {},
-        turret: { mode: 'tesla', range: 8.6, dps: 95, splash: 0, targets: 5, slow: 0, hitsAir: true },
+        turret: { mode: 'tesla', range: 9.8, dps: 95, splash: 0, targets: 5, slow: 0, hitsAir: true },
         effect: '5 cibles simultanées' }
     ]
   }

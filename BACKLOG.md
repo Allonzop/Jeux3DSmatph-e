@@ -128,9 +128,13 @@ Reste ouvert (voir JOURNAL.md du 21/08 au soir pour le détail) :
       16 (+31 % de surface). La caméra n'a pas eu besoin d'être reprise — elle
       suit le héros à distance fixe, indépendante de la taille du plateau, ce
       que la note d'origine ne savait pas encore. Portée des tours et vitesse
-      du héros **pas** retouchées : elles couvrent maintenant une part
-      légèrement plus petite du plateau — à recalibrer si ça se sent trop
-      clairsemé en jeu. Voir JOURNAL.md.)*
+      du héros **pas** retouchées à l'époque : elles couvraient une part
+      légèrement plus petite du plateau. *(2026-08-24 : portées des quatre
+      tours (`gamedata.ts`) recalibrées au même ratio que l'agrandissement
+      (×16/14), pour retrouver la part de plateau couverte avant le 23/08.
+      Vitesse et portée du héros (`Hero.tsx`) volontairement pas touchées —
+      elles font partie de « l'équilibrage du combat au ressenti », réservé à
+      un vrai appareil. Voir JOURNAL.md.)*
 - [x] **Assouplir la grille de placement.** *(21/08 : fait — chaque bâtiment
       porte son `footprint` dans `gamedata.ts` et deux bâtiments se gênent si
       la distance de leurs centres est sous la somme de leurs rayons, au lieu

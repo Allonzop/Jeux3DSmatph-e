@@ -11,6 +11,80 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-24 — Portées des tours recalibrées après l'agrandissement du plateau
+
+**Choix de la tâche.** Toujours une seule case non cochée en tête de
+`BACKLOG.md`, « équilibrage du combat au ressenti » — écartée pour la même
+raison que les 9 séances précédentes depuis le 15/08 : elle exige un jugement
+de ressenti/FPS sur un vrai appareil, explicitement hors de portée de cet
+agent (le rendu logiciel de cette machine tourne à quelques images par
+seconde). Les deux autres cases non cochées (« faire le tour de la
+planète », « deuxième planète ») restent, comme noté à chaque séance depuis
+le 22/08, une refonte moteur et une fonctionnalité neuve — pas une tâche de
+séance normale.
+
+Descendu au « reste ouvert » le plus récent (JOURNAL.md du 23/08) : « Portée
+des tours et vitesse du héros pas recalibrées » depuis que `WORLD_RADIUS` est
+passé de 14 à 16. C'est un point isolé, purement numérique, et directement
+mesurable (contrairement au ressenti) — dans le même esprit que les
+recalibrages du 20/08 et du 22/08.
+
+**Fait**
+
+- `gamedata.ts` : les portées des quatre tours (laser, mortier, cryo, tesla,
+  tous niveaux) sont multipliées par 16/14 (≈ ×1,143), le ratio exact de
+  l'agrandissement du plateau du 23/08. Objectif : leur rendre la même part
+  du plateau qu'elles couvraient avant l'agrandissement, pas les buffer — un
+  correctif d'un effet de bord non voulu, pas une décision d'équilibrage.
+  Pour le cryo, `splash` (le rayon réel de la bulle de ralentissement,
+  vérifié dans `Buildings.tsx` — c'est lui qui trace l'anneau au sol et fait
+  le test de distance, `range` n'est pas utilisé pour ce mode) valait déjà
+  exactement `range` avant ce changement ; les deux ont été montés ensemble
+  pour rester égaux. Le texte d'effet du cryo (« Ralentit de X % dans un
+  rayon de N ») mis à jour avec les nouveaux chiffres.
+- **`HERO_RANGE` et `HERO_DPS` (`Hero.tsx`) volontairement pas touchés**,
+  bien qu'ils souffrent du même effet de bord géométrique : ce sont
+  exactement les deux constantes nommées dans la case « équilibrage du
+  combat au ressenti » du backlog, réservées à un jugement sur un vrai
+  appareil. Les toucher ici aurait anticipé cette case sans l'observation
+  qu'elle demande. La vitesse de déplacement du héros (`SPEED` dans
+  `Hero.tsx`) non plus, pour la même raison de prudence — la note du 23/08
+  la groupait avec la portée des tours mais elle relève du ressenti de
+  déplacement, pas d'une simple correction de couverture.
+
+**Vérifié comment**
+
+- `pnpm install` (nécessaire, `node_modules` absent au démarrage de la
+  séance) puis `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (les deux scénarios utilisent des positions et niveaux qui
+  restent valides quelle que soit la portée).
+- `node tools/game-check/smoke.mjs` : 4/4 parcours OK.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png` et
+  `--arsenal`, ouverts : rien qui clippe ni ne se chevauche sur le plateau
+  agrandi, les anneaux de portée des tours restent lisibles.
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+- Recherché (`grep`) les anciennes valeurs de portée en dur ailleurs dans le
+  dépôt (tools, docs, autres artefacts) : aucune, seul `gamedata.ts` les
+  portait.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté cette séance côté implémentation — la tâche était déjà bornée
+  par le « reste ouvert » du 23/08, pas de fausse piste explorée.
+
+**Reste ouvert**
+
+- **`HERO_RANGE`, `HERO_DPS` et `SPEED` du héros** toujours pas recalibrés
+  pour le plateau agrandi — délibérément, voir ci-dessus. Si Allonzo confirme
+  sur un vrai appareil que le combat/déplacement se sent clairsemé, ce sont
+  les trois constantes à revoir dans `Hero.tsx`, avec le même ratio (×16/14)
+  comme point de départ si aucune autre mesure n'est disponible.
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+
 ## 2026-08-23 — Le plateau central s'agrandit
 
 **Choix de la tâche.** Une seule case non cochée en tête de `BACKLOG.md`,
