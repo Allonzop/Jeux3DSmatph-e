@@ -97,8 +97,15 @@ function PlacementController() {
   const data = buildingData(placingBuilding);
   const color = data?.color || '#ffffff';
   // Portee de la tour en cours de pose, affichee pendant qu'on choisit : c'est
-  // la seule facon de placer une defense en connaissance de cause.
-  const previewRange = data?.levels[0]?.turret?.range ?? 0;
+  // la seule facon de placer une defense en connaissance de cause. En
+  // deplacement (le batiment existe deja, a un niveau > 0) c'est sa portee
+  // actuelle qu'il faut montrer, pas celle du niveau 1 — sinon deplacer une
+  // tourelle de niveau 5 (portee 12) affiche un anneau de niveau 1 (portee
+  // 9,1), trompeur au moment precis ou le joueur juge où elle va porter.
+  const currentLevel = useGameStore.getState().buildingLevels[placingBuilding] || 0;
+  const previewRange = currentLevel > 0
+    ? turretStats(placingBuilding, currentLevel)?.range ?? 0
+    : data?.levels[0]?.turret?.range ?? 0;
   const ghostR = data?.footprint ?? 1.7;
 
   const updateGhost = (e: ThreeEvent<PointerEvent>) => {

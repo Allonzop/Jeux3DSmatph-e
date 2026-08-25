@@ -210,6 +210,11 @@ traités, voir plus haut.
 - [ ] **Deuxième planète.** L'empire spatial promis. Le panneau Empire est le
       point d'entrée tout trouvé ; `zones.ts` montre comment découper un monde.
 
+- [x] **Anneau de portée trompeur en déplaçant une tour améliorée.** *(trouvé
+      et corrigé le 2026-08-25, aucune entrée du backlog n'étant traitable
+      cette séance : les trois cases ci-dessus sont bloquées — vrai appareil
+      requis, ou chantiers à part entière. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

@@ -11,6 +11,82 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-25 — L'anneau de portée pendant un déplacement mentait sur les tours améliorées
+
+**Choix de la tâche.** Les trois cases non cochées de `BACKLOG.md` sont
+toutes bloquées pour une séance normale : « équilibrage du combat au
+ressenti » exige un vrai appareil (11 séances de suite écartée pour cette
+raison depuis le 15/08), « faire le tour de la planète » et « deuxième
+planète » sont explicitement notées comme des chantiers à part entière, pas
+des tâches de séance. Suivant la consigne pour ce cas (jouer, trouver ce qui
+cloche, l'ajouter au backlog, le traiter) : `pnpm install` (nécessaire,
+`node_modules` absent), puis rejeu complet — `smoke.mjs` (4/4), `wave.mjs
+--check` (2/2), captures `--village`, `--arsenal`, `--wave 9`, `--wide` —
+rien de cassé à l'écran. Élargi la recherche à une lecture du code des zones
+récemment stables (placement, déplacement de bâtiment) plutôt que de relire
+une nouvelle fois le rendu, faute de piste visuelle.
+
+**Fait**
+
+- Trouvé en lisant `scene/Buildings.tsx` (`PlacementController`) : l'anneau
+  vert/rouge qui prévisualise la portée d'une tour pendant sa pose lisait
+  toujours `data.levels[0].turret.range` — la portée du **niveau 1**, quel
+  que soit le niveau réel du bâtiment. Ça ne se voyait pas en construction
+  neuve (le bâtiment est justement au niveau 1 à ce moment), mais le bouton
+  « déplacer » (`BuildingPopup.tsx`) rappelle `startPlacing` sur un bâtiment
+  **déjà construit et amélioré** : déplacer une tourelle laser de niveau 5
+  affichait l'anneau du niveau 1 (portée 9,1) au lieu de sa vraie portée
+  (12,0, +32 %). Le joueur choisit où reposer une tour améliorée en
+  regardant un anneau qui ment sur ce qu'elle couvrira une fois reposée.
+  `scene/Buildings.tsx` : `previewRange` lit maintenant le niveau courant du
+  bâtiment (`buildingLevels[placingBuilding]`) via `turretStats(...)` si le
+  bâtiment existe déjà (niveau > 0), et retombe sur `levels[0]` seulement
+  pour une pose neuve (niveau 0, pas encore de stats).
+- Vérifié que le filtre de collision entre bâtiments (`others`, même
+  fichier) excluait déjà correctement le bâtiment en cours de déplacement de
+  lui-même — ce n'était pas le bug, juste vérifié en passant en lisant le
+  même bloc.
+
+**Vérifié comment**
+
+- Script Playwright ad hoc (`window.__villageStore`) : tourelle laser posée
+  au niveau 5, `startPlacing('tourelle')`, capture d'écran avant/après
+  correctif — l'anneau passe visiblement de la taille du niveau 1 à celle du
+  niveau 5 (voir la capture, non gardée dans le dépôt). Confirmé aussi par
+  lecture directe de `gamedata.ts` : tourelle niveau 1 → portée 9,1, niveau 5
+  → 12,0.
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (la portée affichée pendant la *pose* n'affecte pas la
+  portée réelle utilisée en combat, qui passait déjà par `turretStats` au
+  niveau courant ailleurs dans le fichier).
+- `node tools/game-check/smoke.mjs` : 4/4, y compris le parcours « caméra
+  tournée + pose » qui exerce `PlacementController`.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png`, ouvert et
+  comparé à la capture d'avant séance : aucune différence, le correctif ne
+  touche que l'anneau affiché pendant la pose, jamais rendu sur cette
+  capture (aucun bâtiment en cours de déplacement).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté : le bug a été trouvé du premier coup en lisant le code du
+  bouton « déplacer » (jamais couvert par `smoke.mjs`, déjà noté comme angle
+  mort le 23/08), pas de fausse piste explorée.
+
+**Reste ouvert**
+
+- Le parcours « déplacer un bâtiment » n'est toujours pas dans
+  `smoke.mjs` — il aurait attrapé ce bug automatiquement. Noté le 23/08 déjà,
+  toujours pas fait : ajouter un cinquième scénario qui construit une tour à
+  haut niveau, la déplace, et vérifie par exemple que `pendingPlacement`
+  reste cohérent, serait la prochaine amélioration d'outillage si une séance
+  s'y prête.
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+
 ## 2026-08-24 — Portées des tours recalibrées après l'agrandissement du plateau
 
 **Choix de la tâche.** Toujours une seule case non cochée en tête de
