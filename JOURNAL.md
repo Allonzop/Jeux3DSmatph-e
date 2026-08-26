@@ -11,6 +11,90 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-26 — La 2e et la 3e tour d'un même type étaient injoignables depuis le panneau
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+12 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière, notés comme
+tels à chaque séance depuis le 22/08). Suivant la même consigne que le
+25/08 : `pnpm install` (`node_modules` absent), rejeu — `smoke.mjs` (4/4),
+`wave.mjs --check` (2/2), captures `--village`, `--arsenal`, `--wide`,
+`--wave 9`, `--empty` — rien de visiblement cassé à l'écran. La branche
+`claude/bold-brown-96vdd2` avait déjà été fusionnée dans `main` (la séance
+du 25/08) ; redémarrée depuis `origin/main` avant de commencer, comme prévu
+par la consigne pour ce cas.
+
+**Fait**
+
+- Trouvé en lisant `ui/BuildSheet.tsx`, à la suite de la même piste que le
+  25/08 (les bâtiments à plusieurs exemplaires, ajoutés le 21/08 pour lever
+  le cap d'une tourelle/hutte unique) : chaque ligne du panneau Construire
+  calculait `firstPlacedId`, le **premier** exemplaire posé du type, et le
+  bouton « Améliorer »/« Construire » de la ligne appelait toujours
+  `selectBuilding(firstPlacedId)`. Avec deux ou trois tourelles construites,
+  ce bouton ramenait systématiquement à la première : impossible d'ouvrir la
+  fiche de la deuxième ou de la troisième depuis le panneau. Le seul chemin
+  qui marchait était de taper directement le bâtiment dans la scène 3D
+  (`scene/Buildings.tsx` sélectionne bien l'id exact de l'exemplaire tapé) —
+  rien dans le panneau ne le suggérait.
+- Confirmé avant de corriger avec un script Playwright ad hoc : sauvegarde à
+  deux tourelles (`tourelle` niveau 2, `tourelle#2` niveau 1), ouverture du
+  panneau, onglet Défense, clic sur « Améliorer » → `selectedBuilding` valait
+  `tourelle`, jamais `tourelle#2`.
+- `ui/BuildSheet.tsx` : remplacé `firstPlacedId` (un seul id) par `placedIds`
+  (tous les exemplaires posés). Un seul exemplaire posé → bouton inchangé
+  (« Améliorer »/« Construire », même libellé, même position). Plusieurs
+  exemplaires posés → une puce numérotée par exemplaire (`①②③`, via
+  `instanceNumber` déjà exporté par `gamedata.ts`), chacune sélectionnant son
+  propre id et fermant le panneau ; le `title` de chaque puce précise le nom
+  du bâtiment, son numéro et « améliorer » ou « construire » selon son
+  niveau. La branche `!free && placedIds.length === 0` (le texte « Complet »)
+  était déjà du code mort avant ce changement — impossible d'avoir zéro
+  exemplaire posé et plus aucun de disponible en même temps — laissée telle
+  quelle, migrée sans changer son comportement.
+
+**Vérifié comment**
+
+- `pnpm install` (nécessaire, `node_modules` absent) puis
+  `pnpm run typecheck` (les 6 projets) : passe.
+- Script Playwright ad hoc, après correctif, sauvegarde à **trois**
+  tourelles (niveaux 2, 1, 0 — la troisième posée mais pas construite) :
+  panneau ouvert, trois puces `1`/`2`/`3` sur la ligne Tourelle laser,
+  `title` de la puce 3 confirmé (« Tourelle laser n°3 — construire »), clic
+  sur la puce 2 → `selectedBuilding = 'tourelle#2'`, clic sur la puce 3 →
+  `selectedBuilding = 'tourelle#3'`. Capture d'écran du panneau ouvert :
+  trois puces lisibles sur la ligne Tourelle (3/3), les autres lignes à un
+  seul exemplaire inchangées. Script jetable, non ajouté au dépôt.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (aucun des deux scénarios ne pose de second exemplaire).
+- `node tools/game-check/smoke.mjs` : 4/4 — le scénario « tous les panneaux »
+  ouvre déjà ce panneau (avec un seul exemplaire par type), rien de cassé
+  sur le chemin à un seul bouton.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png`, ouvert et
+  comparé à la capture d'avant séance : identique — le scénario `--village`
+  ne pose que des exemplaires uniques, donc jamais les nouvelles puces.
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté : la piste (bâtiments à plusieurs exemplaires, zone encore peu
+  couverte par l'outillage) venait directement du « reste ouvert » du 25/08
+  et du 23/08, pas de fausse piste explorée sur le code lui-même.
+
+**Reste ouvert**
+
+- Le scénario « tous les panneaux » de `smoke.mjs` ne construit qu'un seul
+  exemplaire par type de bâtiment (`tourelle: 3`, jamais `tourelle#2`) : il
+  n'aurait pas attrapé ce bug. Comme le parcours « déplacer un bâtiment »
+  déjà signalé le 25/08, ajouter un second exemplaire construit dans ce
+  scénario (ou un cinquième parcours dédié) attraperait ce genre de
+  régression automatiquement — prochaine amélioration d'outillage possible.
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+
 ## 2026-08-25 — L'anneau de portée pendant un déplacement mentait sur les tours améliorées
 
 **Choix de la tâche.** Les trois cases non cochées de `BACKLOG.md` sont

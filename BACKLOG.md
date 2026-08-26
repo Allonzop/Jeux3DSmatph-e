@@ -215,6 +215,14 @@ traités, voir plus haut.
       cette séance : les trois cases ci-dessus sont bloquées — vrai appareil
       requis, ou chantiers à part entière. Voir JOURNAL.md.)*
 
+- [x] **Impossible de gérer la 2e ou 3e tour depuis le panneau Construire.**
+      *(trouvé et corrigé le 2026-08-26, même situation que le 25/08 : les
+      trois cases ci-dessus sont bloquées. Le bouton « Améliorer » d'un
+      bâtiment à plusieurs exemplaires (tourelle, mortier, cryo, tesla…)
+      visait toujours le premier posé, jamais le second ou le troisième —
+      seul un tap direct dans la scène 3D y menait, sans rien pour le
+      signaler dans le panneau. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

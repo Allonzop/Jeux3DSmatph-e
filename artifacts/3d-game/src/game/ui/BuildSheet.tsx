@@ -5,6 +5,7 @@ import {
   BUILDINGS,
   ROLE_LABEL,
   instanceIds,
+  instanceNumber,
   nextFreeInstance,
   coreUpgradeCost,
   CORE_MAX_LEVEL,
@@ -151,13 +152,12 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
 
               {shown.map((data) => {
                 const ids = instanceIds(data.id);
-                const placed = ids.filter((id) => buildingPositions[id]).length;
-                const free = nextFreeInstance(data.id, buildingPositions);
                 // Un exemplaire pose mais pas encore construit compte : sans
                 // ca, poser les trois tourelles sans en batir aucune affichait
                 // « Complet » et ne laissait plus aucun moyen d'y revenir.
-                const firstPlacedId = ids.find((id) => buildingPositions[id]);
-                const built = firstPlacedId ? (buildingLevels[firstPlacedId] || 0) > 0 : false;
+                const placedIds = ids.filter((id) => buildingPositions[id]);
+                const placed = placedIds.length;
+                const free = nextFreeInstance(data.id, buildingPositions);
 
                 return (
                   <div
@@ -204,15 +204,34 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
                           Placer
                         </button>
                       )}
-                      {firstPlacedId && (
+                      {placedIds.length === 1 && (
                         <button
-                          onClick={() => { sfx.tap(); selectBuilding(firstPlacedId); onClose(); }}
+                          onClick={() => { sfx.tap(); selectBuilding(placedIds[0]); onClose(); }}
                           className="px-3 py-1.5 rounded-xl text-[0.7rem] font-bold uppercase tracking-wider bg-white/8 border border-white/10 text-white/70"
                         >
-                          {built ? 'Améliorer' : 'Construire'}
+                          {(buildingLevels[placedIds[0]] || 0) > 0 ? 'Améliorer' : 'Construire'}
                         </button>
                       )}
-                      {!free && !firstPlacedId && (
+                      {placedIds.length > 1 && (
+                        // Un bouton "Ameliorer" unique ne pouvait viser que le
+                        // premier exemplaire : avec plusieurs tourelles posees,
+                        // les suivantes n'etaient plus accessibles que via un
+                        // tap direct dans la scene 3D, invisible depuis cette
+                        // feuille. Une puce par exemplaire pose.
+                        <div className="flex gap-1 flex-wrap justify-end max-w-[4.5rem]">
+                          {placedIds.map((id) => (
+                            <button
+                              key={id}
+                              onClick={() => { sfx.tap(); selectBuilding(id); onClose(); }}
+                              title={`${data.name} n°${instanceNumber(id)} — ${(buildingLevels[id] || 0) > 0 ? 'améliorer' : 'construire'}`}
+                              className="w-7 h-7 shrink-0 rounded-lg text-[0.7rem] font-black bg-white/8 border border-white/10 text-white/70 active:scale-95 transition-transform"
+                            >
+                              {instanceNumber(id)}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {!free && placedIds.length === 0 && (
                         <span className="text-[0.65rem] text-white/30 uppercase font-bold">Complet</span>
                       )}
                     </div>
