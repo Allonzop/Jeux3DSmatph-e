@@ -11,6 +11,89 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-27 — Un commit du 26/08 était resté impoussé, et un cinquième parcours pour `smoke.mjs`
+
+**Ce qui a été trouvé en démarrant.** La branche locale portait déjà, non
+poussé, le commit du 26/08 (« Le panneau Construire ne peut plus atteindre
+que la première tour posée ») — `BACKLOG.md` et `JOURNAL.md` le documentaient
+comme fait et vérifié, mais `origin/claude/bold-brown-q2g6c4` n'existait même
+pas encore côté distant : la séance précédente s'est arrêtée avant le push,
+ou pendant. Pas le piège du 22/08 (poussé sur la mauvaise branche) — ici rien
+n'avait été poussé du tout. Poussé en premier (`git push -u origin
+claude/bold-brown-q2g6c4`), puis vérifié avec le contrôle qui ne ment pas
+(`git merge-base --is-ancestor <sha> origin/main`) : passé après quelques
+dizaines de secondes, le commit du 26/08 est bien dans `main`. Rebranché
+ensuite sur `origin/main` avant de commencer le travail du jour, comme prévu
+par la consigne pour une branche déjà fusionnée.
+
+**Choix de la tâche.** Toujours les trois mêmes cases bloquées en tête de
+`BACKLOG.md` (équilibrage au ressenti, tour de la planète, deuxième
+planète). Rejeu complet d'abord : `pnpm install` (`node_modules` absent),
+`smoke.mjs` (4/4), `wave.mjs --check` (2/2), captures `--village`,
+`--arsenal`, `--wave 9`, `--wide` — rien de cassé à l'écran. Repris ensuite le
+point noté trois séances de suite (23/08, 25/08, 26/08) comme « prochaine
+amélioration d'outillage possible » : `smoke.mjs` ne construit jamais un
+second exemplaire d'un même bâtiment, donc ni la sélection par puce (fixée le
+26/08) ni le bouton « déplacer » appliqué à une instance précise n'étaient
+rejoués automatiquement — seule une vérification manuelle ad hoc, à refaire à
+la main à chaque changement dans cette zone.
+
+**Fait**
+
+- `tools/game-check/smoke.mjs` : cinquième parcours, « deux tourelles +
+  déplacer la seconde ». Sauvegarde avec `tourelle` (niveau 2) et
+  `tourelle#2` (niveau 1) déjà posées à des positions bien séparées ;
+  ouverture du panneau Construire, clic sur la puce n°2, vérification que
+  `selectedBuilding` vaut bien `tourelle#2` (pas `tourelle`) ; clic sur
+  « Déplacer ce bâtiment », vérification que `placingBuilding` vaut
+  `tourelle#2` ; glissé-déposé sur un point valide, « Poser ici » ; puis
+  vérification que la position de `tourelle#2` a changé, que celle de
+  `tourelle` n'a pas bougé, et qu'aucun des deux niveaux n'a été altéré par le
+  déplacement.
+- Écarté un premier jeu de cibles de dépose copié tel quel du parcours n°4
+  (`caméra tournée + pose`) : ce parcours pose un bâtiment neuf sur un village
+  vide, le mien en a déjà deux — les mêmes coordonnées d'écran ne tombent pas
+  forcément sur un point constructible. Voir « essayé sans succès ».
+
+**Vérifié comment**
+
+- `pnpm install` puis `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/smoke.mjs` : 5/5, le nouveau parcours inclus.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé, cette séance ne touche à aucune mécanique de jeu.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png`, ouvert et
+  comparé à la capture d'avant séance : identique — seul l'outil de test a
+  changé, aucun fichier du jeu.
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- *Réutiliser telles quelles les cibles de dépose du parcours n°4*
+  (`[160,600], [270,600], [215,650], [130,550], [300,550]`) pour déplacer une
+  tourelle dans un village qui en a déjà deux. Échec systématique — aucune
+  cible valide trouvée. Diagnostiqué avec un script ad hoc qui balaie une
+  grille de points d'écran (pas de 40 px, 60 à 370 en x, 400 à 750 en y) et
+  logue lesquels donnent `pendingPlacement.valid === true` : la sélection de
+  la puce et le passage en mode « déplacer » fonctionnaient très bien dès le
+  premier essai (`selectedBuilding`/`placingBuilding` corrects) — c'est
+  uniquement la zone de dépose qui différait, le village n'étant pas vide
+  comme dans le parcours n°4. Retenir : **les cibles de dépose d'un parcours
+  ne se copient pas d'un parcours à l'autre dès que la scène de départ
+  change** (bâtiments déjà posés, décor différent) — rebalayer une grille avec
+  un script jetable plutôt que deviner à l'œil.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le parcours ajouté ne construit que deux exemplaires d'un seul bâtiment
+  (tourelle). Les autres bâtiments à plusieurs exemplaires (mortier, cryo,
+  tesla, hutte) partagent le même code de sélection dans `BuildSheet.tsx` et
+  n'ont pas de raison de se comporter différemment, mais ce n'est pas prouvé
+  par un test.
+
 ## 2026-08-26 — La 2e et la 3e tour d'un même type étaient injoignables depuis le panneau
 
 **Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de

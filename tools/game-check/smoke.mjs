@@ -10,7 +10,7 @@
  * une fiche qui plante à l'ouverture, un panneau qui boucle, un bouton dont le
  * libellé a changé — tout ça passait inaperçu jusqu'au playtest suivant.
  *
- * Ce script joue quatre parcours dans un vrai navigateur et **sort en 1 dès
+ * Ce script joue cinq parcours dans un vrai navigateur et **sort en 1 dès
  * qu'une erreur console apparaît**, quelle qu'elle soit. Il ne juge rien : il
  * constate qu'on peut traverser le jeu sans rien casser.
  *
@@ -133,6 +133,55 @@ await scenario('caméra tournée + pose', makeSave({ resources: { boulons: 9999,
   await page.waitForTimeout(1200);
   const n = await page.evaluate(() => Object.keys(window.__villageStore.getState().buildingPositions).length);
   if (n === 0) throw new Error('rien posé alors que la caméra est tournée');
+});
+
+// 5. Deux exemplaires d'un même bâtiment : la bonne puce du panneau Construire
+// sélectionne la bonne instance, et « Déplacer » agit sur celle-ci — pas
+// toujours la première. Régression du 26/08 (voir JOURNAL.md), jamais couverte
+// jusqu'ici : les scénarios précédents ne posent qu'un seul exemplaire par
+// bâtiment.
+await scenario('deux tourelles + déplacer la seconde', makeSave({
+  resources: { boulons: 9999, matiere_floue: 200, energie_rire: 20 },
+  buildingLevels: { tourelle: 2, 'tourelle#2': 1 },
+  buildingPositions: { tourelle: [4.5, 0, -5], 'tourelle#2': [-4.5, 0, -5] },
+}), async (page) => {
+  await page.locator('button:has-text("Construire")').first().click();
+  await page.waitForTimeout(800);
+  await page.locator('button[title="Tourelle laser n°2 — améliorer"]').click();
+  await page.waitForTimeout(700);
+  const selected = await page.evaluate(() => window.__villageStore.getState().selectedBuilding);
+  if (selected !== 'tourelle#2') throw new Error(`la puce n°2 a sélectionné "${selected}", pas tourelle#2`);
+
+  await page.locator('button[title="Déplacer ce bâtiment"]').click();
+  await page.waitForTimeout(700);
+  const placing = await page.evaluate(() => window.__villageStore.getState().placingBuilding);
+  if (placing !== 'tourelle#2') throw new Error(`« déplacer » a visé "${placing}", pas tourelle#2`);
+
+  const before = await page.evaluate(() => window.__villageStore.getState().buildingPositions['tourelle#2']);
+  const targets = [[220, 400], [140, 680], [300, 720], [60, 560], [260, 400], [340, 680]];
+  let valid = false;
+  for (const [tx, ty] of targets) {
+    await page.mouse.move(215, 560); await page.mouse.down();
+    await page.mouse.move(tx, ty, { steps: 6 }); await page.mouse.up();
+    await page.waitForTimeout(700);
+    valid = await page.evaluate(() => !!window.__villageStore.getState().pendingPlacement?.valid);
+    if (valid) break;
+  }
+  if (!valid) throw new Error('aucune cible de déplacement valide trouvée');
+  await page.locator('button:has-text("Poser ici")').click().catch(() => {});
+  await page.waitForTimeout(1000);
+
+  const after = await page.evaluate(() => window.__villageStore.getState().buildingPositions);
+  if (JSON.stringify(after['tourelle#2']) === JSON.stringify(before)) {
+    throw new Error('tourelle#2 ne semble pas avoir bougé');
+  }
+  if (!after['tourelle'] || after['tourelle'][0] !== 4.5) {
+    throw new Error('la première tourelle a bougé alors que seule la seconde devait être déplacée');
+  }
+  const levels = await page.evaluate(() => window.__villageStore.getState().buildingLevels);
+  if (levels['tourelle#2'] !== 1 || levels['tourelle'] !== 2) {
+    throw new Error('le niveau d\'une tourelle a changé pendant le déplacement');
+  }
 });
 
 server.close();

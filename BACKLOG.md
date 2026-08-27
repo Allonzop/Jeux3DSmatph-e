@@ -223,6 +223,12 @@ traités, voir plus haut.
       seul un tap direct dans la scène 3D y menait, sans rien pour le
       signaler dans le panneau. Voir JOURNAL.md.)*
 
+- [x] **`smoke.mjs` ne couvrait pas les bâtiments à plusieurs exemplaires ni
+      le déplacement d'un bâtiment.** *(2026-08-27 : cinquième parcours
+      ajouté — sélectionne la 2e tourelle par sa puce, la déplace, vérifie
+      que la 1re ne bouge pas. Aurait attrapé le bug du 26/08 tout seul.
+      Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.
