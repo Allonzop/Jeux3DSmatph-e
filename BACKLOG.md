@@ -229,6 +229,13 @@ traités, voir plus haut.
       que la 1re ne bouge pas. Aurait attrapé le bug du 26/08 tout seul.
       Voir JOURNAL.md.)*
 
+- [x] **Le parcours « caméra tournée + pose » de `smoke.mjs` est flaky.**
+      *(2026-08-28 : les cinq points d'écran fixes ne retombaient plus
+      fiablement sur une cible constructible une fois la caméra tournée —
+      le test a échoué au tout début de cette séance. Remplacés par un
+      balayage en grille qui s'arrête à la première cible valide. Voir
+      JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

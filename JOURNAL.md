@@ -11,6 +11,87 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-28 — Le parcours « caméra tournée + pose » de `smoke.mjs` était flaky
+
+**Choix de la tâche.** Toujours les trois mêmes cases bloquées en tête de
+`BACKLOG.md` (équilibrage au ressenti — vrai appareil requis, 14 séances de
+suite écartée depuis le 15/08 ; faire le tour de la planète et deuxième
+planète — chantiers à part entière, notés comme tels depuis le 22/08).
+Rebranché sur `origin/main` en début de séance : la branche locale de la
+séance était déjà à jour (`git merge-base --is-ancestor HEAD origin/main` a
+répondu vrai du premier coup, tout le travail du 26/08 et du 27/08 était bien
+fusionné). Rejeu complet ensuite, comme d'habitude : `pnpm install`
+(`node_modules` absent), puis `node tools/game-check/smoke.mjs`.
+
+**Ce qui a été trouvé.** Le parcours n°4 (« caméra tournée + pose ») a échoué
+dès ce premier rejeu : `aucune cible de pose valide trouvée près du héros`.
+`wave.mjs --check` passait toujours (2/2) — rien de cassé dans le jeu lui-même.
+Diagnostiqué avec un script Playwright ad hoc, en suivant la règle posée le
+23/08 (« toujours interroger la validité exacte plutôt que deviner ») : rejoué
+le même parcours isolément avec les cinq points fixes du script, puis un
+balayage complet en grille de l'écran. Résultat : un des cinq points fixes
+*était* valide en isolation (`[215, 650]`), mais pas dans le run complet de
+`smoke.mjs`. Ce n'est donc pas une régression du jeu — c'est le test lui-même
+qui est flaky : la rotation de caméra est un `mouse.down()` tenu 1800 ms puis
+relâché, et l'angle final exact dépend du temps réel écoulé pendant ce geste,
+qui varie d'une exécution à l'autre (charge machine, ordre des scénarios). Un
+angle légèrement différent déplace toute la scène à l'écran, et les cinq
+points fixes — choisis à l'œil le 23/08, resserrés autour du héros —
+retombent ou non sur une cible constructible selon la chance. Le balayage en
+grille complet (voir script ad hoc) a confirmé qu'il existe toujours de larges
+zones valides à l'écran une fois la caméra tournée : le problème n'est jamais
+qu'il n'y a nulle part où poser, seulement que les cinq points devinés
+peuvent tous la manquer.
+
+**Fait**
+
+- `tools/game-check/smoke.mjs` : les deux listes de points fixes (parcours 4
+  « caméra tournée + pose » et parcours 5 « déplacer la 2e tourelle », qui
+  souffre du même risque en théorie même si son run précédent avait réussi)
+  remplacées par une fonction commune `findPlacementTarget(page)` : elle
+  balaie l'écran en grille (pas de 50 px, 60 à 370 en x, 400 à 750 en y) et
+  s'arrête dès qu'un point retombe sur une cible valide (`pendingPlacement.valid`).
+  Coût : jusqu'à 400 ms par point testé au lieu de 700 ms — le geste de pose
+  est plus rapide que le geste de rotation de caméra, pas besoin de la même
+  marge — et le balayage s'arrête tôt dans la quasi-totalité des cas (la
+  grille couvre une zone où l'échantillonnage du 28/08 a montré que 30 à 40 %
+  des points sont valides).
+
+**Vérifié comment**
+
+- `node tools/game-check/smoke.mjs` : relancé deux fois de suite après le
+  correctif, 5/5 les deux fois (le point qui comptait : le parcours 4 ne
+  dépend plus d'un point precis).
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé, cette séance ne touche à aucune mécanique de jeu, seulement
+  à l'outillage de test.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png`, ouvert :
+  rien de changé à l'écran — seul `smoke.mjs` a été modifié, aucun fichier du
+  jeu.
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté : la cause a été confirmée du premier coup en isolant le
+  parcours et en comparant point fixe vs balayage en grille, pas de fausse
+  piste sur le code du jeu (le bug était dans le test, pas dans
+  `PlacementController`).
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le balayage en grille a un coût pire cas plus élevé qu'une liste de cinq
+  points (jusqu'à 84 points × 400 ms ≈ 34 s au lieu de 5 × 700 ms = 3,5 s) —
+  invisible dans les deux runs de vérification (la cible valide est trouvée
+  bien avant la fin de la grille), mais si `smoke.mjs` devient sensiblement
+  plus lent à l'usage, resserrer la grille autour d'une zone plus proche du
+  héros serait la première piste.
+
+
 ## 2026-08-27 — Un commit du 26/08 était resté impoussé, et un cinquième parcours pour `smoke.mjs`
 
 **Ce qui a été trouvé en démarrant.** La branche locale portait déjà, non

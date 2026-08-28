@@ -29,6 +29,31 @@ await buildIfNeeded();
 const server = await serveStatic(DIST_DIR, BASE_PATH);
 const results = [];
 
+/**
+ * Glisse depuis le pouce (215, 560) jusqu'à ce qu'un point d'écran retombe sur
+ * une cible constructible, et s'arrête au premier trouvé.
+ *
+ * Un point fixe est fragile : la scène dépend de la position du héros, de la
+ * rotation exacte de la caméra (elle-même sensible au temps réel d'un geste
+ * simulé) et du décor généré sur le plateau — le même pixel qui marchait hier
+ * peut tomber sur un rocher aujourd'hui (voir JOURNAL.md, 23/08). Un balayage
+ * en grille sur toute la zone visible de plateau, au lieu d'une poignée de
+ * points devinés à l'œil, absorbe cette variation : signalé comme point faible
+ * de `smoke.mjs` les 23/08, 25/08 et 27/08, jamais traité jusqu'ici.
+ */
+async function findPlacementTarget(page) {
+  for (let ty = 400; ty <= 750; ty += 50) {
+    for (let tx = 60; tx <= 370; tx += 50) {
+      await page.mouse.move(215, 560); await page.mouse.down();
+      await page.mouse.move(tx, ty, { steps: 6 }); await page.mouse.up();
+      await page.waitForTimeout(400);
+      const valid = await page.evaluate(() => !!window.__villageStore.getState().pendingPlacement?.valid);
+      if (valid) return true;
+    }
+  }
+  return false;
+}
+
 async function scenario(name, save, steps) {
   const { browser, page, errors } = await openGame(server.url, { save });
   await page.waitForTimeout(17000);
@@ -115,19 +140,7 @@ await scenario('caméra tournée + pose', makeSave({ resources: { boulons: 9999,
   await page.waitForTimeout(1200);
   await page.evaluate(() => window.__villageStore.getState().startPlacing('tourelle'));
   await page.waitForTimeout(800);
-  // Le décor est déterministe mais réparti sur tout le plateau : un point fixe
-  // peut tomber dessus si la taille du plateau change. On essaie une poignée
-  // de cibles proches jusqu'à en trouver une valide, plutôt que de dépendre
-  // d'un seul pixel qui a marché une fois.
-  const targets = [[160, 600], [270, 600], [215, 650], [130, 550], [300, 550]];
-  let valid = false;
-  for (const [tx, ty] of targets) {
-    await page.mouse.move(215, 560); await page.mouse.down();
-    await page.mouse.move(tx, ty, { steps: 6 }); await page.mouse.up();
-    await page.waitForTimeout(700);
-    valid = await page.evaluate(() => !!window.__villageStore.getState().pendingPlacement?.valid);
-    if (valid) break;
-  }
+  const valid = await findPlacementTarget(page);
   if (!valid) throw new Error('aucune cible de pose valide trouvée près du héros');
   await page.locator('button:has-text("Poser ici")').click().catch(() => {});
   await page.waitForTimeout(1200);
@@ -158,15 +171,7 @@ await scenario('deux tourelles + déplacer la seconde', makeSave({
   if (placing !== 'tourelle#2') throw new Error(`« déplacer » a visé "${placing}", pas tourelle#2`);
 
   const before = await page.evaluate(() => window.__villageStore.getState().buildingPositions['tourelle#2']);
-  const targets = [[220, 400], [140, 680], [300, 720], [60, 560], [260, 400], [340, 680]];
-  let valid = false;
-  for (const [tx, ty] of targets) {
-    await page.mouse.move(215, 560); await page.mouse.down();
-    await page.mouse.move(tx, ty, { steps: 6 }); await page.mouse.up();
-    await page.waitForTimeout(700);
-    valid = await page.evaluate(() => !!window.__villageStore.getState().pendingPlacement?.valid);
-    if (valid) break;
-  }
+  const valid = await findPlacementTarget(page);
   if (!valid) throw new Error('aucune cible de déplacement valide trouvée');
   await page.locator('button:has-text("Poser ici")').click().catch(() => {});
   await page.waitForTimeout(1000);
