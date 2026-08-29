@@ -223,6 +223,15 @@ traités, voir plus haut.
       seul un tap direct dans la scène 3D y menait, sans rien pour le
       signaler dans le panneau. Voir JOURNAL.md.)*
 
+- [x] **Le bonus de zone « Deux Chasseurs spatiaux de plus » (Jungle de
+      Spores) ne faisait rien une fois le Bar au niveau max.** *(trouvé et
+      corrigé le 2026-08-29, même situation que le 25/08 et le 26/08 : les
+      trois cases ci-dessus sont bloquées. `Hunters.tsx` plafonnait le
+      nombre de chasseurs à `hunterDefs.length` (4 personnages définis), et
+      le Bar seul au niveau max en réclamait déjà 4 — le bonus de zone
+      n'ajoutait donc jamais rien, au lieu des deux promis. Deux personnages
+      ajoutés (`h5`, `h6`). Voir JOURNAL.md.)*
+
 - [x] **`smoke.mjs` ne couvrait pas les bâtiments à plusieurs exemplaires ni
       le déplacement d'un bâtiment.** *(2026-08-27 : cinquième parcours
       ajouté — sélectionne la 2e tourelle par sa puce, la déplace, vérifie

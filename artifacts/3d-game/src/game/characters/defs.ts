@@ -147,6 +147,13 @@ export const enemyDef: CharacterDef = enemyDefs[0];
 // pendant les vagues — voir `../scene/Hunters.tsx`. Visuellement ils tiennent
 // du villageois (meme echelle) et du heros (casque, equipement) : on doit lire
 // « habitant arme », pas « second heros ».
+//
+// `Hunters.tsx` plafonne le nombre affiche a `hunterDefs.length` (pas
+// d'exemplaire sans definition). Ce tableau doit donc toujours compter au
+// moins `bar.maxLevel + extraHunters` (gamedata.ts / zones.ts) —
+// aujourd'hui 4 + 2 = 6 — sinon le bonus de zone « Chasseurs en plus » est
+// silencieusement rogne, voire nul une fois le Bar au niveau max (trouve et
+// corrige le 2026-08-29, voir JOURNAL.md).
 
 export const hunterDefs: CharacterDef[] = [
   { id: 'h1', seed: 9101, bodyType: 'stocky', scale: 0.82,
@@ -165,4 +172,12 @@ export const hunterDefs: CharacterDef[] = [
     primary: '#ff8c42', secondary: '#4a3d5c', accent: '#e0aaff', glow: '#ffd24c',
     headwear: 'antennaDome', back: 'shell', faceGear: 'mask',
     eyeShape: 'sleepy', mouth: 'grin', personality: 'heavy' },
+  { id: 'h5', seed: 9505, bodyType: 'round', scale: 0.85,
+    primary: '#9b5de5', secondary: '#e0d1ff', accent: '#00f5d4', glow: '#c77dff',
+    headwear: 'beanie', back: 'wings', neck: 'glowNecklace',
+    eyeShape: 'wide', mouth: 'smile', brows: true, personality: 'bouncy' },
+  { id: 'h6', seed: 9606, bodyType: 'stocky', scale: 0.83, limbThickness: 1.1,
+    primary: '#ffbe0b', secondary: '#3a3a3a', accent: '#fb5607', glow: '#ffbe0b',
+    headwear: 'mushroom', back: 'cape',
+    eyeShape: 'sleepy', mouth: 'neutral', personality: 'calm' },
 ];

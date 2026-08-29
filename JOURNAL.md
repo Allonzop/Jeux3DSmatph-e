@@ -11,6 +11,111 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-29 — Un push oublié récupéré, et le bonus de zone « Chasseurs en plus » qui ne faisait rien au niveau max
+
+**Ce qui a été trouvé en démarrant.** La branche locale portait déjà, non
+poussée, les trois commits du 26/08, 27/08 et 28/08 — `BACKLOG.md` et
+`JOURNAL.md` les documentaient comme faits et vérifiés, mais
+`origin/claude/bold-brown-wefyca` n'existait même pas côté distant : aucune
+séance depuis le 26/08 n'était jamais arrivée jusqu'au push (même piège que
+le 27/08, en pire — là c'est trois séances d'affilée qui étaient restées
+locales). Poussé en tout premier, avant tout autre travail
+(`git push -u origin claude/bold-brown-wefyca`) : le workflow `auto-merge.yml`
+se déclenche sur le push de la branche, donc ce seul geste suffit à
+rattraper les trois séances perdues sans rien recommencer.
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+14 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière, notés comme
+tels depuis le 22/08). Suivant la consigne pour ce cas (jouer, trouver ce
+qui cloche, l'ajouter au backlog, le traiter) : `pnpm install`
+(`node_modules` absent), rejeu complet — `smoke.mjs` (5/5), `wave.mjs
+--check` (2/2), captures `--village`, `--arsenal`, `--wave 9`, `--wide`,
+`--empty` — rien de cassé à l'écran. Faute de piste visuelle, élargi la
+recherche à une lecture de code dans une zone récemment ajoutée et peu
+revisitée depuis : `scene/Hunters.tsx` (les Chasseurs spatiaux recrutés par
+le Bar, restaurés le 21/08) et son lien avec les bonus de zone (`zones.ts`,
+ajoutés le même jour).
+
+**Fait**
+
+- Trouvé en lisant `scene/Hunters.tsx` : `count = Math.min(barLevel +
+  zoneEffects(unlockedZones).extraHunters, hunterDefs.length)` — le nombre de
+  chasseurs affichés est plafonné à `hunterDefs.length`, le nombre de
+  personnages *définis* dans `characters/defs.ts` (4 : `h1`..`h4`). Le Bar a
+  un niveau max de 4 (`gamedata.ts`), et la Jungle de Spores promet
+  explicitement « Deux Chasseurs spatiaux de plus » une fois annexée
+  (`zones.ts`, `bonus: { kind: 'hunters', value: 2, ... }`). Avec seulement 4
+  personnages disponibles : un Bar seul niveau 4 réclame déjà 4 chasseurs
+  (`min(4+0, 4) = 4`), donc le bonus de zone (`min(4+2, 4) = 4`) n'ajoute
+  strictement rien — le texte promis par l'annexion de zone est un mensonge
+  pur pour quiconque a maximisé le Bar, ce qui est le chemin de progression
+  naturel. Au niveau 3, le bonus était déjà tronqué (`min(3+2,4)=4` au lieu
+  de 5 attendus) ; seuls les niveaux 1-2 du Bar en profitaient pleinement.
+  Un bug purement numérique et vérifiable par lecture de code, dans le même
+  esprit que les recalibrages du 24/08 et l'anneau de portée du 25/08 — pas
+  un jugement de ressenti.
+- `characters/defs.ts` : deux personnages ajoutés à `hunterDefs` (`h5`, `h6`),
+  portant le tableau à 6 entrées — exactement `bar.maxLevel (4) +
+  extraHunters de la Jungle de Spores (2)`. Générés avec `studio gen
+  --archetype technique` puis ajustés à la main (accessoires/couleurs
+  choisis dans les registres non encore utilisés par `h1`-`h4`, voir schéma
+  `studio schema`) pour rester dans le même registre visuel qu'eux
+  (« habitant armé »). `studio audit` a d'abord signalé un quasi-doublon
+  (`h6` copiait exactement la silhouette de `v4` — même `bodyType`,
+  `headwear`, `back`, `faceGear` — malgré des couleurs différentes) ;
+  corrigé en changeant le gabarit et les accessoires de `h6`, ré-audité à
+  0 quasi-doublon. Un commentaire posé au-dessus de `hunterDefs` documente
+  l'invariant (`hunterDefs.length` doit rester ≥ `bar.maxLevel +
+  extraHunters`) pour que la prochaine zone ou le prochain niveau de Bar n'y
+  retombe pas en silence.
+
+**Vérifié comment**
+
+- `cd artifacts/character-studio && pnpm --silent run studio validate` puis
+  `studio audit` sur le kit complet (`studio kit`) : 0 quasi-doublon, 0
+  avertissement de palette (les 6 notes existantes sur d'autres personnages
+  sont antérieures, non touchées), couverture des registres 100 %.
+  `studio selftest` : 5/5 (22 personnages du jeu + 60 générés).
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (aucun des deux scénarios ne construit le Bar).
+- `node tools/game-check/smoke.mjs` : 5/5 — cette séance ne touche à aucun
+  parcours existant.
+- Script Playwright ad hoc (sauvegarde avec Bar niveau 4 + `unlockedZones:
+  { spores: true }`, capture large autour du Bar) : au moins cinq
+  silhouettes de chasseurs distinctes visibles autour du Bar (avant le
+  correctif, 4 au maximum quelle que soit la zone annexée) — capture non
+  gardée dans le dépôt. Confirmé aussi par lecture : `studio kit` liste
+  désormais `h1` à `h6`, six exemplaires.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png`, ouvert et
+  comparé à la capture d'avant séance : identique (le scénario `--village`
+  pose le Bar au niveau 2, sous le nouveau plafond de 6, donc jamais affecté
+  par le changement).
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté sur le fond : le bug a été trouvé du premier coup en lisant
+  `Hunters.tsx` avec le bonus de zone en tête. Un seul faux départ mineur :
+  la première version de `h6` copiait involontairement la silhouette de
+  `v4` (même combinaison `bodyType`/`headwear`/`back`/`faceGear`) —
+  `studio audit` l'a signalé immédiatement, corrigé en changeant le gabarit
+  plutôt que juste les couleurs (les couleurs seules ne suffisent pas à
+  distinguer deux silhouettes identiques, voir le score `silhouette 0.00`
+  du rapport).
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le même genre de plafond silencieux pourrait exister ailleurs si un
+  système suppose implicitement qu'un registre de personnages ou de
+  définitions est « assez grand » sans jamais le vérifier — pas d'autre cas
+  trouvé cette séance, mais `hunterDefs` n'était pas le seul tableau de
+  taille fixe croisé avec un niveau de bâtiment potentiellement croissant.
+
 ## 2026-08-28 — Le parcours « caméra tournée + pose » de `smoke.mjs` était flaky
 
 **Choix de la tâche.** Toujours les trois mêmes cases bloquées en tête de
