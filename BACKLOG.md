@@ -245,6 +245,15 @@ traités, voir plus haut.
       balayage en grille qui s'arrête à la première cible valide. Voir
       JOURNAL.md.)*
 
+- [x] **Le rayon d'attaque du héros restait à plat au sol contre un monstre
+      volant (Écumeur).** *(trouvé et corrigé le 2026-08-30, même situation
+      que le 25/08, le 26/08 et le 29/08 : les trois cases ci-dessus sont
+      bloquées. Le héros vise et endommage bien les monstres volants
+      (contrairement aux tours au sol), mais le rayon visuel ignorait leur
+      altitude et s'arrêtait toujours à hauteur de main — il semblait tirer
+      dans le vide sous la cible plutôt que de monter jusqu'à elle. Voir
+      JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

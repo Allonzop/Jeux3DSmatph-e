@@ -11,6 +11,117 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-30 — Le rayon d'attaque du héros ignorait l'altitude des monstres volants
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+15 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière, notés comme
+tels depuis le 22/08). Rebranché sur `origin/main` en début de séance :
+`git fetch origin` puis `git merge-base --is-ancestor HEAD origin/main` a
+répondu vrai (`HEAD` égal à `origin/main` et à
+`origin/claude/bold-brown-tzb6gr`, les trois pointaient sur le même commit
+065b164) — rien à récupérer cette fois, contrairement au 27/08 et au 29/08.
+Suivant la consigne pour le cas des trois cases bloquées (jouer, trouver ce
+qui cloche, l'ajouter au backlog, le traiter) : `pnpm install`
+(`node_modules` absent), rejeu complet — `smoke.mjs` (5/5), `wave.mjs
+--check` (2/2), captures `--village`, `--arsenal`, `--wave 9`, `--wide` —
+rien de cassé à l'écran au premier coup d'œil. En zoomant sur la capture
+`--wave 9` (`python3`/Pillow, absent de l'environnement, installé avec
+`pip install pillow`), un rayon d'attaque du héros s'arrêtait en pleine
+herbe, sans monstre visible à son extrémité — piste suivie plutôt
+qu'écartée comme un artefact de capture, en application de la règle du
+23/08 (« toujours interroger la validité exacte plutôt que deviner »).
+
+**Fait**
+
+- Diagnostiqué avec une instrumentation Playwright ad hoc (`window.__heroDebug`
+  exposé temporairement dans `Hero.tsx`, retiré avant le commit) : le monstre
+  visé par le rayon avait une position `y` jusqu'à 1,88, largement au-dessus
+  du sol (`y ≈ 0,5` pour tous les monstres au sol relevés par ailleurs). Lu
+  dans `enemies.ts` : l'Écumeur (monstre volant depuis la vague 5) porte
+  `altitude: 2.2`, et son commentaire dit explicitement « seul le héros et le
+  tesla l'atteignent » — c'est un mécanisme voulu, le héros doit pouvoir
+  viser ce que les tours au sol ne peuvent pas.
+- Le bug était dans le rendu, pas dans le ciblage ni les dégâts : `Hero.tsx`
+  trouve bien l'Écumeur comme cible la plus proche et lui inflige des
+  dégâts (`damageEnemy` ne filtre pas sur l'altitude), mais le cylindre du
+  rayon mettait `_local.y = 0` avant de calculer longueur et position,
+  clouant le rayon à hauteur de main (`BEAM_Y = 0.9`) quelle que soit
+  l'élévation réelle de la cible. Contre un monstre au sol la différence
+  est invisible (0,5 ≈ 0,9), contre un Écumeur elle saute aux yeux : le
+  rayon reste à plat, semble tirer dans le vide sous le monstre qui plane
+  au-dessus.
+- `Hero.tsx` : remplacé le calcul à plat par un segment 3D complet entre la
+  main du héros (`0, BEAM_Y, 0` en espace local) et la position réelle de la
+  cible (`_local.x, _local.y, _local.z`, plus touché à zéro) — milieu,
+  longueur et orientation du cylindre recalculés en conséquence. Un monstre
+  au sol n'est quasiment pas affecté (différence de hauteur de quelques
+  décimètres) ; un monstre volant reçoit désormais un rayon qui monte
+  jusqu'à lui.
+
+**Vérifié comment**
+
+- Preuve algébrique avant tout : le rayon relie maintenant exactement
+  `(0, BEAM_Y, 0)` à `(_local.x, _local.y, _local.z)` en espace local du
+  héros — cette dernière valeur *est* la position monde de la cible passée
+  par `worldToLocal` sans troncature, donc le segment se termine
+  exactement là où est la cible, à toute altitude.
+- Confirmation visuelle : script Playwright ad hoc qui relance la vague 9 à
+  partir d'une sauvegarde neuve jusqu'à ce que la cible la plus proche du
+  héros soit un monstre volant (`target[1] > 1.0`), capture prise à ce
+  moment précis. Sur la capture retenue, le rayon part du héros et se
+  termine exactement sur le modèle du monstre visé (silhouette bleu-gris,
+  cohérente avec la teinte `#7dd3fc` de l'Écumeur), plutôt que dans l'herbe
+  vide comme avant le correctif. Capture non gardée dans le dépôt (script
+  jetable, comme les vérifications ad hoc des séances précédentes).
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (aucun des deux scénarios ne construit ni ne fait
+  apparaître d'Écumeur).
+- `node tools/game-check/smoke.mjs` : 5/5 — cette séance ne touche à aucun
+  parcours existant.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png`, ouvert et
+  comparé à la capture d'avant séance : identique (le scénario `--village`
+  ne lance pas de vague, donc jamais de rayon visible).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- *Provoquer la scène avec un monstre volant en manipulant directement
+  `window.__villageStore.setState({ enemies: [...] })` après un combat
+  normal.* Chaque tentative faisait réapparaître un overlay bloquant
+  (carte de montée de niveau ou bandeau « Vague repoussée ») qui ne se
+  refermait pas malgré `clearLevelUp()`/`clearWaveOutcome()` appelés
+  explicitement dans le même `evaluate` — l'overlay revenait identique à
+  la capture suivante, sans qu'aucune des pistes essayées (clic sur le
+  texte de fermeture, remise à `null` du champ du magasin, `playerLevel`
+  fixé très haut avant le combat pour éviter toute montée de niveau) ne
+  le fasse disparaître durablement. Cause non identifiée — plausiblement
+  un état React/Framer Motion qui ne se resynchronise pas avec une
+  manipulation directe du magasin en dehors du flux normal du jeu.
+  Abandonné au profit d'un rejeu de la vraie vague 9 en boucle jusqu'à
+  tomber naturellement sur un monstre volant à portée — plus lent mais
+  fiable, et c'est ce qui a produit la capture retenue. Si une future
+  séance a besoin d'un scénario de test reproductible avec un monstre
+  volant isolé, chercher plutôt du côté d'une sauvegarde qui démarre
+  directement en combat (comme `--wave` le fait pour `shot.mjs`) que d'une
+  bascule d'état en cours de partie.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- L'overlay qui refuse de se fermer sous manipulation directe du magasin
+  (voir « essayé sans succès ») n'a pas été creusé plus loin puisqu'il
+  n'affecte qu'un script de vérification jetable, pas le jeu lui-même —
+  mais si un futur outil de `tools/game-check/` a besoin d'injecter un
+  état de combat arbitraire en cours de partie plutôt qu'au chargement,
+  ça vaudrait la peine de comprendre pourquoi `clearLevelUp`/
+  `clearWaveOutcome` ne suffisent pas.
+
 ## 2026-08-29 — Un push oublié récupéré, et le bonus de zone « Chasseurs en plus » qui ne faisait rien au niveau max
 
 **Ce qui a été trouvé en démarrant.** La branche locale portait déjà, non

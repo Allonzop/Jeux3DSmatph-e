@@ -240,13 +240,17 @@ export function Hero() {
       // Le groupe du héros pivote quand il marche : on passe donc par
       // `worldToLocal`, sinon le rayon tournerait avec lui au lieu de rester
       // pointé sur le monstre.
+      // Le héros vise aussi les monstres volants (contrairement aux tours,
+      // voir `altitude` dans utils.ts) : le rayon doit donc monter jusqu'à
+      // eux plutôt que de rester à plat à hauteur de main, sans quoi il
+      // s'arrête au sol sous la cible et semble tirer dans le vide.
       _local.copy(_target);
       group.worldToLocal(_local);
-      _local.y = 0;
-      const len = _local.length();
-      beam.position.set(_local.x / 2, BEAM_Y, _local.z / 2);
+      _aim.set(_local.x, _local.y - BEAM_Y, _local.z);
+      const len = _aim.length();
+      beam.position.set(_local.x / 2, (BEAM_Y + _local.y) / 2, _local.z / 2);
       beam.scale.set(1, Math.max(0.001, len), 1);
-      _aim.copy(_local).normalize();
+      _aim.normalize();
       beam.quaternion.setFromUnitVectors(_up, _aim);
     }
 
