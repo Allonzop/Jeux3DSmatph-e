@@ -254,6 +254,14 @@ traités, voir plus haut.
       dans le vide sous la cible plutôt que de monter jusqu'à elle. Voir
       JOURNAL.md.)*
 
+- [x] **Le même bug (rayon à plat contre un monstre volant) existait aussi
+      pour les Chasseurs spatiaux du Bar.** *(trouvé et corrigé le
+      2026-08-31, même situation que le 25/08, le 26/08, le 29/08 et le
+      30/08 : les trois cases ci-dessus sont bloquées. La correction du
+      30/08 n'avait touché que `Hero.tsx` ; `Hunters.tsx` a le même
+      mécanisme de rayon et la même absence de filtre d'altitude sur le
+      ciblage, donc le même défaut. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

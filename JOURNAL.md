@@ -11,6 +11,126 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-08-31 — Un push oublié récupéré, et le même bug de rayon à plat que le 30/08 retrouvé dans `Hunters.tsx`
+
+**Ce qui a été trouvé en démarrant.** `origin/claude/bold-brown-7b01ze`
+n'existait pas côté distant, alors que la branche locale portait déjà, non
+poussés, les cinq commits du 26/08 au 30/08 (`BACKLOG.md` et `JOURNAL.md` les
+documentaient comme faits et vérifiés). Même piège que le 27/08 et le 29/08,
+en pire — cinq séances d'affilée restées locales. Poussé en tout premier
+(`git push -u origin claude/bold-brown-7b01ze`), puis vérifié avec le
+contrôle qui ne ment pas (`git merge-base --is-ancestor <sha> origin/main`,
+en boucle jusqu'à réponse vraie) : les cinq commits sont bien passés dans
+`main` avant de commencer le travail du jour.
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+16 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : `pnpm install` (`node_modules`
+absent), rejeu complet — `smoke.mjs` (5/5), `wave.mjs --check` (2/2),
+captures `--village`, `--arsenal`, `--wave 9`, `--wide`, `--empty` — rien de
+cassé à l'écran au premier coup d'œil. En zoomant sur `--wave 9`, un rayon de
+héros terminait bien sur un monstre volant sans artefact visible (la
+correction du 30/08 tient). Faute de piste visuelle nouvelle, élargi la
+recherche à une lecture de code autour de ce correctif de la veille : les
+autres endroits du jeu qui dessinent un rayon vers une cible peuvent avoir le
+même défaut si personne ne l'a vérifié.
+
+**Fait**
+
+- Trouvé en lisant `scene/Hunters.tsx` juste après avoir relu le correctif du
+  30/08 dans `Hero.tsx` : les Chasseurs spatiaux du Bar ont exactement le
+  même mécanisme de rayon (segment entre la main et la cible, via
+  `worldToLocal`) et exactement le même défaut que celui corrigé hier — sauf
+  que le correctif du 30/08 n'avait touché que `Hero.tsx`. `Hunters.tsx`
+  calculait la position de la cible pour le rayon avec
+  `surfaceY(tx, tz) + BEAM_Y` (hauteur du sol + hauteur de main), qui ignore
+  l'altitude de vol exactement comme le faisait `Hero.tsx` avant hier. Or un
+  chasseur peut bien viser un Écumeur : sa boucle de sélection de cible
+  (lignes 93-121) ne filtre que les monstres morts et le Spectre intangible,
+  rien sur l'altitude — contrairement aux tours au sol (`Buildings.tsx`, qui
+  filtrent par `hitsAir`). Un chasseur qui combat un Écumeur tirait donc un
+  rayon plat qui semblait traverser le décor au lieu de monter vers la
+  cible qui plane au-dessus.
+- `Hunters.tsx` : ajout de `ty` (capturé depuis `live.y`, la position réelle
+  publiée par le monstre) à côté de `tx`/`tz` dans la boucle de sélection de
+  cible, et remplacement de `surfaceY(tx, tz) + BEAM_Y` par `ty` dans le
+  calcul du rayon — même principe que le correctif du 30/08, adapté au repère
+  local du chasseur (`worldToLocal` puis soustraction de `BEAM_Y`, qui
+  existait déjà et n'avait pas besoin de changer).
+
+**Vérifié comment**
+
+- Diagnostiqué et confirmé avec une instrumentation Playwright ad hoc
+  (`window.__hunterDebug` exposé temporairement dans `Hunters.tsx`, retiré
+  avant le commit) : sauvegarde avec un seul Bar posé près du cristal (pour
+  que la laisse du chasseur couvre le chemin des monstres), vague 9 relancée
+  en boucle (`waveNumber` remis puis `startWave()`, comme le fait déjà
+  `shot.mjs --wave` — pas de bascule d'état en cours de combat, en
+  application de la leçon du 30/08 sur les overlays qui restent coincés)
+  jusqu'à ce qu'un chasseur vise un monstre dont la position `y` dépasse 1,3.
+  Capture **avant** correctif (rayon temporairement remis à
+  `surfaceY(tx,tz)+BEAM_Y` pour la comparaison, restauré ensuite) : le rayon
+  est visiblement plat, passe presque à l'horizontale et semble traverser le
+  dôme du Bar avant d'atteindre la cible. Capture **après** correctif : le
+  même rayon part visiblement plus bas et monte en diagonale jusqu'à la
+  cible. Les deux captures ne portent pas exactement le même monstre (la
+  boucle de relance retombe sur des identifiants différents d'un essai à
+  l'autre), mais la différence de forme du rayon — plat contre incliné — est
+  sans ambiguïté sur les deux images. Scripts et captures jetables, non
+  gardés dans le dépôt.
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (aucun des deux scénarios ne construit de Bar).
+- `node tools/game-check/smoke.mjs` : 5/5 — cette séance ne touche à aucun
+  parcours existant.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres_village.png`,
+  ouvert et comparé à la capture d'avant séance : identique (le scénario
+  `--village` ne lance pas de vague, donc jamais de rayon visible).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté sur le fond : le bug a été trouvé du premier coup en relisant
+  le correctif de la veille avec en tête la question « où ailleurs ce même
+  calcul existe-t-il ? ». Un seul ajustement en cours de route : la première
+  tentative de comparaison avant/après visait à rejouer exactement le même
+  monstre des deux côtés en espérant un rejeu déterministe identique — les
+  deux essais sont tombés sur des identifiants de monstre différents (la
+  boucle de relance de vague n'est pas synchronisée au tick près avec un
+  script externe), donc comparaison qualitative (forme du rayon) plutôt que
+  pixel à pixel. Suffisant ici, la différence étant flagrante.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le rayon des tourelles/mortier/cryo/tesla (`Buildings.tsx`) n'a pas ce
+  problème par construction : elles ne ciblent jamais un monstre volant sans
+  `hitsAir`, donc leur rayon reste toujours à une cible au sol. Seuls
+  `Hero.tsx` (corrigé le 30/08) et `Hunters.tsx` (corrigé aujourd'hui)
+  ciblent sans filtre d'altitude et dessinent un rayon complet en 3D — les
+  deux sont maintenant à jour, aucun autre endroit du code ne reproduit ce
+  calcul.
+- Repéré en cours de route, non traité (hors sujet, pas un bug de jeu) :
+  trois commentaires historiques désignent Tesla comme « la seule tour, avec
+  le héros, à atteindre les monstres volants » (`gamedata.ts` en-tête de
+  section, blurb de la Bobine Tesla, commentaire de `ecumeur` dans
+  `enemies.ts` qui renvoie en plus vers une fonction `canHit` qui n'existe
+  plus nulle part dans le code) — alors que le Cryo-diffuseur a bien
+  `hitsAir: true` sur ses trois niveaux et son propre blurb le dit
+  explicitement (« volants compris »). Les deux lectures se défendent : le
+  Cryo touche les volants mais leur inflige très peu de dégâts (8 à 18 dps,
+  contre 40 à 95 pour le Tesla) et son blurb le dit aussi (« tue peu, sauve
+  beaucoup ») — Tesla resterait donc la seule tour qui les *abat*
+  vraiment, pas la seule qui les *atteint*. Nuance de vocabulaire, pas un
+  bug vérifiable par lecture de code ou par capture d'écran ; le commentaire
+  qui pointe vers `canHit` est en revanche une référence morte, à corriger
+  si une séance future retouche ce fichier.
+
 ## 2026-08-30 — Le rayon d'attaque du héros ignorait l'altitude des monstres volants
 
 **Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de

@@ -94,6 +94,7 @@ function Hunter({
     let targetId: string | null = null;
     let targetDist = HUNTER_RANGE * 2.6;
     let tx = 0;
+    let ty = 0;
     let tz = 0;
     if (state.waveActive) {
       for (const enemy of state.enemies) {
@@ -115,6 +116,7 @@ function Hunter({
           targetDist = dist;
           targetId = enemy.id;
           tx = live.x;
+          ty = live.y;
           tz = live.z;
         }
       }
@@ -139,8 +141,14 @@ function Hunter({
           // groupe incline par la courbure de la planete. Un ecart calcule
           // dans le monde et pose tel quel dans ce repere vise a cote des que
           // le chasseur s'eloigne du centre. On passe par `worldToLocal`.
+          //
+          // `ty` est la position reelle de la cible (enemyPositions), pas
+          // `surfaceY(tx, tz)` : un chasseur peut viser un Ecumeur comme le
+          // heros (aucun filtre d'altitude sur sa selection de cible, voir la
+          // boucle ci-dessus), et `surfaceY` ignore l'altitude de vol — meme
+          // bug que celui corrige dans Hero.tsx le 30/08, non repercute ici.
           beamRef.current.visible = true;
-          _aim.set(tx, surfaceY(tx, tz) + BEAM_Y, tz);
+          _aim.set(tx, ty, tz);
           group.worldToLocal(_aim);
           _aim.y -= BEAM_Y;
           const len = _aim.length();
