@@ -11,6 +11,94 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-01 — Un push oublié récupéré, et l'enseigne néon du Bar illisible dès le niveau 2
+
+**Ce qui a été trouvé en démarrant.** Même piège que le 27/08, le 29/08 et le
+31/08, une fois de plus : `origin/claude/bold-brown-94auf5` n'existait pas
+côté distant alors que la branche locale portait déjà, non poussés, les six
+commits du 26/08 au 31/08 (jusqu'au correctif du rayon des Chasseurs
+spatiaux). Poussé en tout premier (`git push -u origin
+claude/bold-brown-94auf5`), puis vérifié avec `git fetch origin main` +
+`git merge-base --is-ancestor <sha> origin/main` : les six commits sont bien
+passés dans `main` avant de commencer le travail du jour. Ce piège revient
+trop souvent pour être une coïncidence — voir « Reste ouvert ».
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+17 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : `pnpm install` (`node_modules`
+absent), rejeu complet — `wave.mjs --check` (2/2), `smoke.mjs` (5/5),
+captures `--village`, `--arsenal`, `--wave 9`, `--empty`, `--village --wide`.
+
+**Fait**
+
+- Trouvé en zoomant sur `--village` et `--wide` (`python3`/Pillow, réinstallé
+  — absent de l'environnement) : un amas rose en forme de « 8 », flottant sur
+  un poteau au-dessus du Bar, ne ressemblant à rien d'identifiable. Isolé par
+  lecture de code (`BuildingBar` dans `Buildings.tsx`) plutôt que deviné :
+  l'« enseigne néon » du Bar empile un `torusGeometry` non tourné par niveau
+  (`position={[0, 1.4 + i*0.3, 0.8]}`, aucune rotation), donc chaque anneau
+  reste debout, face à l'avant du bâtiment — pas à plat comme le reste du
+  décor redessiné le 15/08 (toits, socles). Au niveau 1 un seul anneau
+  debout passe à peu près inaperçu ; dès le niveau 2 (le niveau par défaut
+  du Bar dans `--village`) deux anneaux debout, espacés de seulement 0,3
+  unité en hauteur, se chevauchent depuis la caméra en plongée à 45° du jeu
+  et se lisent comme un huit ou un ruban plutôt que deux cercles distincts.
+  `--arsenal` (Bar niveau 3) montre la même chose en pire, trois anneaux
+  superposés.
+- `Buildings.tsx`, fonction `BuildingBar` : les anneaux empilés debout
+  remplacés par des anneaux plats (`ringGeometry`, `rotation={[-Math.PI/2, 0,
+  0]}`, comme le halo de portée des tours) et concentriques à hauteur fixe
+  (rayon croissant avec le niveau) plutôt qu'empilés en hauteur — même
+  principe que les anneaux de vie du cristal (`CrystalCore.tsx`). Un niveau
+  donne un anneau, deux niveaux deux anneaux concentriques, etc. : la
+  progression reste lisible, sans jamais se chevaucher, quel que soit
+  l'angle de caméra (rotation de la caméra disponible depuis le 21/08).
+  `meshBasicMaterial` gardé, `side={THREE.DoubleSide}` ajouté par prudence
+  pour les angles de caméra les plus inclinés.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (ce correctif ne touche à rien du combat).
+- `node tools/game-check/smoke.mjs` : 5/5 — aucun parcours ne teste
+  l'apparence du Bar.
+- `node tools/game-check/shot.mjs --village --out /tmp/village_after.png` et
+  `--arsenal --wide --out /tmp/arsenal_wide.png` : ouvertes et zoomées
+  (crop + resize Pillow) sur l'enseigne. Avant : amas rose en huit flottant
+  sur un poteau (niveau 2), pire encore au niveau 3 (`--arsenal`). Après :
+  cercles concentriques nets, lisibles comme une cible, aux deux niveaux.
+  `--empty` et `--wave 9` inchangées à l'œil (le Bar n'y apparaît pas ou pas
+  au niveau 2+).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté sur le fond. Seule hésitation : le rendu final utilise
+  `ringGeometry` (anneau plat) plutôt que `torusGeometry` (accepterait aussi
+  une rotation à plat) — choisi parce que `ringGeometry` est déjà le
+  vocabulaire du reste du décor plat du jeu (toits, socles, halo de portée,
+  anneaux de vie du cristal) ; pas de différence fonctionnelle mais garde le
+  fichier cohérent avec lui-même.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le piège du push oublié s'est maintenant reproduit quatre séances sur
+  cinq (27/08, 29/08, 31/08, 01/09). La consigne de vérifier au démarrage
+  fonctionne à chaque fois qu'elle est suivie, donc ce n'est pas un bug de
+  la procédure — mais sa récurrence suggère que la séance précédente pousse
+  parfois trop tôt dans le déroulement (avant que le réseau ou l'auth git ne
+  soit prêt) sans qu'une erreur visible ne s'affiche. Pas creusé plus loin
+  cette séance : hors sujet par rapport à la tâche choisie, et chaque
+  séance suivante rattrape le retard sans perte de travail tant que le
+  contrôle `merge-base --is-ancestor` reste la première chose faite.
+
 ## 2026-08-31 — Un push oublié récupéré, et le même bug de rayon à plat que le 30/08 retrouvé dans `Hunters.tsx`
 
 **Ce qui a été trouvé en démarrant.** `origin/claude/bold-brown-7b01ze`

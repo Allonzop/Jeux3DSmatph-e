@@ -262,6 +262,15 @@ traités, voir plus haut.
       mécanisme de rayon et la même absence de filtre d'altitude sur le
       ciblage, donc le même défaut. Voir JOURNAL.md.)*
 
+- [x] **L'enseigne néon du Bar devient un amas rose illisible dès le niveau
+      2.** *(trouvé et corrigé le 2026-09-01, même situation que le 25/08 au
+      31/08 : les trois cases ci-dessus sont bloquées. Les anneaux de
+      l'enseigne étaient empilés debout, face à l'avant du bâtiment, pas à
+      plat — vu de la caméra en plongée du jeu ils se chevauchent en un
+      « 8 » rose flottant sur un poteau dès que le Bar dépasse le niveau 1.
+      Visible sur `shot.mjs --village` (bar niveau 2) et `--arsenal` (niveau
+      3). Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

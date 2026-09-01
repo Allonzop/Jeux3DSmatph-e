@@ -684,14 +684,19 @@ function BuildingBar(props: BuildingProps) {
         ))}
       </group>
 
-      {/* Neon Sign — un anneau de plus par niveau, empile vers le haut. */}
+      {/*
+        Neon Sign — un anneau de plus par niveau. Empiles en hauteur et
+        debout (face vers l'avant du batiment) a l'origine, ils se
+        chevauchaient en un amas rose illisible vu de la camera en plongee du
+        jeu des le niveau 2 — visible sur `shot.mjs --village`. Poses a plat
+        et concentriques, comme le halo de portee des tours, ils restent
+        lisibles quel que soit le niveau.
+      */}
       {Array.from({ length: Math.max(1, level) }).map((_, i) => (
-        <group key={i} position={[0, 1.4 + i * 0.3, 0.8]}>
-          <mesh>
-            <torusGeometry args={[0.3 - i * 0.04, 0.05, 16, 32]} />
-            <meshBasicMaterial color="#ff69b4" />
-          </mesh>
-        </group>
+        <mesh key={i} position={[0, 1.42, 0.8]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.14 + i * 0.13, 0.14 + i * 0.13 + 0.06, 32]} />
+          <meshBasicMaterial color="#ff69b4" transparent opacity={0.9} side={THREE.DoubleSide} />
+        </mesh>
       ))}
       <mesh position={[0, 1.4, 0.8]}>
         <cylinderGeometry args={[0.25, 0.25, 0.02, 32]} />
