@@ -420,7 +420,7 @@ function RangeRing({ range, color }: { range: number; color: string }) {
 // Ciblage partage
 // ---------------------------------------------------------------------------
 
-type Target = { id: string; x: number; z: number; dist: number };
+type Target = { id: string; x: number; y: number; z: number; dist: number };
 
 /**
  * Les monstres qu'une tour peut viser, du plus proche au plus lointain.
@@ -430,6 +430,11 @@ type Target = { id: string; x: number; z: number; dist: number };
  * toujours en x/z — voir world.ts), monstres deja morts ecartes, volants
  * reserves aux tours qui les atteignent, et Spectre ignore pendant sa phase de
  * dematerialisation.
+ *
+ * `y` porte l'altitude reelle de la cible (`live.y`, sol + altitude de vol +
+ * flottement — voir Enemies.tsx) : necessaire au Tesla, seule tour dont l'arc
+ * vise un point precis plutot qu'une zone au sol, et qui peut cibler un
+ * volant (`hitsAir`).
  */
 function findTargets(
   fromX: number,
@@ -451,7 +456,7 @@ function findTargets(
     const dz = live.z - fromZ;
     const dist = Math.sqrt(dx * dx + dz * dz);
     if (dist > stats.range) continue;
-    out.push({ id: enemy.id, x: live.x, z: live.z, dist });
+    out.push({ id: enemy.id, x: live.x, y: live.y, z: live.z, dist });
   }
   out.sort((a, b) => a.dist - b.dist);
   if (out.length > limit) out.length = limit;
@@ -1263,7 +1268,12 @@ function BuildingTesla(props: BuildingProps) {
       // l'ecran. `worldToLocal` fait la conversion une fois pour toutes.
       const parent = arc.parent;
       if (!parent) continue;
-      _ePos.set(target.x, surfaceY(target.x, target.z) + 0.7, target.z);
+      // `target.y` porte deja l'altitude de vol (voir `findTargets`) : un
+      // Ecumeur vise par le Tesla (hitsAir) recevait sinon un arc qui
+      // s'arretait a hauteur de sol + 0,7, plat sous la cible qui plane —
+      // meme defaut que corrige le 30/08 (Hero.tsx) et le 31/08
+      // (Hunters.tsx), jamais reporte ici.
+      _ePos.set(target.x, target.y + 0.7, target.z);
       parent.worldToLocal(_ePos);
       _arcDir.set(_ePos.x, _ePos.y - ARC_HEIGHT, _ePos.z);
       const len = _arcDir.length();

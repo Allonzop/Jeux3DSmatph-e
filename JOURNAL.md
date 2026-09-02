@@ -11,6 +11,110 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-02 — L'arc du Tesla ignorait aussi l'altitude des monstres volants
+
+**Ce qui a été trouvé en démarrant.** `origin/claude/bold-brown-mr9xym`
+pointait déjà sur le même commit que `origin/main` (`18f35e1`, le correctif
+de l'enseigne néon du 01/09) : la branche avait été fusionnée, pas de travail
+local à récupérer cette fois. Redémarrée depuis `origin/main`
+(`git checkout -B claude/bold-brown-mr9xym origin/main`), comme prévu par la
+consigne pour ce cas.
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+18 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : `pnpm install` (`node_modules`
+absent), `wave.mjs --check` (2/2), `smoke.mjs` (5/5), captures `--village`,
+`--arsenal`, `--wave 9`, `--wide`, `--empty` — rien de cassé à l'écran au
+premier coup d'œil ni dans les vérifications automatiques.
+
+Faute de piste visuelle nouvelle, élargi la recherche à une lecture de code,
+comme le 31/08 : le journal de cette date-là affirmait que « le rayon des
+tourelles/mortier/cryo/tesla n'a pas ce problème par construction : elles ne
+ciblent jamais un monstre volant sans `hitsAir` ». Vérification de cette
+affirmation plutôt que confiance aveugle : `gamedata.ts` montre que le Cryo
+**et** le Tesla portent `hitsAir: true` sur tous leurs niveaux — la
+conclusion du 31/08 était fausse pour ces deux-là, seulement vraie pour la
+tourelle laser et le mortier.
+
+**Fait**
+
+- Le Cryo-diffuseur ne dessine aucun rayon vers une cible précise (bulle de
+  gel au sol, `ringGeometry`/`circleGeometry` centrées sur la tour) : son
+  `hitsAir` n'a donc pas d'effet visuel, juste un ralentissement/dégât de
+  zone qui touche aussi les volants dans le rayon. Rien à corriger là.
+- Le Tesla (`BuildingTesla` dans `Buildings.tsx`), en revanche, dessine bien
+  un arc tendu de la bobine jusqu'à chaque cible — même mécanisme que le
+  rayon du héros (corrigé le 30/08) et des Chasseurs spatiaux (corrigé le
+  31/08). Le calcul de la position de la cible utilisait
+  `surfaceY(target.x, target.z) + 0.7` : hauteur du sol, sans tenir compte de
+  l'altitude de vol. Un Écumeur ciblé par un Tesla (autorisé par `hitsAir`)
+  recevait donc un arc qui s'arrêtait à hauteur de sol + 0,7, plat, au lieu
+  de monter jusqu'à la cible qui plane à 2,2 unités au-dessus.
+- `findTargets` (fonction partagée par les quatre tours, `Buildings.tsx`) ne
+  gardait que `x`/`z`/`dist` par cible. Ajouté `y`, capturé depuis
+  `live.y` (position réelle publiée par le monstre, qui porte déjà
+  sol + altitude de vol + flottement — voir `Enemies.tsx`) : sans coût pour
+  les trois autres tours, qui l'ignorent simplement. `BuildingTesla` utilise
+  maintenant `target.y + 0.7` au lieu de `surfaceY(target.x, target.z) +
+  0.7` — comportement inchangé contre un monstre au sol (`target.y` y vaut
+  exactement `surfaceY(x,z)`, altitude 0), corrigé contre un volant.
+
+**Vérifié comment**
+
+- Comparaison avant/après avec un script Playwright jetable (posait un seul
+  Tesla niveau 4 près du cristal, relançait la vague 9 en boucle jusqu'à
+  trouver un Écumeur en portée, capturait l'écran) : une instrumentation
+  temporaire (`window.__teslaDebugTargets`, exposant `y` et `groundY` par
+  cible, retirée avant le commit) confirmait qu'une cible avait `y -
+  groundY > 0,5` avant de déclencher la capture. Capture **avant**
+  correctif (calcul temporairement remis à `surfaceY(...)+0.7`, restauré
+  ensuite) : arc quasiment horizontal, semblant raser le sol jusqu'à un
+  point court de la cible qui plane près de la lisière d'arbres. Capture
+  **après** correctif : deux arcs visiblement inclinés, montant en diagonale
+  vers des cibles hors cadre en haut à gauche — même changement de forme que
+  la comparaison du 31/08 sur les Chasseurs spatiaux. Script et captures de
+  travail jetables, non gardés dans le dépôt (seule `tesla_check.mjs`
+  utilisée est restée dans le répertoire de travail temporaire de la
+  séance).
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé.
+- `node tools/game-check/smoke.mjs` : 5/5.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png` : identique
+  à avant (`--village` ne construit pas de Tesla et ne lance pas de vague, le
+  scénario ne pouvait donc pas montrer la différence).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté sur le fond. Un seul ajustement : la première version de
+  l'instrumentation de vérification cherchait un signal générique
+  (`enemies[].pos[1]`) pour détecter un volant en jeu, qui n'existe pas sous
+  cette forme côté client (`enemy.pos` est figé au point d'apparition, voir
+  le commentaire de `Hero.tsx` du 30/08) — remplacé par l'exposition directe
+  des cibles calculées par `findTargets` (`y`/`groundY`), qui donne un
+  signal exact plutôt que déduit.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- La conclusion du 31/08 (« les tours n'ont pas ce problème ») était
+  partiellement fausse et personne ne l'avait vérifiée depuis trois
+  séances (29/08 note similaire sur les tours au sol avec `hitsAir`
+  toujours faux — correcte pour celles-là, mais le Tesla n'a pas été
+  distingué du Cryo à l'époque). Leçon pour la suite : quand un journal
+  affirme qu'une catégorie entière de code « n'a pas ce problème par
+  construction », vérifier l'affirmation elle-même plutôt que de la prendre
+  pour acquise — c'est ce qui a mené au bug trouvé aujourd'hui.
+- Le commentaire mort pointant vers une fonction `canHit` inexistante
+  (`gamedata.ts`, `enemies.ts` sur l'Écumeur) signalé le 31/08 est toujours
+  là, non traité — hors sujet cette séance aussi.
+
 ## 2026-09-01 — Un push oublié récupéré, et l'enseigne néon du Bar illisible dès le niveau 2
 
 **Ce qui a été trouvé en démarrant.** Même piège que le 27/08, le 29/08 et le

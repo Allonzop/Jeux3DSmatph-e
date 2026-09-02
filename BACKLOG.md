@@ -271,6 +271,17 @@ traités, voir plus haut.
       Visible sur `shot.mjs --village` (bar niveau 2) et `--arsenal` (niveau
       3). Voir JOURNAL.md.)*
 
+- [x] **L'arc du Tesla restait à plat contre un monstre volant (Écumeur),
+      même bug que le héros et les Chasseurs spatiaux.** *(trouvé et corrigé
+      le 2026-09-02, même situation que le 25/08 au 01/09 : les trois cases
+      ci-dessus sont bloquées. Le Tesla vise bien les volants (`hitsAir:
+      true`, comme le Cryo-diffuseur), mais le journal du 31/08 avait conclu
+      à tort que seuls `Hero.tsx` et `Hunters.tsx` dessinaient un rayon vers
+      un point précis — l'arc du Tesla (`BuildingTesla` dans
+      `Buildings.tsx`) fait exactement ça et avait le même défaut
+      (`surfaceY(cible) + 0.7`, sans l'altitude de vol), jamais corrigé.
+      Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.
