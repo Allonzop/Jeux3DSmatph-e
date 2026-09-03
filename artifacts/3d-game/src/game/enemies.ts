@@ -117,12 +117,13 @@ export const ENEMY_TYPES: Record<EnemyKind, EnemyType> = {
     tint: '#8d99ae',
   },
 
-  // Vole : hors de portee des tourelles au sol, seul le heros et le tesla
-  // l'atteignent. Voir `canHit` dans Enemies.tsx.
+  // Vole : le heros et les Chasseurs spatiaux l'atteignent toujours: parmi
+  // les tours, seules celles dont `hitsAir` est vrai dans gamedata.ts (Cryo,
+  // Tesla) le touchent — `findTargets` dans Buildings.tsx applique ce filtre.
   ecumeur: {
     kind: 'ecumeur',
     name: 'Écumeur',
-    tip: 'Vole : les tourelles au sol ne le touchent pas.',
+    tip: 'Vole : la plupart des tours au sol ne l’atteignent pas.',
     hp: 0.75,
     speed: 1.4,
     breach: 1,

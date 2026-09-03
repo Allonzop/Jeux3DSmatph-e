@@ -282,6 +282,16 @@ traités, voir plus haut.
       (`surfaceY(cible) + 0.7`, sans l'altitude de vol), jamais corrigé.
       Voir JOURNAL.md.)*
 
+- [x] **Le conseil affiché à l'arrivée de l'Écumeur (vague 5) est faux : « les
+      tourelles au sol ne le touchent pas ».** *(trouvé et corrigé le
+      2026-09-03, même situation que le 25/08 au 02/09 : les trois cases
+      ci-dessus sont bloquées. Deux tours au sol sur quatre (Cryo-diffuseur,
+      Bobine Tesla, `hitsAir: true` dans gamedata.ts) touchent bel et bien
+      l'Écumeur — seuls la tourelle laser et le mortier ne l'atteignent pas.
+      Le texte, montré par `WaveRadar.tsx` au premier Écumeur de chaque
+      partie, disait le contraire sans nuance et pouvait pousser le joueur à
+      négliger Cryo et Tesla contre les volants. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

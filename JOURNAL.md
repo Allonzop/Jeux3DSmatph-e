@@ -11,6 +11,115 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-03 — Le conseil d'arrivée de l'Écumeur mentait sur les tours qui le touchent
+
+**Ce qui a été trouvé en démarrant.** `claude/bold-brown-ceyd5b` pointait déjà
+sur le même commit qu'`origin/main` (`dc09583`, le correctif du Tesla du
+02/09) : encore une fois la branche précédente avait été fusionnée sans
+travail local en attente. Redémarrée depuis `origin/main`
+(`git checkout -B claude/bold-brown-ceyd5b origin/main`), comme prévu par la
+consigne. `pnpm install` (`node_modules` absent).
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+19 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : `wave.mjs --check` (2/2),
+`smoke.mjs` (5/5), captures `--village`, `--arsenal` (+`--wide`), `--wave 9`,
+`--wave 12`, `--village --wide`, `--empty` — rien de cassé à l'œil nu ni dans
+les vérifications automatiques.
+
+Faute de piste visuelle nouvelle sur ces captures, élargi la recherche :
+scripts Playwright jetables pour regarder ce que `shot.mjs` ne couvre pas
+(onglets Défense/Production/Soutien/Empire du panneau Construire, fiche de
+secteur, fiche du commandant, bannières de victoire/défaite/niveau supérieur).
+Tout était lisible et cohérent — aucun bug trouvé de ce côté. Deux fausses
+pistes explorées et écartées (voir « Essayé sans succès »).
+
+En relisant `enemies.ts` pendant cette recherche, un commentaire mort signalé
+depuis le 31/08 (« Voir `canHit` dans Enemies.tsx », fonction inexistante,
+jamais traité faute de temps trois séances de suite) a mené à relire le champ
+`tip` voisin, **affiché au joueur** par `WaveRadar.tsx` (`Nouveau : {nom} —
+{tip}`) à la première apparition de chaque profil de monstre — pas seulement
+un commentaire de code cette fois.
+
+**Fait**
+
+- `enemies.ts`, profil `ecumeur` : le commentaire mort renvoyant à `canHit`
+  (fonction qui n'existe pas dans `Enemies.tsx`) remplacé par une description
+  correcte du mécanisme réel (`findTargets` dans `Buildings.tsx`, filtré par
+  `hitsAir` de `gamedata.ts`).
+- Le `tip` du même profil, **celui-là bien affiché en jeu** — bannière
+  « Nouveau : Écumeur — … » à la vague 5, capturée avec un script jetable
+  (`waveNumber: 4, waveActive: false`, radar visible sans lancer la vague) —
+  disait « Vole : les tourelles au sol ne le touchent pas. » C'est faux :
+  `gamedata.ts` donne `hitsAir: true` au Cryo-diffuseur et à la Bobine Tesla,
+  deux tours posées au sol. Seules la tourelle laser et le mortier ratent
+  l'Écumeur. Le texte pouvait convaincre un joueur de ne pas investir dans
+  Cryo/Tesla contre les volants, sur une information fausse donnée par le jeu
+  lui-même — pas un problème de rendu 3D cette fois, un problème de contenu.
+  Remplacé par « Vole : la plupart des tours au sol ne l'atteignent pas. »,
+  vrai (2 sur 4) et toujours aussi court.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (le champ `tip` n'entre dans aucun calcul de combat).
+- `node tools/game-check/smoke.mjs` : 5/5.
+- Script Playwright jetable rejouant la bannière radar de la vague 5 (avant
+  puis après le changement, capture d'écran à chaque fois) : « Vole : les
+  tourelles au sol ne le touchent pas. » avant, « Vole : la plupart des tours
+  au sol ne l'atteignent pas. » après, sans débordement ni retour à la ligne
+  supplémentaire dans le cadre `max-w-[68vw]` de la bannière.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png` : identique
+  à avant (l'Écumeur n'apparaît pas dans ce scénario, aucune raison que la
+  capture change).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Le popup de secteur (`ZonePopup`, celui qui montre « Secteur à annexer » et
+  un bouton « Annexer ») ne tient pas compte de `unlockedZones` : appelé sur
+  un secteur déjà possédé via `selectZone(id)` en direct depuis la console, il
+  réaffiche quand même l'écran d'achat (le bouton ne fait rien,
+  `unlockZone` renvoyant `false` sans rien casser). Vérifié que ce n'est pas
+  atteignable en jeu : les deux seuls appelants de `selectZone` avec un id de
+  zone — le tap au sol dans `Ground.tsx` (`ZoneSector`) et le bouton « Voir »
+  de `EmpirePanel` — sont tous les deux gardés par `!unlocked`. Rien à
+  corriger, l'incohérence est un état que le joueur ne peut pas produire.
+- Un petit point ambré est apparu, à des positions légèrement différentes
+  d'une capture à l'autre, juste après le libellé « BRICOLEUR » du bandeau de
+  haut d'écran sur deux captures prises pendant une vague (`--wave 12`, puis
+  une reproduction au script). Vérifié par lecture du DOM
+  (`scrollWidth`/`clientWidth` du span, plusieurs niveaux et titres jusqu'à
+  22 caractères) qu'aucune troncature ne se produit jamais sur ce libellé — le
+  texte affiché est exactement `Bricoleur`, sans caractère en trop. Une
+  capture prise hors combat au même endroit (`outcome_victoire.png`) montre le
+  même point, mais visiblement détaché du texte, à sa droite, dans le ciel
+  étoilé du décor : c'est une étoile du fond de scène qui passe par hasard à
+  cet endroit de l'écran selon la caméra, pas un élément d'interface. Ne pas
+  ré-instruire ce fil : le DOM ne truque rien ici.
+- `node tools/game-check/smoke.mjs` a dépassé une fois le délai de 120 s
+  du terminal en cours de séance (aucune erreur, juste plus long que la
+  fenêtre par défaut) : relancé en tâche de fond avec un délai de 180 s,
+  terminé normalement à 5/5. Pas un bug du script, juste une variance de
+  temps de rendu logiciel d'une exécution à l'autre — au besoin, relancer
+  avec plus de marge plutôt que conclure à un échec depuis un timeout de
+  terminal.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Les six autres profils de monstre (`enemies.ts`) n'ont pas été relus pour
+  d'éventuels `tip` erronés du même genre — seul l'Écumeur a été vérifié,
+  parce que c'est lui qui a mené à cette découverte. Une relecture complète
+  des sept `tip` face au comportement réel de chaque profil serait rapide et
+  n'a pas été faite faute de temps.
+
 ## 2026-09-02 — L'arc du Tesla ignorait aussi l'altitude des monstres volants
 
 **Ce qui a été trouvé en démarrant.** `origin/claude/bold-brown-mr9xym`
