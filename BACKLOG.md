@@ -292,6 +292,17 @@ traités, voir plus haut.
       partie, disait le contraire sans nuance et pouvait pousser le joueur à
       négliger Cryo et Tesla contre les volants. Voir JOURNAL.md.)*
 
+- [x] **La fiche de la Ferme ment : « la seule source régulière de matière
+      floue ».** *(trouvé et corrigé le 2026-09-04, même situation que le
+      25/08 au 03/09 : les trois cases ci-dessus sont bloquées. Au moins cinq
+      autres sources régulières existent : le gisement de base du plateau
+      (`ResourceNodes.tsx`), les gisements des secteurs Toundra de Givre et
+      Jungle de Spores une fois annexés (`zones.ts`), la récompense de chaque
+      vague gagnée à partir de la vague 2 (`gamedata.ts`), la récompense de
+      chaque montée de niveau du commandant paire (`progress.ts`), et le
+      déblaiement d'une géode (`DECOR_REWARD.crystal` dans `store.ts`). Voir
+      JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

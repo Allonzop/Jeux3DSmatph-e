@@ -11,6 +11,113 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-04 — La fiche de la Ferme mentait sur l'exclusivité de la matière floue
+
+**Ce qui a été trouvé en démarrant.** Même piège que le 27/08, le 29/08, le
+31/08 et le 01/09 : la séance du 03/09 avait committé
+(`897b17c`, le correctif du conseil de l'Écumeur) sans jamais pousser —
+`origin/claude/bold-brown-a9lyxv` n'existait pas côté distant. Poussé en tout
+premier (`git push -u origin claude/bold-brown-a9lyxv`), puis vérifié en
+boucle avec `git merge-base --is-ancestor 897b17c origin/main` jusqu'à
+réponse vraie (une quarantaine de secondes) : le commit du 03/09 est passé
+dans `main` avant de commencer le travail du jour. Rebranché ensuite sur
+`origin/main` (`git checkout -B claude/bold-brown-a9lyxv origin/main`), comme
+prévu par la consigne pour ce cas.
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+20 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : `pnpm install` (`node_modules`
+absent), `pnpm run typecheck` (passe), `node tools/game-check/wave.mjs
+--check` (2/2), `node tools/game-check/smoke.mjs` (5/5), captures
+`--village`, `--arsenal`, `--arsenal --wide`, `--village --wide`, `--wave 9`,
+`--wave 12`, `--empty` — rien de cassé à l'œil nu. Zoomé (Pillow, réinstallé
+— absent de l'environnement) sur l'enseigne du Bar (déjà des anneaux plats
+concentriques, correctif du 01/09 toujours bon) et sur plusieurs tuiles de
+`--arsenal --wide` : rien de nouveau côté rendu 3D.
+
+Faute de piste visuelle nouvelle, même démarche que le 03/09 : relecture des
+textes affichés au joueur plutôt que du rendu. Les sept `tip` de monstres
+(`enemies.ts`, signalés comme non relus dans le « reste ouvert » du 03/09)
+se sont révélés corrects un par un, vérifiés contre le code réel (vitesse,
+pv, dégâts au noyau, mécanisme de soin/invisibilité). En élargissant aux
+`blurb` des bâtiments (même mécanisme d'affichage, `BuildSheet.tsx` et
+`BuildingPopup.tsx`), la fiche de la Ferme prétend être « la seule source
+régulière de matière floue, la ressource des tours ».
+
+**Fait**
+
+- Vérifié par lecture de code plutôt que supposé : au moins cinq autres
+  sources régulières de matière floue existent en dehors de la Ferme — le
+  gisement de base du plateau (`ResourceNodes.tsx`, `NODES`, 2 unités toutes
+  les 14 s, disponible dès le début de partie, aucune zone requise), les
+  gisements des secteurs Toundra de Givre et Jungle de Spores une fois
+  annexés (`zones.ts`, `node: { resource: 'matiere_floue', ... }`), la
+  récompense de chaque vague gagnée à partir de la vague 2
+  (`gamedata.ts`, `reward.matiere_floue = scale((wave - 1) * 3)`), la
+  récompense d'une montée de niveau de commandant paire
+  (`progress.ts`, `if (level % 2 === 0) reward.matiere_floue = ...`), et le
+  déblaiement d'une géode (`DECOR_REWARD.crystal` dans `store.ts`, +2). La
+  Ferme reste la source la plus généreuse en continu (jusqu'à 1/s au niveau
+  4, contre des gains ponctuels ou espacés ailleurs), mais « la seule » est
+  une affirmation fausse montrée au joueur — dans le même esprit que le
+  conseil erroné de l'Écumeur corrigé le 03/09, une fiche de bâtiment plutôt
+  qu'un conseil de vague cette fois.
+- `gamedata.ts`, bâtiment `ferme` : blurb remplacé par « La source la plus
+  fiable de matière floue, la ressource des tours. » — garde l'information
+  utile (c'est la meilleure option pour cette ressource) sans revendiquer une
+  exclusivité fausse.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (le champ `blurb` n'entre dans aucun calcul).
+- `node tools/game-check/smoke.mjs` : 5/5.
+- Script Playwright jetable (panneau Construire ouvert, texte extrait du DOM
+  puis capture d'écran) : le nouveau texte s'affiche sur une seule ligne,
+  sans débordement ni retour à la ligne supplémentaire, cohérent avec les
+  fiches voisines (Hutte, Marché) dans le même panneau. Script et capture non
+  gardés dans le dépôt.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png` : identique
+  à avant (le panneau Construire n'est pas ouvert dans ce scénario, aucune
+  raison que la capture change).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté sur le fond. Deux fils explorés puis abandonnés faute de bug
+  réel : le commentaire de code (pas affiché au joueur) de `gamedata.ts`
+  au-dessus de `tourelle` (« le tesla est le seul, avec le heros, a
+  atteindre les monstres volants ») reste imprécis pour la même raison que
+  relevée le 31/08 (le Cryo touche aussi les volants, juste avec moins de
+  dégâts) — mais ce n'est qu'un commentaire de code, jamais montré au joueur,
+  contrairement au `blurb` de la Ferme ; pas traité cette séance, priorité
+  donnée à un texte réellement visible en jeu. Le bombeur (`enemies.ts`, tip
+  « dégâts doublés au contact ») a un multiplicateur `breach: 1.9`, pas
+  exactement 2 — mais le commentaire de code au-dessus le dit déjà lui-même
+  (« degats au noyau presque doubles ») et l'écart est trop faible pour
+  induire une vraie décision de jeu erronée, contrairement au « la seule
+  source » de la Ferme qui était factuellement faux et vérifiable en
+  quelques lignes de recherche.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le commentaire de code imprécis sur le Tesla (voir « essayé sans succès »)
+  n'est toujours pas corrigé — invisible au joueur, donc de peu d'urgence,
+  mais à corriger si une séance future retouche `gamedata.ts` près de la
+  section des tours.
+- Les `blurb` des autres bâtiments (Hutte, Bar, Antenne, Marché, tours) ont
+  été lus en passant pendant cette recherche mais pas vérifiés un par un
+  contre le code aussi systématiquement que celui de la Ferme — aucune autre
+  affirmation d'exclusivité (« la seule », « le seul ») trouvée parmi eux,
+  mais une relecture complète et ciblée n'a pas été faite faute de temps.
+
 ## 2026-09-03 — Le conseil d'arrivée de l'Écumeur mentait sur les tours qui le touchent
 
 **Ce qui a été trouvé en démarrant.** `claude/bold-brown-ceyd5b` pointait déjà

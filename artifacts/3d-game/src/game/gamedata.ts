@@ -231,7 +231,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     name: 'Ferme',
     color: '#57cc99',
     role: 'production',
-    blurb: 'La seule source régulière de matière floue, la ressource des tours.',
+    blurb: 'La source la plus fiable de matière floue, la ressource des tours.',
     maxLevel: 4,
     maxInstances: 2,
     footprint: 1.35,
