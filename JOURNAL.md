@@ -11,6 +11,110 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-05 — La fiche de la Hutte mentait sur la production hors ligne
+
+**Ce qui a été trouvé en démarrant.** `HEAD`, `origin/main` et
+`origin/claude/bold-brown-d7cjej` pointaient tous les trois sur le même
+commit (`9938430`, le correctif du blurb de la Ferme du 04/09) : le travail
+de la veille était déjà fusionné, rien à rattraper cette fois. Rebranché
+depuis `origin/main` (`git checkout -B claude/bold-brown-d7cjej
+origin/main`), comme prévu par la consigne pour ce cas. `pnpm install`
+(`node_modules` absent).
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+21 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : `pnpm run typecheck` (passe),
+`node tools/game-check/wave.mjs --check` (2/2), `node
+tools/game-check/smoke.mjs` (5/5), captures `--village`, `--arsenal`
+(+`--wide`), `--wave 9`, `--wave 12`, `--village --wide`, `--empty` —
+zoomées (Pillow, réinstallé — absent de l'environnement) sur l'enseigne du
+Bar et la tour en spirale de l'Antenne : rien de nouveau côté rendu 3D,
+tout cohérent avec les correctifs déjà en place.
+
+Faute de piste visuelle nouvelle, même démarche que le 03/09 et le 04/09 :
+relecture des textes affichés au joueur, en reprenant le fil laissé ouvert
+le 04/09 (« les `blurb` des autres bâtiments... pas vérifiés un par un »).
+Les dix `blurb` de `gamedata.ts` relus un par un contre le code réel. Neuf
+corrects. Celui de la Hutte, premier bâtiment du jeu et le plus lu par tout
+nouveau joueur, affirme « Produit des boulons en continu, même jeu
+fermé. » — une promesse de production hors ligne, courante dans les jeux
+d'incrémentation (Clash of Clans compris, cité dans le compte-rendu
+d'Allonzo du 15/08), mais vérifiable et fausse ici.
+
+**Fait**
+
+- Vérifié par lecture de code plutôt que supposé : la production passive
+  (Hutte, Ferme, Marché) est appliquée par `PassiveTicker` dans
+  `GameCanvas.tsx`, un `setInterval(…, 1000)` posé dans un `useEffect` du
+  composant racine du jeu. Ce minuteur ne tourne que pendant que l'onglet du
+  jeu est ouvert et monté — fermer l'onglet ou l'application arrête le
+  `setInterval` comme n'importe quel minuteur JavaScript, il ne continue pas
+  en arrière-plan. Cherché aussi un éventuel rattrapage au rechargement
+  (horodatage sauvegardé, calcul du temps écoulé depuis la dernière visite) :
+  aucun — `store.ts` ne persiste que `resources`, `buildingLevels`,
+  `buildingPositions` et `tutorialStep` (`partialize`), rien d'un instant de
+  dernière sauvegarde, et `migrate` ne fait que renommer d'anciens champs,
+  sans jamais ajouter de production hors ligne. Aucun `serviceWorker` ni
+  écouteur `visibilitychange` lié à la production nulle part dans
+  `artifacts/3d-game/src` (le seul `visibilitychange` trouvé, dans
+  `Joystick.tsx`, ne fait que réinitialiser le joystick au changement d'onglet).
+  « Même jeu fermé » est donc une affirmation fausse montrée au joueur dès
+  la toute première carte du panneau Construire — dans le même esprit que
+  le conseil erroné de l'Écumeur (03/09) et la fiche de la Ferme (04/09),
+  cette fois sur le tout premier bâtiment que voit un joueur.
+- `gamedata.ts`, bâtiment `hutte` : blurb remplacé par « Produit des boulons
+  en continu tant que la partie est ouverte. Un villageois vient s'y
+  installer. » — garde l'information utile (production continue, pas
+  seulement au clic) sans revendiquer une continuité hors ligne fausse.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (le champ `blurb` n'entre dans aucun calcul).
+- `node tools/game-check/smoke.mjs` : 5/5.
+- Script Playwright jetable réutilisant `tools/game-check/build.mjs` et
+  `lib.mjs` (panneau Construire ouvert, onglet Production sélectionné,
+  texte extrait du DOM puis capture d'écran) : le nouveau texte s'affiche
+  sur deux lignes dans la carte de la Hutte, sans déborder ni casser la
+  mise en page, cohérent avec les cartes voisines (Ferme, Marché) dans le
+  même panneau. Script et capture non gardés dans le dépôt.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png` :
+  identique à avant (le panneau Construire n'est pas ouvert dans ce
+  scénario, aucune raison que la capture change).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté sur le fond. Les neuf autres `blurb` relus un par un contre le
+  code réel (Ferme, Bar, Antenne, Marché, tourelle laser, mortier,
+  cryo-diffuseur, bobine Tesla, noyau de cristal) : tous corrects, y compris
+  la formulation « la seule tour qui abat les volants » de la Bobine Tesla,
+  déjà examinée et volontairement laissée telle quelle le 31/08 (nuance
+  entre « atteindre » et « abattre », pas une erreur factuelle). Aucune
+  nouvelle affirmation douteuse trouvée parmi eux cette fois — la relecture
+  complète laissée en suspens le 04/09 est maintenant faite.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le commentaire de code imprécis sur le Tesla (« le tesla est le seul, avec
+  le heros, a atteindre les monstres volants », signalé le 04/09 et avant)
+  n'est toujours pas corrigé — invisible au joueur, donc de peu d'urgence,
+  mais à corriger si une séance future retouche `gamedata.ts` près de la
+  section des tours.
+- La relecture des dix `blurb` de bâtiments est maintenant complète et n'a
+  rien trouvé d'autre. Il reste d'autres textes affichés au joueur non
+  passés en revue systématiquement de la même façon : les fiches de secteur
+  (`zones.ts`), les descriptions de pouvoirs du héros et les textes des
+  onglets Empire/Soutien du panneau Construire — pistes à essayer si une
+  future séance manque à nouveau de bug visuel.
+
 ## 2026-09-04 — La fiche de la Ferme mentait sur l'exclusivité de la matière floue
 
 **Ce qui a été trouvé en démarrant.** Même piège que le 27/08, le 29/08, le

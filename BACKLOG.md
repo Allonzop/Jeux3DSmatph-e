@@ -303,6 +303,13 @@ traités, voir plus haut.
       déblaiement d'une géode (`DECOR_REWARD.crystal` dans `store.ts`). Voir
       JOURNAL.md.)*
 
+- [x] **La fiche de la Hutte ment : « même jeu fermé ».** *(trouvé et corrigé
+      le 2026-09-05, même situation que le 25/08 au 04/09 : les trois cases
+      ci-dessus sont bloquées. La production passive tourne sur un
+      `setInterval` monté avec le composant React du jeu (`GameCanvas.tsx`,
+      `PassiveTicker`) : rien ne s'accumule hors ligne, aucun mécanisme de
+      rattrapage au chargement n'existe. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

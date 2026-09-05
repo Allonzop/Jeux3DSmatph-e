@@ -208,7 +208,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     name: 'Hutte',
     color: '#f4a261',
     role: 'production',
-    blurb: 'Produit des boulons en continu, même jeu fermé. Un villageois vient s’y installer.',
+    blurb: 'Produit des boulons en continu tant que la partie est ouverte. Un villageois vient s’y installer.',
     maxLevel: 5,
     maxInstances: 3,
     footprint: 1.6,
