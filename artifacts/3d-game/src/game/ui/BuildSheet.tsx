@@ -278,9 +278,7 @@ function CoreCard() {
           </span>
         </div>
         <p className="text-white/55 text-[0.72rem] leading-snug mt-0.5">
-          {maxed
-            ? 'Renforcement maximal atteint.'
-            : `Encaisse ${coreLevel + 1} monstre${coreLevel > 0 ? 's' : ''} de plus par vague.`}
+          {maxed ? 'Renforcement maximal atteint.' : 'Encaisse un monstre de plus par vague.'}
         </p>
         {!maxed && <div className="mt-1.5"><CostRow cost={cost} /></div>}
       </div>

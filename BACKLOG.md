@@ -310,6 +310,14 @@ traités, voir plus haut.
       `PassiveTicker`) : rien ne s'accumule hors ligne, aucun mécanisme de
       rattrapage au chargement n'existe. Voir JOURNAL.md.)*
 
+- [x] **La carte du Noyau de cristal exagère le gain des paliers 2 et 3.**
+      *(trouvé et corrigé le 2026-09-06, même situation que le 25/08 au
+      05/09 : les trois cases ci-dessus sont bloquées. Le texte affichait
+      « Encaisse {rang+1} monstres de plus par vague », donc 1 puis 2 puis 3
+      à mesure des achats — alors que `coreBreachDamage` (`gamedata.ts`)
+      n'accorde jamais qu'un seul monstre de tolérance par palier, quel que
+      soit le rang déjà atteint. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

@@ -11,6 +11,128 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-06 — Un push oublié récupéré, et la carte du Noyau exagérait le gain des paliers 2 et 3
+
+**Ce qui a été trouvé en démarrant.** Même piège que le 27/08 au 01/09 :
+`HEAD` portait un commit (`a36d8c5`, le correctif du blurb de la Hutte du
+09-05, déjà documenté fait et vérifié dans `BACKLOG.md`/`JOURNAL.md`) jamais
+poussé — `origin/claude/bold-brown-c5al8s` n'existait même pas côté distant.
+Poussé en tout premier (`git push -u origin claude/bold-brown-c5al8s`), puis
+vérifié en boucle avec `git merge-base --is-ancestor a36d8c5 origin/main`
+jusqu'à réponse vraie (une dizaine de secondes) : le commit du 09-05 est
+passé dans `main` avant de commencer le travail du jour. Rebranché ensuite
+sur `origin/main` (`git checkout -B claude/bold-brown-c5al8s origin/main`),
+comme prévu par la consigne pour ce cas. `pnpm install` (`node_modules`
+absent).
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+22 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : `pnpm run typecheck` (passe),
+`node tools/game-check/wave.mjs --check` (2/2), `node
+tools/game-check/smoke.mjs` (5/5), captures `--village`, `--arsenal`
+(+`--wide`), `--village --wide`, `--wave 9`, `--wave 12`, `--empty` —
+zoomées (Pillow, réinstallé — absent de l'environnement) sur l'enseigne du
+Bar, la tour de l'Antenne, la Ferme et deux monstres à aura visibles en
+vague 12 (des cercles orange translucides superposés autour d'un profil de
+monstre — soigneur, effet de zone déjà connu et voulu, pas un artefact) :
+rien de nouveau côté rendu 3D.
+
+Faute de piste visuelle nouvelle, même démarche que le 03/09 au 05/09 :
+relecture des textes affichés au joueur plutôt que du rendu, en reprenant le
+fil laissé ouvert le 09-05 (« les fiches de secteur, les descriptions de
+pouvoirs du héros et les textes des onglets Empire/Soutien... pistes à
+essayer »). Les quatre `blurb` de zones (`zones.ts`) et les cinq blurbs de
+pistes/pouvoirs du héros (`hero.ts`, trois pistes + deux pouvoirs actifs)
+relus un par un contre le code réel : tous corrects (vérifié notamment que
+`SURCHARGE_FACTOR = 2` et `duration: 8` correspondent bien à « Double les
+dégâts du héros pendant huit secondes », et que les valeurs `towerDamage`,
+`enemySlow`, `loot`, `hunters` de chaque zone correspondent aux libellés
+`bonus.label`). L'onglet « Soutien » cité le 09-05 n'existe pas sous ce nom
+— c'est un rôle de bâtiment (`ROLE_LABEL.soutien`, une des trois familles de
+l'onglet Construire), déjà couvert par la relecture des dix `blurb` de
+bâtiments le 09-05.
+
+En élargissant à `BuildSheet.tsx` (le panneau qui affiche tous ces textes),
+la carte du Noyau de cristal, en tête de l'onglet Défense, affiche `Encaisse
+${coreLevel + 1} monstre${coreLevel > 0 ? 's' : ''} de plus par vague.` —
+un nombre qui grossit à chaque achat (1, puis 2, puis 3 aux rangs 0, 1, 2).
+
+**Fait**
+
+- Vérifié par lecture de code : `coreBreachDamage` (`gamedata.ts`) calcule
+  `survivable = Math.floor(enemyCount / 2) + coreLevel`. Chaque achat de
+  `upgradeCore` (`store.ts`) ne fait que `coreLevel + 1` : la tolérance
+  gagnée par un achat est donc toujours exactement +1, quel que soit le rang
+  de départ — passer de 0 à 1 ajoute 1 monstre de tolérance, tout comme
+  passer de 1 à 2 ou de 2 à 3. Le commentaire au-dessus de la formule le dit
+  lui-même explicitement : « chaque cran lui accorde un monstre de tolerance
+  en plus », et plus loin « un monstre de tolerance en plus ... "le noyau
+  encaisse un monstre de plus" ». Le texte affiché (`coreLevel + 1`)
+  décrivait en réalité le gain *cumulé* depuis le rang 0, pas le gain de
+  l'achat en cours — au rang 1, le bouton « Renforcer » promettait « 2
+  monstres de plus » alors que l'achat n'en apporte qu'un seul de plus que
+  l'état actuel du joueur. Un joueur au rang 1 ou 2 payait donc un prix
+  croissant (`coreUpgradeCost`, jusqu'à ×5,8 en boulons du rang 0 au rang 2)
+  pour un texte qui laissait croire à un gain croissant, alors que le gain
+  réel par achat est plat.
+- `BuildSheet.tsx`, `CoreCard` : texte remplacé par une phrase constante,
+  « Encaisse un monstre de plus par vague. », qui ne dépend plus de
+  `coreLevel` — exactement la formulation que le commentaire de
+  `gamedata.ts` annonçait déjà comme l'intention d'origine.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (le texte de la carte n'entre dans aucun calcul).
+- `node tools/game-check/smoke.mjs` : 5/5.
+- Script Playwright jetable (`core_check.mjs`, non gardé dans le dépôt) :
+  ouvre le panneau Construire, onglet Défense, lit le texte de la carte du
+  Noyau et achète trois renforcements de suite en relisant le texte à
+  chaque rang. Avant le correctif (vérifié en remettant temporairement
+  l'ancien calcul) : « Encaisse 1 monstre... » puis « Encaisse 2
+  monstres... » puis « Encaisse 3 monstres... ». Après : « Encaisse un
+  monstre de plus par vague. » aux trois rangs, capture d'écran à l'appui —
+  sur une seule ligne, sans débordement, cohérent avec les cartes de tours
+  voisines dans le même onglet.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png` :
+  identique à avant (le panneau Construire n'est pas ouvert dans ce
+  scénario, aucune raison que la capture change).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté sur le fond. Une piste explorée puis classée sans suite :
+  deux monstres visibles en vague 12 (`--wave 12`) portaient chacun un halo
+  orange translucide qui se chevauchait — inquiétant au premier regard,
+  mais confirmé être l'effet de zone d'un profil connu (soigneur, voir
+  `enemies.ts`) plutôt qu'un artefact de rendu ; pas un bug.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le commentaire de code imprécis sur le Tesla (« le tesla est le seul, avec
+  le heros, a atteindre les monstres volants », signalé depuis le 31/08)
+  n'est toujours pas corrigé — invisible au joueur, donc de peu d'urgence.
+- Les blurbs de zones, pistes et pouvoirs du héros sont maintenant relus et
+  corrects. Textes affichés au joueur encore non passés en revue
+  systématiquement de la même façon : les tips de montée de niveau
+  (`LevelUp.tsx`), le contenu détaillé de `EmpirePanel`/`ZonePopup` au-delà
+  des `blurb` de zone déjà vérifiés (promesses de la « deuxième planète »,
+  texte des paliers de commandant), et les textes d'erreur/désactivé des
+  boutons (« Complet », etc.) — pistes à essayer si une future séance manque
+  à nouveau de bug visuel.
+- Le piège du push oublié continue de se reproduire quasi systématiquement
+  (27/08, 29/08, 31/08, 01/09, et maintenant 09-05→09-06) : la vérification
+  en tout début de séance (`merge-base --is-ancestor` en boucle) reste la
+  parade qui marche à chaque fois qu'elle est appliquée, donc toujours la
+  faire avant tout autre travail.
+
 ## 2026-09-05 — La fiche de la Hutte mentait sur la production hors ligne
 
 **Ce qui a été trouvé en démarrant.** `HEAD`, `origin/main` et
