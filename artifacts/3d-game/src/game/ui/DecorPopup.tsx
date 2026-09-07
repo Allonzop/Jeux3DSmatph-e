@@ -77,8 +77,18 @@ export function DecorPopup() {
                 if (pos) {
                   const y = surfaceY(pos[0], pos[2]);
                   spawnBurst(pos[0], y + 0.5, pos[2], '#c29d72', 1.2, 0.5);
+                  // Une géode rapporte boulons *et* matière floue : un seul
+                  // chiffre flottant sur les boulons faisait croire que le
+                  // reste du gain (affiché sur ce bouton juste avant le clic)
+                  // s'était volatilisé. Un chiffre par ressource réellement
+                  // gagnée — empilés verticalement, pas côte à côte : le
+                  // jitter horizontal (9 px) ne suffit pas à séparer deux
+                  // nombres à deux chiffres, ils se superposent en bouillie.
                   const gain = DECOR_REWARD[kind];
-                  spawnPopup(pos[0], y + 1.5, pos[2], `+${gain.boulons ?? 0}`, 'resource');
+                  let stack = 0;
+                  for (const [, val] of Object.entries(gain) as [ResourceType, number][]) {
+                    if (val > 0) spawnPopup(pos[0], y + 1.5 + stack++ * 0.7, pos[2], `+${val}`, 'resource');
+                  }
                 }
               }}
               className="mt-3 w-full py-2.5 rounded-xl bg-amber-400 text-black font-black uppercase tracking-wider text-[0.75rem] active:scale-[0.98] transition-transform shadow-[0_3px_0_#b45309] flex items-center justify-center gap-2"

@@ -318,6 +318,11 @@ traités, voir plus haut.
       n'accorde jamais qu'un seul monstre de tolérance par palier, quel que
       soit le rang déjà atteint. Voir JOURNAL.md.)*
 
+- [x] **Le chiffre flottant du déblayage d'une géode ne montrait que les
+      boulons, jamais la matière floue.** *(trouvé et corrigé le 2026-09-07,
+      même situation que le 25/08 au 06/09 : les trois cases ci-dessus sont
+      bloquées. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

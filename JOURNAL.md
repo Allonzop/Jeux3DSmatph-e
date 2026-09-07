@@ -11,6 +11,110 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-07 — Le déblayage d'une géode ne montrait jamais le gain de matière floue
+
+**Ce qui a été trouvé en démarrant.** `HEAD` local, `origin/main` et la
+branche de la veille (`5b400b7`, le correctif de la carte du Noyau du 09-06)
+pointaient déjà tous les trois sur le même commit — vérifié avec `git fetch
+origin main` puis `git merge-base --is-ancestor 5b400b7 origin/main` (vrai
+immédiatement) : rien à rattraper cette fois, contrairement à la plupart des
+séances précédentes. `pnpm install` (`node_modules` absent).
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+23 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : `pnpm run typecheck` (passe),
+`node tools/game-check/wave.mjs --check` (2/2), `node
+tools/game-check/smoke.mjs` (5/5), captures `--village`, `--arsenal`
+(+`--wide`), `--wave 9`, `--wave 12` — zoomées (Pillow, réinstallé) sur
+l'enseigne du Bar, le rayon du héros contre l'Écumeur en vague 9 (monte bien
+jusqu'à son altitude de vol, correctif du 30/08 toujours bon) et les
+monstres de vague 12 : rien de nouveau côté rendu 3D.
+
+Faute de piste visuelle nouvelle, même démarche que le 03/09 au 06/09 :
+recherche d'un texte ou d'un affichage qui décrit mal ce que fait vraiment
+le jeu. Élargi cette fois au-delà des `blurb`/`tip`/`effect` déjà relus
+(tous corrects, voir les séances précédentes) vers les *chiffres flottants*
+que le jeu fait apparaître dans la scène 3D à chaque gain de ressource
+(`effects.ts`, `spawnPopup`). `DecorPopup.tsx` (le bandeau de déblayage d'un
+arbre/rocher/buisson/champignon/géode) n'affichait que
+`` `+${gain.boulons ?? 0}` `` après le clic sur « Déblayer » — alors que le
+bouton, juste avant le clic, montre bien les deux ressources d'une géode
+(`DECOR_REWARD.crystal = { boulons: 10, matiere_floue: 2 }`, voir la séance
+du 04/09). Le joueur voyait donc la promesse des deux gains sur le bouton,
+payait le même geste, et ne voyait plus qu'un seul chiffre apparaître dans
+le monde — la matière floue gagnée restait invisible hors du HUD en haut de
+l'écran, silencieusement.
+
+**Fait**
+
+- `DecorPopup.tsx` : la boucle sur `Object.entries(gain)` fait apparaître un
+  chiffre flottant par ressource réellement gagnée (`val > 0`), et non plus
+  seulement les boulons. Les quatre autres décors (arbre, rocher, buisson,
+  champignon) ne rapportent qu'une seule ressource chacun (voir
+  `DECOR_REWARD` dans `store.ts`) : pour eux le changement ne change rien à
+  l'écran, seule la géode (boulons + matière floue) était concernée.
+- Premier essai : les deux chiffres à la même hauteur, décalés seulement par
+  le `jitter` horizontal existant (± 27 px, prévu pour « deux chiffres
+  simultanés ne se superposent pas », voir `effects.ts`). Vérifié à l'écran
+  (script Playwright jetable, capture juste après le clic) : `+10` et `+2`
+  se chevauchent presque entièrement, illisibles l'un sur l'autre — le
+  jitter suffit à séparer deux chiffres à un ou deux chiffres qui bougent
+  chacun leur tour, pas deux chiffres qui naissent au même instant au même
+  endroit. Corrigé en empilant verticalement (décalage de 0,7 unité de
+  monde par ressource, en plus du `y + 1.5` d'origine) plutôt qu'en comptant
+  sur le jitter horizontal seul. Revérifié : `+2` et `+10` lisibles l'un
+  au-dessus de l'autre sur la capture.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (le déblayage de décor n'entre dans aucun calcul de
+  vague).
+- `node tools/game-check/smoke.mjs` : 5/5.
+- Script Playwright jetable (non gardé dans le dépôt) : sauvegarde avec
+  ressources à zéro, `window.__villageStore.getState().selectDecor
+  ('crystal-0')` pour ouvrir le bandeau sans dépendre du raycasting 3D,
+  clic direct sur le bouton DOM « Déblayer » (le sélecteur texte Playwright
+  ne déclenchait pas le clic à travers l'animation framer-motion — clic DOM
+  direct sur l'élément à la place). Resources avant/après lues dans le
+  store : `boulons 500→510`, `matiere_floue 0→2`, conforme à
+  `DECOR_REWARD.crystal`. Capture d'écran prise juste après le clic : les
+  deux chiffres `+10` et `+2` visibles et lisibles, empilés verticalement.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png` :
+  identique à avant (le bandeau de déblayage n'est pas ouvert dans ce
+  scénario, aucune raison que la capture change).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Le premier correctif (jitter horizontal seul, sans décalage vertical)
+  fonctionnait au sens où les deux ressources étaient bien créditées et les
+  deux popups bien créés, mais produisait un nouveau défaut visuel
+  (chiffres superposés illisibles) — capturé à l'écran avant d'être
+  remplacé par l'empilement vertical, voir « Fait » ci-dessus. Ne pas
+  réutiliser le jitter horizontal seul pour deux popups nés au même instant
+  et à la même position : il n'écarte que des popups déjà en mouvement à
+  des instants différents.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le commentaire de code imprécis sur le Tesla (signalé depuis le 31/08)
+  n'est toujours pas corrigé — invisible au joueur, donc de peu d'urgence.
+- Les chiffres flottants d'autres sources multi-ressources n'ont pas été
+  passés en revue systématiquement au-delà de la géode : la récompense de
+  victoire de vague et la montée de niveau de commandant utilisent des
+  panneaux dédiés (pas `spawnPopup` dans la scène 3D d'après une recherche
+  rapide), donc probablement pas concernés par le même défaut, mais pas
+  vérifié ligne à ligne — piste à essayer si une future séance manque à
+  nouveau de bug visuel.
+
 ## 2026-09-06 — Un push oublié récupéré, et la carte du Noyau exagérait le gain des paliers 2 et 3
 
 **Ce qui a été trouvé en démarrant.** Même piège que le 27/08 au 01/09 :
