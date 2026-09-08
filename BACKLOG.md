@@ -323,6 +323,11 @@ traités, voir plus haut.
       même situation que le 25/08 au 06/09 : les trois cases ci-dessus sont
       bloquées. Voir JOURNAL.md.)*
 
+- [x] **Le conseil d'arrivée du Bombeur exagère ses dégâts au noyau : « dégâts
+      doublés ».** *(trouvé et corrigé le 2026-09-08, même situation que le
+      25/08 au 07/09 : les trois cases ci-dessus sont bloquées. Voir
+      JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

@@ -136,7 +136,7 @@ export const ENEMY_TYPES: Record<EnemyKind, EnemyType> = {
   bombeur: {
     kind: 'bombeur',
     name: 'Bombeur',
-    tip: 'Explose au contact : dégâts doublés sur le cristal.',
+    tip: 'Explose au contact : dégâts presque doublés sur le cristal.',
     hp: 1.1,
     speed: 0.9,
     breach: 1.9,

@@ -11,6 +11,157 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-08 — Un triple push oublié récupéré, le conseil du Bombeur exagérait ses dégâts, et un vrai bug de caméra trouvé dans les zones annexées (non traité)
+
+**Ce qui a été trouvé en démarrant.** Piège habituel, en pire cette fois :
+`HEAD` local portait trois commits jamais poussés (05/09 « blurb de la Hutte »,
+06/09 « carte du Noyau », 07/09 « déblayage de géode »), tous déjà documentés
+faits et vérifiés dans `BACKLOG.md`/`JOURNAL.md` mais absents d'`origin` —
+`git fetch origin claude/bold-brown-0rjjh3` répondait même « couldn't find
+remote ref ». Poussé en tout premier (`git push -u origin
+claude/bold-brown-0rjjh3`), puis vérifié avec `git merge-base --is-ancestor
+e701ae9 origin/main` en boucle jusqu'à réponse vraie (une dizaine de
+secondes) : les trois commits sont bien passés dans `main` avant de commencer
+le travail du jour. Rebranché ensuite sur `origin/main`, comme prévu par la
+consigne. `pnpm install` (`node_modules` absent).
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+24 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : `pnpm run typecheck` (passe),
+`node tools/game-check/wave.mjs --check` (2/2), captures `--village`,
+`--arsenal`, `--wave 9` — rien de cassé à l'œil nu.
+
+**Une piste sérieuse explorée puis mise de côté : la caméra dans les zones
+annexées.** En rejouant la suggestion laissée ouverte le 06/09 et le 07/09
+(revoir l'onglet Empire, les secteurs annexés, tout ce que `shot.mjs` ne
+couvre jamais puisqu'aucun de ses scénarios ne construit dans une zone), un
+script Playwright jetable a téléporté le héros dans chacun des quatre
+secteurs (`window.__villageStore.setState({ heroPos: [...] })`, avec
+`unlockedZones` forcé à `true` pour les quatre). Trois zones (Cendres,
+Givre, Spores) se sont bien affichées, décor du bon biome inclus. La
+quatrième — **Dunes Dorées, au sud (angle 270°, z négatif)** — a toujours
+montré la vue par défaut du village, jamais le héros ni le sable doré,
+quelle que soit l'attente (testé jusqu'à 9 s, très au-delà des 30 s de
+`SETTLE_MS` habituels).
+
+Diagnostiqué par lecture de `Camera.tsx` puis confirmé en exposant
+temporairement `window.__cameraDebug` (retiré avant le commit, jamais gardé
+dans le dépôt) : la caméra calcule sa cible comme `heroPos + rotation(yaw) ×
+(0, 13.5, 13)` — un décalage **fixe en Z du monde**, tourné seulement par la
+boussole manuelle (`cameraControl.yaw`), jamais par la position du héros
+lui-même. À yaw 0 (par défaut), `target.z = heroPos.z + 13` : pour un héros
+au sud (z négatif), plus il s'éloigne, plus `target.z` se rapproche de zéro
+puis le dépasse — au lieu de suivre le héros vers l'extérieur comme pour les
+trois autres directions (où `heroPos + 13` s'éloigne d'autant plus de
+l'origine que le héros s'éloigne). Concrètement, pour Dunes Dorées (rayon
+19, sud), la caméra confirmée par le debug retombait en `(0, 5.26, -5.98)`
+— **à l'intérieur même du village de départ**, à hauteur des toits, avec le
+regard qui traverse la Ferme (postée en `(0, 0, -4.4)`) presque exactement
+sur la ligne de mire, au lieu d'être positionnée dans la zone aux côtés du
+héros. D'où l'écran figé sur la vue du village : la caméra n'a jamais
+vraiment bougé, elle est restée coincée entre les bâtiments.
+
+Vérifié que ce n'est pas propre aux zones : le même calcul dégénère déjà
+dans le plateau de base (avant toute zone), dès que le héros descend sous
+z ≈ −13 sans tourner la caméra — `target.z` devient nul ou négatif, la
+caméra se retrouve au-dessus du cristal ou plus au sud que prévu. Les zones
+n'ont fait qu'étendre la portée sud jusqu'à 22, rendant le pire cas (caméra
+en plein village) atteignable alors qu'avant il s'arrêtait à « caméra très
+proche du cristal », déjà limite mais moins spectaculairement cassé.
+
+**Pas traité cette séance.** Un correctif correct doit rendre le décalage
+caméra conscient de la direction radiale du héros par rapport au centre de
+la planète (« derrière lui, vu du centre » plutôt que « au nord, dans le
+repère du monde ») — mais `cameraControl.yaw` sert aussi à convertir la
+direction du joystick (écran) en direction monde dans `Hero.tsx`
+(`heroDir` tourné par `sin/cos(yaw)`) : changer la référence de la caméra
+sans toucher à cette conversion désynchroniserait les commandes du joueur
+dès qu'il s'éloigne du centre, dans toutes les directions, pas seulement au
+sud. C'est un chantier de la même famille que « faire le tour de la
+planète » (le jeu raisonne en `(x, z)` plat, seul le rendu suit la sphère) :
+risqué à corriger à l'aveugle sans pouvoir vérifier au doigt et à l'œil sur
+un vrai appareil que les commandes restent nettes dans toutes les
+directions. Laissé en l'état, documenté ici pour qu'Allonzo décide s'il en
+fait une entrée de `BACKLOG.md` dédiée — ce n'est pas une des trois cases
+déjà bloquées, c'est une découverte neuve.
+
+**Traité à la place : le conseil d'arrivée du Bombeur exagérait ses dégâts.**
+Repris le fil du 04/09 (« l'écart de `breach: 1.9` contre `dégâts doublés`
+est trop faible pour induire une vraie décision de jeu erronée... pas
+traité cette séance ») : faute d'un deuxième bug de rendu à traiter cette
+fois (la caméra ci-dessus n'étant pas un correctif sûr à faire à l'aveugle),
+et le journal du 03/09 ayant laissé ouvert « les six autres profils de
+monstre n'ont pas été relus pour d'éventuels tips erronés », relecture des
+sept `tip` d'`enemies.ts` contre le comportement réel : six corrects
+(spectre et chaman vérifiés contre leurs mécanismes dans `Enemies.tsx` —
+intangibilité un tiers du temps, soin de zone — tous deux exacts). Le
+`tip` du Bombeur, affiché par `WaveRadar.tsx` à sa première apparition
+(vague 6), dit « dégâts doublés sur le cristal » ; `breach: 1.9` dans
+`enemies.ts` donne un dégât de 90 % supérieur à la normale, pas 100 %. Le
+commentaire de code juste au-dessus le dit lui-même plus honnêtement
+(« degats au noyau presque doubles ») — seul le texte montré au joueur
+surclamait l'écart.
+
+**Fait**
+
+- `enemies.ts`, profil `bombeur` : `tip` remplacé par « Explose au contact :
+  dégâts presque doublés sur le cristal. », cohérent avec le commentaire de
+  code et avec `breach: 1.9`.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (le champ `tip` n'entre dans aucun calcul de combat).
+- Script Playwright jetable : `waveNumber` posé à 5 (`waveFailed: false,
+  waveActive: false`) pour afficher le radar de la vague 6 sans la lancer
+  (lancer la vague masque le radar — `WaveRadar` ne s'affiche que hors
+  combat). Bannière capturée : « Nouveau : Bombeur — Explose au contact :
+  dégâts presque doublés sur le cristal. », sur deux lignes, sans
+  débordement du cadre `max-w-[68vw]`.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres_village.png` :
+  identique à avant (le Bombeur n'apparaît pas dans ce scénario, aucune
+  raison que la capture change).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté sur le fond pour le correctif retenu. Sur la piste caméra
+  abandonnée : une première tentative de correctif rapide (clamper le
+  rayon horizontal de la caméra à ne jamais descendre sous `WORLD_RADIUS`)
+  a été envisagée puis rejetée sans être codée — la vue par défaut, héros
+  au centre, place déjà la caméra à un rayon de 13 (`< WORLD_RADIUS = 16`)
+  intentionnellement, un tel clamp aurait changé le cadrage de référence de
+  **toutes** les captures existantes, pas seulement corrigé le cas sud. La
+  bonne piste est probablement de rendre le décalage relatif à la direction
+  radiale du héros plutôt qu'à un axe fixe du monde, mais voir plus haut
+  pourquoi ce n'est pas un correctif sûr à faire sans pouvoir tester les
+  commandes sur un vrai appareil.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- **Nouveau, pas dans le backlog** : la caméra peut se retrouver coincée à
+  l'intérieur du village de départ (regard qui traverse la Ferme) quand le
+  héros s'éloigne loin au sud sans que le joueur ait tourné la boussole —
+  pire dans Dunes Dorées (atteignable dès le rayon 19) mais déjà présent
+  dans le plateau de base au-delà de z ≈ −13. Voir la section dédiée
+  ci-dessus pour le diagnostic complet et pourquoi ce n'est pas corrigé.
+  Si Allonzo veut que ce soit traité, ça vaudrait une entrée dédiée dans
+  `BACKLOG.md` plutôt que d'être confondu avec « faire le tour de la
+  planète » (qui est un problème différent : le raisonnement plat au-delà
+  de l'équateur, pas le cadrage de la caméra).
+- Les sept `tip` d'`enemies.ts` sont maintenant tous relus et corrects (fil
+  ouvert depuis le 03/09, maintenant clos).
+- Le piège du push oublié continue de se reproduire presque à chaque
+  séance récente. Toujours rattrapable par le contrôle
+  `merge-base --is-ancestor` en tout début de séance — à ne jamais sauter.
+
 ## 2026-09-07 — Le déblayage d'une géode ne montrait jamais le gain de matière floue
 
 **Ce qui a été trouvé en démarrant.** `HEAD` local, `origin/main` et la
