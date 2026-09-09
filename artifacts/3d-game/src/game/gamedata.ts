@@ -294,8 +294,9 @@ export const BUILDINGS: Record<string, BuildingData> = {
   //
   // Quatre roles distincts, volontairement non interchangeables : le laser
   // tape fort et loin sur une cible, le mortier nettoie les paquets, le cryo
-  // ne tue presque rien mais donne du temps a tout le reste, et le tesla est
-  // le seul, avec le heros, a atteindre les monstres volants.
+  // ne tue presque rien mais donne du temps a tout le reste, et le cryo et
+  // le tesla sont, avec le heros, les seuls a atteindre les monstres volants
+  // (laser et mortier ne les touchent pas). Voir `hitsAir` plus bas.
   tourelle: {
     id: 'tourelle',
     name: 'Tourelle laser',

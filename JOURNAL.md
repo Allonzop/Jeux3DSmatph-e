@@ -11,6 +11,151 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-09 — Recherche large sans nouveau bug trouvé ; correctif du commentaire du Tesla, signalé depuis le 31/08
+
+**Ce qui a été trouvé en démarrant.** Pas de piège cette fois : `HEAD` local
+(`7c01b6c`, le correctif du Bombeur du 08/09) et `origin/main` pointaient déjà
+sur le même commit après `git fetch origin main` — le travail de la veille
+était déjà fusionné. Branche recréée depuis `origin/main` (`git checkout -B
+claude/bold-brown-to9y9w origin/main`). `pnpm install` (`node_modules`
+absent).
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+25 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : `pnpm run typecheck` (passe),
+`node tools/game-check/wave.mjs --check` (2/2), `node
+tools/game-check/smoke.mjs` (5/5), captures `--village`, `--arsenal`,
+`--wave 9`, `--wave 12` — rien de cassé à l'œil nu.
+
+**Recherche large, plus poussée que d'habitude, sans rien trouver de neuf.**
+Faute de piste visuelle sur les captures habituelles, exploration
+systématique de tout ce que `shot.mjs`/`smoke.mjs` ne montrent jamais en
+image (seulement en absence d'erreur console) :
+
+- Panneau Empire et fiche de secteur (`ZonePopup.tsx`/`EmpirePanel`) :
+  capturés à l'écran pour la première fois (scripts Playwright jetables,
+  non gardés) — rendu correct, texte cohérent avec `zones.ts` (« un quart de
+  la couronne » vérifié exact : quatre zones de 90° chacune, coûts et
+  bonus affichés conformes aux données).
+- Fiche du commandant (`HeroPanel.tsx`) : capturée à l'écran pour la
+  première fois — rendu correct. Le titre « Commandant » du panneau et le
+  titre de rang « Commandant » (niveaux 12-15, `progress.ts`) coïncident à
+  l'écran par hasard à ces niveaux ; pas un bug, juste une coïncidence de
+  vocabulaire, laissée telle quelle.
+- Bâtiment posé à l'intérieur d'une zone annexée (jamais couvert par aucun
+  script existant) : script jetable plaçant une deuxième tourelle en
+  secteur Cendres et déplaçant le héros à proximité, capture d'écran.
+  Rendu correct — `BuildingWrapper` recalcule toujours la position via
+  `surfacePos(pos[0], pos[2])`, donc le `y` stocké (toujours 0, voir
+  `HUD.tsx` ligne `placeBuilding(placingBuilding, [pendingPlacement.x, 0,
+  pendingPlacement.z])`) n'a aucune importance — pas de bug de hauteur
+  malgré la courbure de la sphère à ce rayon.
+- `WaveOutcome.tsx` (bandeau de victoire/défaite) : contrairement au bug du
+  09-07 sur `DecorPopup.tsx`, celui-ci utilise déjà une liste qui affiche
+  toutes les ressources gagnées/perdues, pas seulement les boulons — rien à
+  corriger, le bug du 09-07 était isolé au déblayage de décor.
+- `BuildingPopup.tsx` (`TurretSheet`) : les statistiques affichées
+  (dégâts, portée, ralentissement, cibles, « Atteint les volants ») sont
+  lues en direct sur les mêmes données que la boucle de combat — aucune
+  affirmation figée à vérifier, ce panneau ne peut pas mentir par
+  construction.
+- `BuildSheet.tsx` : le texte « Complet » (bâtiment dont tous les
+  exemplaires sont posés) est en fait du code mort — la condition
+  `!free && placedIds.length === 0` ne peut jamais être vraie puisque
+  `maxInstances` est toujours ≥ 1 pour tous les bâtiments. Jamais affiché
+  au joueur, donc pas un bug visible ; pas touché cette séance, à nettoyer
+  si une séance future retouche ce fichier.
+- `Tutorial.tsx` (treize cartes) : relu contre la mécanique réelle,
+  notamment « Plus de la moitié passe = cristal détruit » — vérifié par le
+  calcul (`coreBreachDamage` : le noyau meurt à `floor(enemyCount/2) + 1`
+  brèches, toujours strictement plus de la moitié, quel que soit
+  `enemyCount`) : exact.
+- `WaveRadar.tsx` (composition annoncée) : la formule `count = 1 + next *
+  2` utilisée pour l'aperçu est exactement celle de `startWave` dans
+  `store.ts` — l'annonce ne peut pas diverger du résultat réel.
+- `heroPowers.ts` (Onde de choc, Surcharge) : recharge, répulsion et durée
+  vérifiées par lecture de code — correctes, y compris la répulsion à
+  amplitude constante (`SHOCK_PUSH`) quelle que soit la distance à
+  l'intérieur du rayon, qui aurait pu sembler suspecte au premier regard
+  (`dx * (SHOCK_PUSH / dist)` est algébriquement `unitX * SHOCK_PUSH`).
+- Bibliothèque de personnages : `studio audit` sur le kit du jeu (22
+  personnages) donne 0 avertissement et 6 notes de palette — quatre
+  monstres (grognard, fileur, écumeur, bombeur) ont une couleur de peau
+  identique à leur couleur primaire, donc un rôle « skin » invisible.
+  Vraisemblablement voulu (créatures à corps d'une seule matière, pas de
+  peau nue distincte) plutôt qu'un oubli, mais pas vérifié à l'œil sur le
+  rig — à confirmer visuellement si une séance future manque encore de
+  piste.
+
+**Fait, faute de mieux : le commentaire du Tesla, signalé depuis le 31/08.**
+`gamedata.ts`, au-dessus de la définition de `tourelle` : le commentaire
+affirmait « le tesla est le seul, avec le heros, a atteindre les monstres
+volants ». Faux depuis l'ajout du Cryo-diffuseur avec `hitsAir: true` (voir
+le correctif du 02/09 sur l'arc du Tesla, qui avait déjà établi ce fait) —
+signalé comme non urgent (jamais montré au joueur) dans le journal de
+chaque séance du 31/08 au 09-08 sans jamais être corrigé, faute d'un
+bâtiment de la section à retoucher. Cette séance a relu ce fichier en
+détail sans rien y changer d'autre ; corrigé à cette occasion plutôt que
+laissé une neuvième fois.
+
+**Fait**
+
+- `gamedata.ts`, commentaire au-dessus de `tourelle` : remplacé par « le
+  cryo et le tesla sont, avec le heros, les seuls a atteindre les monstres
+  volants (laser et mortier ne les touchent pas). Voir `hitsAir` plus
+  bas. » — vérifié contre les quatre tours : `hitsAir: false` pour laser et
+  mortier, `hitsAir: true` pour cryo et tesla à tous les niveaux.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (un commentaire n'entre dans aucun calcul).
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png` :
+  identique pixel pour pixel à avant (aucune raison qu'un commentaire change
+  le rendu).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Aucune piste de bug réel écartée à tort : toutes les zones explorées
+  cette séance (listées ci-dessus) ont été vérifiées correctes par lecture
+  de code et/ou capture d'écran, pas seulement supposées telles. Ne pas
+  reparcourir à l'identique sans raison neuve : Empire/secteur, fiche du
+  commandant, bâtiment en zone annexée, `WaveOutcome`, `TurretSheet`,
+  tutoriel, radar de vague, pouvoirs du héros — tous relus et corrects
+  cette fois.
+- Le texte mort « Complet » de `BuildSheet.tsx` (voir ci-dessus) a été
+  identifié comme inatteignable mais volontairement pas retiré : il
+  n'apparaît jamais au joueur, un nettoyage pur sans bug à corriger ne
+  justifiait pas de sortir du fil de la séance.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Toujours pas dans `BACKLOG.md`, signalé le 09-08 : la caméra peut se
+  retrouver coincée dans le village de départ quand le héros s'éloigne au
+  sud sans tourner la boussole (pire dans Dunes Dorées). Pas retouché cette
+  séance, même raison que le 09-08 : correctif risqué sans pouvoir tester
+  les commandes sur un vrai appareil. Si Allonzo veut que ce soit traité,
+  ça vaut une entrée dédiée.
+- Le texte mort « Complet » de `BuildSheet.tsx` : à retirer si une séance
+  future retouche ce fichier, aucune urgence puisqu'invisible.
+- Les six notes de palette « skin = primary » du `studio audit` (voir
+  ci-dessus) : probablement voulu, pas vérifié à l'œil — piste à essayer si
+  une future séance manque encore de bug visuel.
+- Recherche de bug visuel/de contenu maintenant très large (voir la liste
+  ci-dessus) sans rien trouver de neuf en dehors du commentaire corrigé :
+  si une séance future se retrouve dans la même situation avec les trois
+  cases toujours bloquées, il faudra sans doute élargir encore — zones
+  angulaires proches des limites (0°, 90°, 180°, 270°), ou rejouer une
+  partie complète jusqu'à une vague très tardive (15+) jamais capturée.
+
 ## 2026-09-08 — Un triple push oublié récupéré, le conseil du Bombeur exagérait ses dégâts, et un vrai bug de caméra trouvé dans les zones annexées (non traité)
 
 **Ce qui a été trouvé en démarrant.** Piège habituel, en pire cette fois :

@@ -328,6 +328,20 @@ traités, voir plus haut.
       25/08 au 07/09 : les trois cases ci-dessus sont bloquées. Voir
       JOURNAL.md.)*
 
+- [x] **Le commentaire de code sur les tours (`gamedata.ts`) affirmait que le
+      Tesla était la seule tour, avec le héros, à atteindre les monstres
+      volants.** *(corrigé le 2026-09-09, même situation que le 25/08 au
+      08/09 : les trois cases ci-dessus sont bloquées. Signalé imprécis
+      depuis le 31/08 (le Cryo-diffuseur a aussi `hitsAir: true`) mais jamais
+      corrigé, faute de mieux à traiter à chaque séance suivante. Cette fois,
+      une recherche large de bug visuel ou de contenu erroné (panneaux
+      Empire et secteur, fiche du commandant, montée de niveau, butin de
+      vague, tutoriel, radar de vague, bâtiment posé dans une zone annexée)
+      n'a rien trouvé de neuf : le commentaire signalé de longue date, dans
+      le fichier même relu pendant cette recherche, a été corrigé à la
+      place. Invisible au joueur, mais faux depuis huit séances. Voir
+      JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.
