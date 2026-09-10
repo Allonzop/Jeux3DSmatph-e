@@ -11,6 +11,109 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-10 — Cinq commits de la veille récupérés, et retrait du code mort « Complet » du panneau Construire
+
+**Ce qui a été trouvé en démarrant.** Même piège que d'habitude, en pire :
+`HEAD` local portait **cinq** commits jamais poussés (05/09 blurb de la Hutte,
+06/09 carte du Noyau, 07/09 déblayage de géode, 08/09 conseil du Bombeur,
+09/09 commentaire du Tesla), tous déjà documentés faits et vérifiés dans
+`BACKLOG.md`/`JOURNAL.md` mais absents d'`origin` — `git fetch origin
+claude/bold-brown-s2n5cw` répondait « couldn't find remote ref ».
+`origin/main` était resté bloqué sur le commit du 04/09 (fiche de la Ferme)
+pendant cinq séances. Poussé en tout premier (`git push -u origin
+claude/bold-brown-s2n5cw`), puis vérifié avec `git merge-base --is-ancestor
+6481f53 origin/main` en boucle jusqu'à réponse vraie (quelques secondes) :
+les cinq commits sont bien passés dans `main` avant de commencer le travail
+du jour. Rebranché ensuite sur `origin/main` (`git checkout -B
+claude/bold-brown-s2n5cw origin/main`), comme prévu par la consigne pour ce
+cas. `pnpm install` (`node_modules` absent).
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+26 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : `pnpm run typecheck` (passe),
+`node tools/game-check/wave.mjs --check` (2/2), captures `--village`,
+`--arsenal`, `--wave 12` — rien de cassé à l'œil nu.
+
+**Deux pistes explorées sans rien trouver de neuf.**
+
+- Les six notes de palette « skin = primary invisible » du `studio audit`
+  (laissées ouvertes le 09-09 comme piste à vérifier à l'œil) : chargées
+  dans l'éditeur du studio (`localStorage` rempli directement avec les six
+  `CharacterDef` du kit, script Playwright jetable — le studio n'a pas de
+  bibliothèque par défaut, tout vient de `localStorage`). Les cinq monstres
+  (grognard, fileur, écumeur, bombeur, chaman) rendent bien comme des
+  créatures d'une seule matière, sans peau nue distincte — cohérent avec
+  l'hypothèse déjà posée le 09-09, pas un bug. Le septième cas, Villageois 7
+  (`primary`/`secondary` quasi identiques, rôle « secondary » invisible),
+  rend un personnage un peu terne (capuche et corps du même brun) mais reste
+  lisible et cohérent avec les autres villageois — une question de variété
+  de palette, pas un défaut fonctionnel ; laissé tel quel.
+- Vague 18 jamais capturée auparavant (la plus tardive à ce jour était la
+  vague 12) : `--wave 18 --village --wide`, 37 monstres annoncés. Rendu
+  correct, rien de cassé visuellement malgré le nombre d'ennemis à l'écran.
+
+**Fait, faute de mieux : le code mort « Complet » de `BuildSheet.tsx`,
+signalé depuis le 09-09.** Vérifié par lecture de code plutôt que supposé :
+`nextFreeInstance` (`gamedata.ts`) ne renvoie `null` que si **tous** les
+exemplaires d'un bâtiment sont déjà posés — ce qui implique
+`placedIds.length === maxInstances`. Comme `maxInstances` vaut toujours ≥ 1
+pour les dix bâtiments du jeu (vérifié un par un dans `gamedata.ts`), la
+condition `!free && placedIds.length === 0` ne peut jamais être vraie
+simultanément : le bloc affichant « Complet » était inatteignable depuis son
+introduction. De toute façon, quand un bâtiment est complet, l'un des deux
+autres blocs (bouton « Améliorer » pour un seul exemplaire, rangée de puces
+pour plusieurs) prend déjà le relais — « Complet » n'avait donc aucune place
+utile même en théorie. Bloc retiré.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (le panneau Construire n'entre dans aucun calcul de vague).
+- `node tools/game-check/smoke.mjs` : 5/5, dont le parcours « tous les
+  panneaux » qui ouvre justement l'onglet Défense.
+- Script Playwright jetable : panneau Construire ouvert sur un village avec
+  une tourelle laser posée sur trois possibles (`1/3`), capture d'écran — le
+  bouton « Placer » (exemplaire libre) et le bouton « Améliorer » (exemplaire
+  posé) s'affichent côte à côte comme avant, aucune trace de « Complet »
+  nulle part, mise en page inchangée pour les autres bâtiments (mortier,
+  cryo, tesla à 0 posé n'affichent que « Placer »).
+- `node tools/game-check/shot.mjs --village --out /tmp/apres_village.png` :
+  identique à avant (le panneau Construire n'est pas ouvert dans ce
+  scénario, aucune raison que la capture change).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté à tort. Les deux pistes explorées (palette « skin = primary »,
+  vague 18) ont toutes deux été vérifiées correctes par capture d'écran,
+  pas seulement supposées telles — inutile de les reparcourir sans piste
+  neuve.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Toujours pas dans `BACKLOG.md`, signalé le 08/09 : la caméra peut se
+  retrouver coincée dans le village de départ quand le héros s'éloigne au
+  sud sans tourner la boussole (pire dans Dunes Dorées). Pas retouché cette
+  séance, même raison que le 08/09 : correctif risqué sans pouvoir tester
+  les commandes sur un vrai appareil.
+- Le piège du push oublié s'est aggravé cette fois (cinq séances
+  accumulées au lieu d'une ou deux) : le contrôle `merge-base
+  --is-ancestor` en tout début de séance reste la parade qui marche à
+  chaque fois qu'elle est appliquée — à ne jamais sauter, et peut-être à
+  vérifier plus souvent que « juste en début de séance » si ce décalage
+  continue de grossir.
+- Villageois 7 (palette terne, `primary`≈`secondary`) : confirmé pas un
+  bug fonctionnel, juste une variante moins contrastée que ses voisins —
+  pas une priorité, mais une piste de retouche cosmétique si une séance
+  future manque encore de bug réel.
+
 ## 2026-09-09 — Recherche large sans nouveau bug trouvé ; correctif du commentaire du Tesla, signalé depuis le 31/08
 
 **Ce qui a été trouvé en démarrant.** Pas de piège cette fois : `HEAD` local

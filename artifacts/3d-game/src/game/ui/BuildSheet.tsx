@@ -231,9 +231,6 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
                           ))}
                         </div>
                       )}
-                      {!free && placedIds.length === 0 && (
-                        <span className="text-[0.65rem] text-white/30 uppercase font-bold">Complet</span>
-                      )}
                     </div>
                   </div>
                 );

@@ -342,6 +342,13 @@ traités, voir plus haut.
       place. Invisible au joueur, mais faux depuis huit séances. Voir
       JOURNAL.md.)*
 
+- [x] **Le panneau Construire affichait un bloc de code mort (« Complet »)
+      qui ne pouvait jamais s'afficher.** *(corrigé le 2026-09-10, même
+      situation que le 25/08 au 09/09 : les trois cases ci-dessus sont
+      bloquées. Signalé depuis le 09/09 comme code mort à nettoyer « si une
+      séance future retouche ce fichier » — cette séance l'a retouché pour
+      cette raison précise. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.
