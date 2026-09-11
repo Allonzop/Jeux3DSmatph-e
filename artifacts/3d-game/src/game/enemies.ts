@@ -123,7 +123,7 @@ export const ENEMY_TYPES: Record<EnemyKind, EnemyType> = {
   ecumeur: {
     kind: 'ecumeur',
     name: 'Écumeur',
-    tip: 'Vole : la plupart des tours au sol ne l’atteignent pas.',
+    tip: 'Vole : la moitié des tours au sol ne l’atteignent pas.',
     hp: 0.75,
     speed: 1.4,
     breach: 1,

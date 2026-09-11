@@ -349,6 +349,14 @@ traités, voir plus haut.
       séance future retouche ce fichier » — cette séance l'a retouché pour
       cette raison précise. Voir JOURNAL.md.)*
 
+- [x] **Le conseil affiché à l'arrivée de l'Écumeur (vague 5) restait
+      imprécis après sa première correction : « la plupart des tours au sol
+      ne l'atteignent pas ».** *(corrigé le 2026-09-11, même situation que le
+      25/08 au 10/09 : les trois cases ci-dessus sont bloquées. « La plupart »
+      (majorité) pour 2 tours sur 4 (exactement la moitié : laser et mortier
+      ne touchent pas les volants, cryo et tesla si) est un abus de langage —
+      remplacé par « la moitié ». Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

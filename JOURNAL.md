@@ -11,6 +11,87 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-11 — Rien à récupérer, et le conseil de l'Écumeur restait imprécis après sa propre correction du 03/09
+
+**Ce qui a été trouvé en démarrant.** Pas de piège cette fois : `HEAD` local
+(`7ce9be3`, le retrait du code mort du panneau Construire du 09-10) et
+`origin/main` pointaient déjà sur le même commit après `git fetch origin
+main` (`git merge-base --is-ancestor 7ce9be3 origin/main` vrai immédiatement).
+Branche recréée depuis `origin/main` (`git checkout -B claude/bold-brown-8gbpa2
+origin/main`). `pnpm install` (`node_modules` absent).
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+27 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : `pnpm run typecheck` (passe),
+`node tools/game-check/wave.mjs --check` (2/2), `node
+tools/game-check/smoke.mjs` (5/5), capture `--village` — rien de cassé à
+l'œil nu.
+
+**Recherche.** Relecture de `gamedata.ts` (bâtiments, bonus de Marché et
+d'Antenne, formule de butin combinant Marché et zones) et de `zones.ts`
+(bornes angulaires des quatre secteurs) contre leur texte affiché et leurs
+constantes : tout concordait (le bonus du Marché par niveau, `+1,1
+portée/+12 dégâts` par niveau d'Antenne, les bornes de secteur qui
+s'emboîtent exactement sans trou ni chevauchement). Écrans jamais capturés
+avant explorés en combat (niveau de commandant 10, vague 9, flèches de
+menace et chiffres de dégâts visibles ensemble) : rendu correct, les
+distances affichées par les flèches de menace correspondent à la distance
+réelle au cristal.
+
+En relisant les sept `tip` d'`enemies.ts` (déjà tous vérifiés corrects le
+09-08), un doute sur le seul déjà retouché : celui de l'Écumeur, corrigé le
+03/09 de « les tourelles au sol ne le touchent pas » (faux, 0 sur 4) vers
+« la plupart des tours au sol ne l'atteignent pas » (voulu vrai, 2 sur 4).
+Mais 2 sur 4, c'est exactement la moitié, pas une majorité — « la plupart »
+reste un abus de langage, moins grave que l'original mais toujours imprécis.
+
+**Fait**
+
+- `enemies.ts`, profil `ecumeur` : `tip` remplacé par « Vole : la moitié des
+  tours au sol ne l'atteignent pas. », exact (laser et mortier ont
+  `hitsAir: false`, cryo et tesla `hitsAir: true` dans `gamedata.ts`, aux
+  quatre niveaux de chacun).
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (le champ `tip` n'entre dans aucun calcul de combat).
+- Script Playwright jetable rejouant la bannière radar de la vague 5
+  (`waveNumber: 4, waveActive: false`) : « Nouveau : Écumeur — Vole : la
+  moitié des tours au sol ne l'atteignent pas. », sans débordement dans le
+  cadre `max-w-[68vw]` de la bannière.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png` :
+  identique à avant (l'Écumeur n'apparaît pas dans ce scénario, aucune raison
+  que la capture change).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté à tort. Bonus de Marché/Antenne, bornes de zones, flèches de
+  menace en combat (niveau 10, vague 9) : tous relus et corrects cette fois,
+  inutile de les reparcourir sans piste neuve.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Toujours pas dans `BACKLOG.md`, signalé le 08/09 : la caméra peut se
+  retrouver coincée dans le village de départ quand le héros s'éloigne au
+  sud sans tourner la boussole (pire dans Dunes Dorées). Pas retouché cette
+  séance, même raison que le 08/09 au 10/09 : correctif risqué sans pouvoir
+  tester les commandes sur un vrai appareil.
+- Le compteur d'enchaînement (`ComboMeter.tsx`, débloqué au niveau 6) n'est
+  toujours pas apparu sur une capture — pas un bug identifié, juste pas
+  encore vérifié à l'œil : il faut plusieurs coups rapprochés en combat pour
+  qu'il s'affiche, jamais obtenu sur les quelques secondes de rendu logiciel
+  capturées jusqu'ici. Piste à essayer si une future séance manque encore de
+  bug réel.
+
 ## 2026-09-10 — Cinq commits de la veille récupérés, et retrait du code mort « Complet » du panneau Construire
 
 **Ce qui a été trouvé en démarrant.** Même piège que d'habitude, en pire :
