@@ -357,6 +357,11 @@ traités, voir plus haut.
       ne touchent pas les volants, cryo et tesla si) est un abus de langage —
       remplacé par « la moitié ». Voir JOURNAL.md.)*
 
+- [x] **Un gros gain d'XP qui saute plusieurs niveaux d'un coup ne pouvait
+      annoncer qu'un seul déblocage d'interface, jamais deux.** *(trouvé et
+      corrigé le 2026-09-12, même situation que le 25/08 au 11/09 : les trois
+      cases ci-dessus sont bloquées. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

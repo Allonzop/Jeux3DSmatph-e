@@ -11,6 +11,118 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-12 — Un saut de plusieurs niveaux d'XP perdait les déblocages d'interface intermédiaires
+
+**Ce qui a été trouvé en démarrant.** Piège habituel évité de justesse par une
+fausse alerte : `git fetch origin main` en tout début de séance a d'abord
+semblé montrer `origin/main` bloqué cinq jours en arrière (au commit du
+04/09, « fiche de la Ferme »), ce qui aurait signifié cinq séances jamais
+fusionnées malgré des runs `auto-merge.yml` tous marqués succès. Vérifié
+directement contre l'API GitHub (`list_commits` sur `main`) avant de
+conclure à un vrai problème : la tip réelle de `main` était bien `83e1bee`
+(le correctif de l'Écumeur du 11/09), identique à `HEAD` local. Le premier
+`git fetch` avait juste été lancé en parallèle d'autres commandes et a
+ramené un `origin/main` local perimé — un second `git fetch origin main -v`
+isolé a corrigé le ref local immédiatement. Rien à signaler ni à corriger
+dans le workflow ; juste une precaution utile a noter : ne pas faire
+confiance a un `git fetch` execute en parallele d'autres commandes shell
+pour juger si `main` a bien recu une fusion, revérifier isolément ou via
+l'API si le résultat semble anormal. Branche recréée depuis `origin/main`
+(`git checkout -B claude/bold-brown-y9slwr origin/main`). `pnpm install`
+(`node_modules` absent).
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+28 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : `pnpm run typecheck` (passe),
+`node tools/game-check/wave.mjs --check` (2/2), capture `--village` — rien
+de cassé à l'œil nu.
+
+**Recherche.** Piste laissée ouverte le 11/09 : le compteur d'enchaînement
+(`ComboMeter.tsx`, débloqué au niveau 6) n'avait jamais été vu à l'écran.
+Vérifié avec un script Playwright jetable : magasin forcé à `playerLevel: 6`,
+vague lancée, trois monstres tués simultanément par écriture directe de leur
+pv à 0 (`window.__villageStore.setState`). Le compteur **s'affiche bien**
+(« ×5 ENCHAÎNEMENT » capturé à l'écran, cadre `max-w` respecté) — piste
+refermée, ce n'est pas un bug, juste jamais observé faute d'avoir forcé la
+situation.
+
+En lisant le code du compteur pour cette vérification (`ComboMeter.tsx`,
+`hudTiers.ts`, `store.ts`), repéré un vrai défaut dans la carte de montée de
+niveau : `hudUnlockedAt(level)` (dans l'ancienne version de `hudTiers.ts`)
+ne cherchait un déblocage que sur le niveau **final** atteint après la
+boucle `while` d'`addXp`. Le commentaire de cette boucle dit lui-même
+qu'« un gros gain peut franchir deux paliers d'un coup, surtout aux premiers
+niveaux où le seuil est bas » — exactement le cas des trois seuils du HUD
+(3, 4, 6), tous à des niveaux bas et rapprochés. Un joueur passant du niveau
+2 au niveau 4 en un seul gain (une grosse récompense de vague, par exemple)
+ne voyait jamais l'annonce « Les chiffres de dégâts » (seuil 3) : la
+fonctionnalité s'activait bien en silence (`hudHas` compare `>=`, pas `==`),
+mais l'annonce dans la carte de montée de niveau — la seule notification
+prévue, voir le commentaire d'en-tête de `hudTiers.ts` — sautait purement et
+simplement l'un des deux déblocages.
+
+**Fait**
+
+- `hudTiers.ts` : `hudUnlockedAt(level)` remplacé par
+  `hudUnlockedBetween(fromLevel, toLevel)`, qui renvoie la liste (triée) de
+  tous les affichages dont le seuil tombe dans l'intervalle franchi, pas
+  seulement au niveau d'arrivée.
+- `store.ts` : `addXp` retient le niveau de départ (`startLevel`) avant la
+  boucle et le passe à `hudUnlockedBetween` ; `LevelUp.unlocked` devient un
+  tableau (`HudFeature[]`) au lieu d'un seul champ dérivé après coup.
+- `ui/LevelUp.tsx` : le bloc « Affichage débloqué » de la carte plein écran
+  liste désormais chaque élément débloqué (une ligne par affichage) au lieu
+  d'en montrer un seul. Le bandeau compact affiché pendant une vague ne
+  montrait déjà aucun déblocage avant ce correctif — inchangé, hors de
+  portée de ce bug précis.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (la carte de montée de niveau n'entre dans aucun calcul de
+  vague).
+- Script Playwright jetable : magasin forcé au niveau 2 puis `addXp` d'un
+  million (saut direct jusqu'au niveau 32, franchissant les trois seuils 3,
+  4 et 6 d'un coup) — la carte affiche bien les trois lignes « Les chiffres
+  de dégâts », « Les flèches de menace » et « Le compteur d'enchaînement »
+  ensemble, sans débordement du cadre. Deuxième script : saut d'un seul
+  niveau pile sur un seuil (2 → 3) — une seule ligne affichée, pas de
+  régression sur le cas courant.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png` :
+  identique à la capture d'avant (aucune carte de montée de niveau ouverte
+  dans ce scénario, ce correctif ne touche pas le rendu du village).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Le compteur d'enchaînement lui-même : vérifié correct à l'écran (voir
+  ci-dessus), ce n'était pas la piste — inutile de le reparcourir sans
+  nouvelle raison d'en douter.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Toujours pas dans `BACKLOG.md`, signalé le 08/09 : la caméra peut se
+  retrouver coincée dans le village de départ quand le héros s'éloigne au
+  sud sans tourner la boussole (pire dans Dunes Dorées). Pas retouché cette
+  séance, même raison que le 08/09 au 11/09 : correctif risqué sans pouvoir
+  tester les commandes sur un vrai appareil.
+- Villageois 7 (palette terne, `primary`≈`secondary`) : toujours confirmé
+  pas un bug fonctionnel (voir le 10/09), pas une priorité.
+- Nouvelle précaution pour la prochaine séance : si le `git fetch` de départ
+  semble montrer `origin/main` en retard par rapport à `HEAD` local, ne pas
+  conclure trop vite à des séances jamais fusionnées — revérifier avec un
+  `git fetch` isolé ou l'API GitHub avant d'agir, ce fetch-ci s'était avéré
+  périmé plutôt que réel.
+
+## 2026-09-11 — Rien à récupérer, et le conseil de l'Écumeur restait imprécis après sa propre correction du 03/09
+
 ## 2026-09-11 — Rien à récupérer, et le conseil de l'Écumeur restait imprécis après sa propre correction du 03/09
 
 **Ce qui a été trouvé en démarrant.** Pas de piège cette fois : `HEAD` local

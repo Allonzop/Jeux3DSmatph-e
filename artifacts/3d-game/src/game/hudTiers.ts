@@ -41,10 +41,19 @@ export function hudHas(playerLevel: number, feature: HudFeature): boolean {
   return playerLevel >= HUD_UNLOCKS[feature];
 }
 
-/** Ce qui s'allume précisément en atteignant ce niveau, s'il y a lieu. */
-export function hudUnlockedAt(level: number): HudFeature | null {
+/**
+ * Ce qui s'allume en passant de `fromLevel` à `toLevel` (bornes incluses côté
+ * arrivée, exclues côté départ).
+ *
+ * Un gros gain d'XP peut franchir deux paliers d'un coup (voir `addXp` dans
+ * `store.ts`) : vérifier seulement le niveau final aurait fait sauter
+ * l'annonce d'un déblocage intermédiaire, par exemple les chiffres de dégâts
+ * (niveau 3) en passant directement du niveau 2 au niveau 4.
+ */
+export function hudUnlockedBetween(fromLevel: number, toLevel: number): HudFeature[] {
+  const found: HudFeature[] = [];
   for (const [feature, at] of Object.entries(HUD_UNLOCKS) as [HudFeature, number][]) {
-    if (at === level) return feature;
+    if (at > fromLevel && at <= toLevel) found.push(feature);
   }
-  return null;
+  return found.sort((a, b) => HUD_UNLOCKS[a] - HUD_UNLOCKS[b]);
 }

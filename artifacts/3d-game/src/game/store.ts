@@ -16,6 +16,7 @@ import { ZONES, maxRadiusAt, zoneEffects } from './zones';
 import { heroTrack, type HeroTrackId } from './hero';
 import { xpForLevel, levelUpReward, XP } from './progress';
 import { resetPowers } from './heroPowers';
+import { hudUnlockedBetween, type HudFeature } from './hudTiers';
 
 export type ResourceType = 'boulons' | 'matiere_floue' | 'energie_rire';
 
@@ -38,6 +39,8 @@ export type Enemy = {
 export type LevelUp = {
   level: number;
   reward: Partial<Resources>;
+  /** Affichages débloqués en passant du niveau précédent à celui-ci. */
+  unlocked: HudFeature[];
 };
 
 export type WaveOutcome = {
@@ -605,7 +608,8 @@ export const useGameStore = create<GameState>()(
         if (amount <= 0) return;
         const state = get();
         let xp = state.xp + amount;
-        let level = state.playerLevel;
+        const startLevel = state.playerLevel;
+        let level = startLevel;
         let gained = 0;
         const reward: Resources = { boulons: 0, matiere_floue: 0, energie_rire: 0 };
 
@@ -635,7 +639,7 @@ export const useGameStore = create<GameState>()(
         set((s) => ({
           xp,
           playerLevel: level,
-          levelUp: { level, reward: shown },
+          levelUp: { level, reward: shown, unlocked: hudUnlockedBetween(startLevel, level) },
           resources: {
             boulons: s.resources.boulons + reward.boulons,
             matiere_floue: s.resources.matiere_floue + reward.matiere_floue,
