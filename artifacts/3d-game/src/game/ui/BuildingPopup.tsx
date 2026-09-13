@@ -13,6 +13,7 @@ import { CharacterPortrait } from './CharacterPortrait';
 import { ResourceIcon, BuildingIcon, CloseIcon, MoveIcon } from './icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { sfx } from '../sfx';
+import { zoneEffects } from '../zones';
 
 const ROLE_TINT: Record<BuildingRole, string> = {
   defense: '#f87171',
@@ -43,11 +44,21 @@ function PassiveYield({ passive }: { passive: Partial<Record<string, number>> })
  * parentheses, sans un seul chiffre. On ameliorait a l'aveugle. Les quatre
  * lignes ci-dessous sont les memes donnees que celles que lit la boucle de
  * combat — impossible qu'elles mentent.
+ *
+ * Les degats affiches doivent donc, comme la boucle de combat (`towerDps`
+ * dans `scene/Buildings.tsx`), tenir compte du bonus de degats des secteurs
+ * annexes (`zoneEffects().towerDamage`) : sans ca, une fois « Plaines de
+ * Cendre » annexee, le panneau affichait le dps de base de `gamedata.ts`
+ * (160/sec au niveau 5 de la tourelle laser) alors que la tour infligeait
+ * bel et bien 192/sec en jeu — le commentaire ci-dessus etait alors faux.
  */
 function TurretSheet({ stats, next }: { stats: TurretStats | null; next?: TurretStats | null }) {
+  const towerDamageMult = useGameStore((s) => zoneEffects(s.unlockedZones).towerDamage);
   if (!stats) return null;
+  const dps = Math.round(stats.dps * towerDamageMult);
+  const nextDps = next ? Math.round(next.dps * towerDamageMult) : undefined;
   const rows: { label: string; value: string; nextValue?: string }[] = [
-    { label: 'Dégâts', value: `${stats.dps}/sec`, nextValue: next ? `${next.dps}/sec` : undefined },
+    { label: 'Dégâts', value: `${dps}/sec`, nextValue: next ? `${nextDps}/sec` : undefined },
     { label: 'Portée', value: stats.range.toFixed(1), nextValue: next ? next.range.toFixed(1) : undefined },
   ];
   if (stats.splash > 0) {

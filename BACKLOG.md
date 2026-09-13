@@ -362,6 +362,15 @@ traités, voir plus haut.
       corrigé le 2026-09-12, même situation que le 25/08 au 11/09 : les trois
       cases ci-dessus sont bloquées. Voir JOURNAL.md.)*
 
+- [x] **La fiche d'une tour mentait sur ses dégâts une fois « Plaines de
+      Cendre » annexée.** *(trouvé et corrigé le 2026-09-13, même situation
+      que le 25/08 au 12/09 : les trois cases ci-dessus sont bloquées. Le
+      panneau affichait le dps de base de `gamedata.ts`, jamais multiplié
+      par le bonus de secteur (`zoneEffects().towerDamage`, +20 % une fois
+      Cendres annexée) que lit pourtant la boucle de combat — contredisant
+      le commentaire du fichier qui promettait « impossible qu'elles
+      mentent ». Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

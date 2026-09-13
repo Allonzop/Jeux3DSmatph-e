@@ -11,6 +11,115 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-13 — La fiche d'une tour mentait sur ses dégâts une fois un secteur de bonus annexé
+
+**Ce qui a été trouvé en démarrant.** Pas de piège cette fois : `git fetch
+origin main` puis `git merge-base --is-ancestor HEAD origin/main` répondaient
+vrai immédiatement — `HEAD` local (`fe88c73`, le correctif du saut de niveaux
+du 12/09) était déjà fusionné dans `main`. Branche recréée depuis
+`origin/main` (`git checkout -B claude/bold-brown-xuw7ib origin/main`).
+`pnpm install` (`node_modules` absent).
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+29 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : `pnpm run typecheck` (passe),
+`node tools/game-check/wave.mjs --check` (2/2), capture `--village` et
+`--arsenal --wide` — rien de cassé à l'œil nu (l'enseigne du Bar, l'Antenne
+et le Marché zoomés, tous corrects).
+
+**Recherche.** Faute de piste visuelle nouvelle, recherche large déléguée à
+un agent d'exploration en tâche de fond (`store.ts`, `world.ts`,
+`gamedata.ts`, `HUD.tsx`, `ComboMeter.tsx`/`hudTiers.ts`, `Hunters.tsx`,
+`Camera.tsx`, `effects.ts`, `BuildingPopup.tsx`, etc. — tout ce qui n'avait
+pas déjà été relu dans une séance précédente), pendant que je vérifiais moi
+même le studio de personnages (`selftest` 5/5, `audit` : toujours les six
+mêmes notes de palette déjà confirmées voulues, rien de neuf) et une
+incohérence que j'avais repérée en passant dans
+`character-studio/src/studio/three/constants.ts` (`GAME_VIEW_HEIGHT` dérivé
+d'un décalage caméra `(0, 14, 10)` alors que `scene/Camera.tsx` utilise
+`(0, 13.5, 13)` depuis toujours — jamais corrigé depuis l'introduction du
+fichier). Cette dernière piste n'a pas été traitée : une seule tâche par
+séance, et le résultat de l'agent (ci-dessous) touchait directement à ce que
+voit le joueur en jeu, pas seulement un outil du studio — priorité donnée à
+celui-là. Laissée notée en fin d'entrée pour une séance future.
+
+L'agent a confirmé un vrai défaut dans `BuildingPopup.tsx` (`TurretSheet`) :
+le panneau d'une tour affiche `stats.dps` — la valeur brute de
+`gamedata.ts` — alors que la boucle de combat (`scene/Buildings.tsx`,
+fonction `towerDps`, appelée aux quatre points de dégâts : laser, mortier,
+cryo, tesla) multiplie ce même `dps` par
+`zoneEffects(unlockedZones).towerDamage`, qui vaut `1,2` une fois le
+secteur « Plaines de Cendre » annexé (`zones.ts` : `+20 % de dégâts`,
+accessible dès le niveau de commandant 3, donc tôt en partie). Le
+commentaire juste au-dessus de `TurretSheet` affirme pourtant explicitement
+« les memes donnees que celles que lit la boucle de combat — impossible
+qu'elles mentent » : faux dès que Cendres est annexé. Une tourelle laser de
+niveau 5 (`dps: 160` dans `gamedata.ts`) affichait toujours « 160/sec »
+alors qu'elle infligeait réellement 192/sec en combat.
+
+**Fait**
+
+- `BuildingPopup.tsx` : `TurretSheet` lit désormais
+  `zoneEffects(unlockedZones).towerDamage` (import de `zones.ts`) et
+  multiplie `stats.dps`/`next.dps` par ce facteur avant affichage
+  (`Math.round`, comme les autres valeurs arrondies du panneau), exactement
+  ce que fait `towerDps` dans `scene/Buildings.tsx`. Portée, splash,
+  ralentissement, nombre de cibles et « atteint les volants » n'entrent
+  dans aucun bonus de secteur actuel, laissés inchangés.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (la fiche d'une tour n'entre dans aucun calcul de vague).
+- Script Playwright jetable (non gardé) : sauvegarde avec une tourelle laser
+  au niveau 5 (5/5, `dps` de base 160), panneau ouvert
+  (`selectBuilding('tourelle')`). Avant annexion de Cendres : « 160/sec ».
+  Après `unlockedZones: { cendres: true }` injecté dans le magasin : «
+  192/sec » — capture d'écran à l'appui, mise en page inchangée (aucun
+  débordement, même les autres lignes du panneau intactes).
+- `node tools/game-check/shot.mjs --village --out /tmp/apres_village.png` :
+  identique pixel pour pixel à avant (le panneau d'une tour n'est pas ouvert
+  dans ce scénario, aucune raison que la capture change).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté à tort sur le fond. Recherche large (agent de fond) : hunters,
+  antenne, marché, noyau, tesla/cryo altitude, combo, objectifs, WaveOutcome
+  — tous relus et corrects, rien de neuf en dehors du défaut retenu. Ne pas
+  reparcourir ces zones sans piste neuve.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- **Nouveau, pas dans le backlog** : `character-studio/src/studio/three/constants.ts`,
+  `GAME_VIEW_HEIGHT` (26,4) est calculé à partir d'un décalage caméra
+  `(0, 14, 10)` documenté en commentaire — mais `scene/Camera.tsx` place la
+  caméra à `(0, 13.5, 13)` depuis toujours (avant même l'introduction de ce
+  fichier de constantes, seule ligne de son historique git). La valeur
+  correcte serait `2 × √(13,5² + 13²) × tan(37,5°) ≈ 28,76`, pas 26,4 —
+  vérifié par calcul (`python3`), pas seulement supposé. Cette constante
+  n'alimente qu'une fonctionnalité du studio (`Editor.tsx`,
+  `frameLikeGame` : le bouton qui recadre la caméra d'édition « comme en
+  jeu » pour juger un personnage à la bonne taille apparente) — jamais vue
+  du joueur, donc pas urgent, mais fausse depuis l'origine du fichier et
+  jamais corrigée. Non traité cette séance (une seule tâche, et le défaut
+  du panneau de tour touchait directement le joueur) ; correctif tout prêt
+  pour une séance future : remplacer `(0, 14, 10)` par `(0, 13.5, 13)` dans
+  le commentaire et `26.4` par `28.76` (ou une valeur recalculée) dans la
+  constante.
+- Camera coincée au sud (Dunes Dorées), signalée depuis le 08/09 : toujours
+  pas traitée, même raison qu'à chaque séance précédente (correctif risqué
+  sans pouvoir tester les commandes sur un vrai appareil).
+- Villageois 7 (palette terne) : toujours confirmé pas un bug, pas une
+  priorité.
+
 ## 2026-09-12 — Un saut de plusieurs niveaux d'XP perdait les déblocages d'interface intermédiaires
 
 **Ce qui a été trouvé en démarrant.** Piège habituel évité de justesse par une
