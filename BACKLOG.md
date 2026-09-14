@@ -371,6 +371,15 @@ traités, voir plus haut.
       le commentaire du fichier qui promettait « impossible qu'elles
       mentent ». Voir JOURNAL.md.)*
 
+- [x] **La constante `GAME_VIEW_HEIGHT` du character-studio (bouton « taille
+      jeu » de l'éditeur) était calculée à partir d'un mauvais décalage
+      caméra.** *(trouvé le 2026-09-13, corrigé le 2026-09-14, même situation
+      que le 25/08 au 13/09 : les trois cases ci-dessus sont bloquées.
+      Correctif tout prêt laissé en fin d'entrée du 13/09 : le commentaire
+      donnait `héros + (0, 14, 10)` comme décalage caméra du jeu, alors que
+      `scene/Camera.tsx` utilise `(0, 13,5, 13)` depuis toujours. N'affecte
+      que le bouton d'aperçu du studio, jamais vu du joueur. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

@@ -27,12 +27,13 @@ export const POST = {
 /**
  * Hauteur de monde visible par la caméra du jeu, en unités.
  *
- * `scene/Camera.tsx` place la caméra à `héros + (0, 14, 10)`, soit une distance
- * de √(14² + 10²) ≈ 17,2 ; le `<Canvas>` du jeu ne passe pas de `camera`, donc
- * le fov est celui par défaut de R3F, 75°. D'où 2 × 17,2 × tan(37,5°) ≈ 26,4.
+ * `scene/Camera.tsx` place la caméra à `héros + (0, 13,5, 13)`, soit une
+ * distance de √(13,5² + 13²) ≈ 18,74 ; le `<Canvas>` du jeu ne passe pas de
+ * `camera`, donc le fov est celui par défaut de R3F, 75°. D'où
+ * 2 × 18,74 × tan(37,5°) ≈ 28,76.
  *
- * Un personnage d'1,5 unité n'occupe donc que ~6 % de la hauteur de l'écran en
+ * Un personnage d'1,5 unité n'occupe donc que ~5 % de la hauteur de l'écran en
  * jeu : le bloom et la vignette étant des effets *écran*, leur force apparente
  * dépend de cette taille.
  */
-export const GAME_VIEW_HEIGHT = 26.4;
+export const GAME_VIEW_HEIGHT = 28.76;

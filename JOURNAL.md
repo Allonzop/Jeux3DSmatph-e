@@ -11,6 +11,100 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-14 — Correctif tout prêt appliqué : `GAME_VIEW_HEIGHT` du character-studio
+
+**Ce qui a été trouvé en démarrant.** Pas de piège cette fois : `git fetch
+origin main` puis `git merge-base --is-ancestor HEAD origin/main` répondaient
+vrai immédiatement — `HEAD` local (`254a397`, le correctif des dégâts de tour
+du 13/09) était déjà fusionné dans `main`. Branche recréée depuis
+`origin/main` (`git checkout -B claude/bold-brown-x4xpgl origin/main`).
+`pnpm install` (`node_modules` absent).
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+30 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : `pnpm run typecheck` (passe),
+`node tools/game-check/wave.mjs --check` (2/2), capture `--village` — rien
+de cassé à l'œil nu.
+
+**Traité : le correctif laissé tout prêt par l'entrée du 13/09.** Cette
+entrée notait, sans le traiter (une seule tâche par séance, priorité donnée
+ce jour-là au bug affectant directement le joueur), une incohérence dans
+`character-studio/src/studio/three/constants.ts` : le commentaire
+au-dessus de `GAME_VIEW_HEIGHT` donnait le décalage caméra du jeu comme
+`héros + (0, 14, 10)`, alors que `scene/Camera.tsx` place la caméra à
+`heroPos + (sin(yaw)×13, ground + 13,5, cos(yaw)×13)` — soit `(0, 13,5, 13)`
+à yaw nul — depuis toujours (avant même l'introduction du fichier de
+constantes, seule ligne de son historique git). Confirmé par lecture directe
+de `Camera.tsx` (lignes 34-42) : le commentaire du jeu lui-même dit « le
+cadrage d'origine » pour `(0, +13,5, +13)`. La valeur recalculée
+(`python3` : `2 × √(13,5² + 13²) × tan(37,5°) ≈ 28,76`) diffère de l'ancienne
+(26,4) de 9 %.
+
+`GAME_VIEW_HEIGHT` n'alimente qu'une fonctionnalité du studio (`Editor.tsx`,
+`frameLikeGame`, bouton « taille jeu ») : elle recule la caméra d'édition à
+la distance où le personnage occupe la même part d'écran qu'en jeu, pour
+juger sa taille apparente réelle. Jamais vue du joueur — pas urgent, mais
+fausse depuis l'origine du fichier.
+
+**Fait**
+
+- `character-studio/src/studio/three/constants.ts` : commentaire corrigé
+  (`(0, 13,5, 13)` au lieu de `(0, 14, 10)`, distance `≈ 18,74` au lieu de
+  `17,2`) et `GAME_VIEW_HEIGHT` passé de `26.4` à `28.76`. Le commentaire
+  sur la part d'écran occupée par un personnage d'1,5 unité mis à jour de
+  « ~6 % » à « ~5 % » (`1,5 / 28,76 ≈ 5,2 %`).
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (cette constante n'entre dans aucun calcul de vague).
+- Studio lancé (`pnpm run dev`, port 5173) et piloté par un script
+  Playwright jetable (chromium pris directement dans `/opt/pw-browsers/`,
+  la résolution du module `playwright` par défaut échouait dans ce
+  répertoire) : bibliothèque ouverte (kit auto-chargé, `localStorage` vide),
+  fiche du Héros ouverte, capture avant clic sur « taille jeu » (personnage
+  cadré de près, cadrage par défaut de l'éditeur), puis après clic — la
+  caméra recule et le personnage devient une petite silhouette au centre
+  d'un sol vert, cohérent avec le village vu de loin en jeu (`shot.mjs
+  --village`, où le héros n'occupe qu'une fraction du village). Pas de
+  régression : le bouton fonctionne toujours, juste avec la bonne distance.
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png` :
+  identique pixel pour pixel à avant (le studio et le jeu sont deux projets
+  distincts, cette constante du studio n'entre dans aucun calcul du jeu).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5, avant et après le correctif — `selftest` ne couvre pas le rendu de
+  l'éditeur (voir `AGENTS.md` : il rejoue les invariants du format
+  d'échange, pas le rendu 3D), cohérent avec le fait qu'aucun personnage n'a
+  changé de forme.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté à tort. Piste déjà entièrement diagnostiquée par l'entrée du
+  13/09 (calcul vérifié par `python3`, décalage caméra confirmé par lecture
+  de `Camera.tsx`) : cette séance a appliqué le correctif préparé sans
+  détour, pas de nouvelle recherche large nécessaire.
+- Note pratique pour une future séance : dans ce dépôt, `import 'playwright'`
+  échoue selon le répertoire de travail (résolution de module Node) — passer
+  par le chemin absolu `/opt/node22/lib/node_modules/playwright/index.mjs`,
+  et fournir explicitement `executablePath: '/opt/pw-browsers/chromium'`
+  avec `args: ['--no-sandbox']` à `chromium.launch()`. `waitUntil:
+  'networkidle'` sur `page.goto` d'un serveur Vite ne se résout jamais (le
+  websocket HMR reste ouvert) : utiliser `waitUntil: 'load'` à la place.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Camera coincée au sud (Dunes Dorées), signalée depuis le 08/09 : toujours
+  pas traitée, même raison qu'à chaque séance précédente (correctif risqué
+  sans pouvoir tester les commandes sur un vrai appareil).
+- Villageois 7 (palette terne) : toujours confirmé pas un bug, pas une
+  priorité.
+
 ## 2026-09-13 — La fiche d'une tour mentait sur ses dégâts une fois un secteur de bonus annexé
 
 **Ce qui a été trouvé en démarrant.** Pas de piège cette fois : `git fetch
