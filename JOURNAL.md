@@ -11,6 +11,123 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-15 — Correctif tout prêt appliqué : la barre de vie restait affichée pendant l'animation de mort
+
+**Ce qui a été trouvé en démarrant.** Pas de piège cette fois : `HEAD` local
+(`fe88c73`, le correctif du saut de niveaux du 12/09 — l'entrée du 14/09
+n'avait rien changé au code du jeu, seulement au studio) et `origin/main`
+pointaient déjà sur le même commit après `git fetch origin main`
+(`git merge-base --is-ancestor` vrai immédiatement). Branche recréée depuis
+`origin/main` (`git checkout -B claude/bold-brown-beupe7 origin/main`).
+`pnpm install` (`node_modules` absent).
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+31 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Un agent de recherche dédié a relu tout `JOURNAL.md` (2026-08-15 au
+2026-09-06, la partie que je n'avais pas encore en tête) pour lister ce qui
+restait ouvert en dehors de ces trois cases. Un correctif tout prêt, jamais
+appliqué, en ressort : la note de la toute première séance (09-08) sur
+`Enemies.tsx` — « la barre de vie flottante reste affichée à 0 % pendant
+l'écrasement (elle ne se cache que quand `hpPercent === 1`) [...] une séance
+future pourrait la masquer explicitement dès `hp <= 0` ». Vérifié encore
+valide par lecture directe du fichier actuel : la condition est toujours
+`hpPercent < 1` (`Enemies.tsx` ligne 345), inchangée depuis.
+
+**Traité.** `EnemyNode` calcule `hpPercent = enemy.hp / enemy.maxHp` et
+n'affiche la plaque de vie (fond sombre + remplissage teinté) que si
+`hpPercent < 1`. Un monstre à 0 pv reste dans `enemies` le temps de son
+animation de mort (`isDead`/`deathSquash`, voir le commentaire de
+`damageEnemy` dans `store.ts` — c'est volontaire depuis le 18/08, pour
+laisser jouer l'écrasement avant `removeEnemy`), donc `hpPercent` vaut alors
+exactement 0, qui vérifie toujours `hpPercent < 1` : la plaque de fond reste
+affichée, vide, tout le temps de l'écrasement (~0,5 s), sur un cadavre qui
+rétrécit. Pas gênant en pratique (déjà noté ainsi le 09-08 : une barre vide
+sur un corps qui disparaît reste lisible), mais un correctif d'une ligne,
+identifié depuis plus d'un mois.
+
+**Fait**
+
+- `Enemies.tsx` : condition changée en `hpPercent > 0 && hpPercent < 1`, plus
+  le commentaire au-dessus expliquant pourquoi (`isDead` démonte le noeud
+  après coup, pas avant).
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (la barre de vie n'entre dans aucun calcul de combat).
+- `node tools/game-check/shot.mjs --village --out /tmp/apres_village.png` :
+  identique pixel pour pixel à avant (aucun monstre blessé dans ce scénario).
+- Script Playwright jetable (non gardé) : un monstre isolé injecté
+  directement dans `enemies` (sans passer par `startWave`, qui déclenche la
+  bannière « ATTAQUE » — voir plus bas) à mi-vie (50/100) affiche la plaque
+  rouge à moitié pleine comme avant, aucune régression sur le cas normal.
+  Mise à 0 pv directement (`setState`, pas `damageEnemy`, pour isoler le
+  rendu du reste) : capture avant et après le correctif, dans les deux cas la
+  plaque n'apparaît déjà plus sur la capture — voir ci-dessous pourquoi ça ne
+  prouve rien dans un sens ou dans l'autre, et pourquoi je m'appuie sur la
+  lecture de code plutôt que sur cette capture pour conclure.
+
+**Essayé sans succès, à ne pas refaire**
+
+- **Capturer visuellement la plaque vide pendant l'écrasement (avant le
+  correctif), pour prouver le bug par l'image plutôt que par la lecture de
+  code.** Plusieurs approches, toutes infructueuses pour la même raison
+  de fond :
+  - Forcer `waveActive: true` par `setState` direct (sans passer par
+    `startWave`) déclenche la bannière « ATTAQUE VAGUE N » (`WaveIntro.tsx`,
+    sur le front montant de `waveActive`) — mais celle-ci ne disparaît
+    jamais dans cet environnement, même après 90 s d'attente réelle : son
+    minuteur (1,9 s) se déclenche bien, mais l'animation de sortie
+    d'`AnimatePresence` (framer-motion, pilotée par `requestAnimationFrame`)
+    ne semble jamais aller à son terme sous ce rendu logiciel très lent — le
+    texte reste dans le DOM (`document.body.innerText` le voit encore)
+    largement après que l'opacité soit visuellement retombée à 0 sur les
+    captures. Contournement qui marche : ne jamais toucher `waveActive` —
+    `Enemies()` (le composant parent) affiche `store.enemies` sans condition
+    sur `waveActive`, donc un monstre injecté directement s'affiche très
+    bien sans déclencher la bannière.
+  - Même en évitant la bannière, capturer la fenêtre exacte où `hp` vient de
+    tomber à 0 mais où `isDead`/`removeEnemy` n'a pas encore démonté le
+    noeud s'est révélé impossible à obtenir de façon fiable : `delta` dans
+    `useFrame` suit le temps réel écoulé depuis la dernière image, et sous
+    SwiftShader (quelques images par seconde, parfois beaucoup moins), une
+    seule image peut représenter plusieurs centaines de millisecondes de
+    temps simulé — largement plus que les ~0,5 s de l'écrasement
+    (`deathSquash`/`deathScale`, `Enemies.tsx`). Résultat observé à répétition
+    (avant et après le correctif) : le monstre passe de « affiché normalement
+    » à « entièrement retiré du magasin » en une seule image rendue, sans
+    qu'aucune capture n'attrape d'état intermédiaire — testé avec des
+    captures en rafale (jusqu'à 8 d'affilée, sans délai) juste après avoir
+    forcé `hp: 0`, toujours le même résultat. Ce n'est pas spécifique à ce
+    correctif : c'est une limite de fond de ce harnais pour tout ce qui doit
+    durer moins d'une seconde. **Ne pas retenter empiriquement une capture
+    d'un état transitoire aussi court dans cet environnement — s'appuyer sur
+    la lecture de code, comme la note du 09-08 l'avait déjà fait à l'origine
+    sans capture.**
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Camera coincée au sud (Dunes Dorées), signalée depuis le 08/09 : toujours
+  pas traitée, même raison qu'à chaque séance précédente (correctif risqué
+  sans pouvoir tester les commandes sur un vrai appareil).
+- Villageois 7 (palette terne) : toujours confirmé pas un bug, pas une
+  priorité.
+- Digest complet du reste de `JOURNAL.md` (15/08 au 06/09) produit par
+  l'agent de recherche de cette séance : au-delà du correctif retenu
+  ci-dessus, rien d'autre n'y ressort comme piste neuve non déjà refermée —
+  seuls des points cosmétiques mineurs déjà connus et explicitement
+  optionnels (libellé « Retry » du bouton de vague, bannière de
+  confirmation du déplacement de bâtiment identique à celle de la pose,
+  chevauchement possible du label 3D « Construire » avec le panneau) restent
+  non traités, sans qu'aucune séance ne les ait jamais jugés prioritaires
+  face aux trois cases bloquées.
+
 ## 2026-09-14 — Correctif tout prêt appliqué : `GAME_VIEW_HEIGHT` du character-studio
 
 **Ce qui a été trouvé en démarrant.** Pas de piège cette fois : `git fetch

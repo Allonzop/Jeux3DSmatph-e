@@ -380,6 +380,14 @@ traités, voir plus haut.
       `scene/Camera.tsx` utilise `(0, 13,5, 13)` depuis toujours. N'affecte
       que le bouton d'aperçu du studio, jamais vu du joueur. Voir JOURNAL.md.)*
 
+- [x] **La barre de vie d'un monstre restait affichée, vide, pendant toute
+      l'animation de mort.** *(signalé dès le 2026-08-09, jamais traité,
+      corrigé le 2026-09-15, même situation que le 25/08 au 14/09 : les trois
+      cases ci-dessus sont bloquées. `Enemies.tsx` n'affichait la plaque de vie
+      que si `hpPercent < 1` : à 0 pv (mort, mais pas encore démonté — voir
+      `isDead`), la condition restait vraie et la plaque vide restait visible
+      tout l'écrasement. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

@@ -341,8 +341,11 @@ function EnemyNode({ enemy }: { enemy: Enemy }) {
           React par monstre blesse, montes et demontes en plein combat. Deux
           quads coutent une poignee de triangles et ne touchent jamais au DOM.
           Au sol plutot qu'au-dessus de la tete : la camera regarde d'en haut,
-          et ca evite d'avoir a orienter la barre vers elle a chaque image. */}
-      {hpPercent < 1 && (
+          et ca evite d'avoir a orienter la barre vers elle a chaque image.
+          `hpPercent > 0` : sans cette borne la plaque sombre reste affichee,
+          vide, pendant tout l'ecrasement de la mort (`hp` tombe a 0 avant que
+          `isDead` ne demonte le noeud). */}
+      {hpPercent > 0 && hpPercent < 1 && (
         <group position={[0, -type.altitude + 0.09, 0.55]} rotation={[-Math.PI / 2, 0, 0]}>
           <mesh>
             <planeGeometry args={[0.96, 0.17]} />
