@@ -388,6 +388,18 @@ traités, voir plus haut.
       `isDead`), la condition restait vraie et la plaque vide restait visible
       tout l'écrasement. Voir JOURNAL.md.)*
 
+- [x] **La caméra pouvait rester coincée dans le village de départ quand le
+      héros s'éloigne loin au sud sans tourner la boussole.** *(signalé dès le
+      2026-08-08, jamais traité (jugé trop risqué à corriger sans vrai
+      appareil), corrigé le 2026-09-16, même situation que le 25/08 au 15/09 :
+      les trois cases ci-dessus sont bloquées. `scene/Camera.tsx` calculait la
+      hauteur de la caméra à partir du sol sous le héros mais la plaçait à une
+      position `(x, z)` qui pouvait être bien plus proche du centre de la
+      planète — la hauteur ne correspondait alors plus à l'endroit réel de la
+      caméra, qui plongeait sous les toits du village. Corrigé en empêchant la
+      caméra de se rapprocher du centre plus que le héros, sans toucher à la
+      direction de la vue (`yaw`) ni aux commandes. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

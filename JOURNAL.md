@@ -11,6 +11,140 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-16 — La caméra coincée au sud (signalée depuis le 08/09) enfin corrigée
+
+**Ce qui a été trouvé en démarrant.** Pas de piège cette fois : `HEAD` local
+(`dfbcceb`, le correctif de la barre de vie du 15/09) et `origin/main`
+pointaient déjà sur le même commit après `git fetch origin main`
+(`git merge-base --is-ancestor dfbcceb origin/main` vrai immédiatement).
+Branche recréée depuis `origin/main` (`git checkout -B claude/bold-brown-yy41n3
+origin/main`). `pnpm install` (`node_modules` absent).
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+32 séances de suite écartée depuis le 15/08), « faire le tour de la planète »
+et « deuxième planète » (chantiers à part entière depuis le 22/08). Suivant la
+consigne pour ce cas : `pnpm run typecheck` (passe), `node
+tools/game-check/wave.mjs --check` (2/2), capture `--village` — rien de cassé
+à l'œil nu.
+
+**Reprise d'un vrai bug diagnostiqué et jamais traité, pas une nouvelle
+recherche.** `JOURNAL.md` du 08/09 (repris à chaque séance depuis dans « reste
+ouvert », jusqu'au 15/09 inclus) documentait un bug de caméra complet — la vue
+reste bloquée dans le village de départ (regard traversant la Ferme) quand le
+héros s'éloigne loin au sud sans tourner la boussole, pire dans Dunes Dorées
+(rayon 19) mais déjà présent dans le plateau de base au-delà de z ≈ −13 — sans
+jamais le corriger, jugé à chaque fois « risqué sans pouvoir tester les
+commandes sur un vrai appareil » parce que la piste envisagée alors (rendre le
+décalage caméra relatif à la direction radiale du héros) touchait aussi à
+`cameraControl.yaw`, partagé avec la conversion du joystick dans `Hero.tsx`.
+
+Relu `scene/Camera.tsx` avec ce diagnostic en tête : la caméra vise une
+position `heroPos + (sin(yaw)×13, ground+13.5, cos(yaw)×13)`, où `ground =
+surfaceY(heroPos.x, heroPos.z)` — le sol **sous le héros**, pas sous la
+caméra. Or `surfaceY` ne dépend que du rayon au centre de la planète
+(`sqrt(PLANET_RADIUS² − r²) − PLANET_RADIUS`, `world.ts`). Tant que la caméra
+reste à peu près au même rayon que le héros, l'approximation tient. Mais à
+yaw 0, un héros plein sud (rayon 19) donne un décalage `(0, +13)` presque
+exactement opposé à sa propre direction depuis le centre : la caméra retombe
+à un rayon de 6 (bien plus près du centre que le héros), avec une hauteur
+calculée pour un rayon de 19 (beaucoup plus bas) — elle plonge sous le
+terrain, bien plus haut à ce rayon-là, pile au niveau des toits du village.
+Confirmé par calcul (`ground` à r=19 : −8,25 ; caméra à −8,25+13,5 = 5,25,
+quasi identique aux 5,26 mesurés par debug le 08/09) puis par script
+Playwright jetable reproduisant l'état exact du 08/09 (téléportation du héros
+en `[0, 0, -19]`, zones débloquées) : capture identique à la description
+d'alors, vue bloquée sur le village de départ.
+
+**Correctif retenu : un plancher sur le rayon de la caméra, pas un
+changement de repère.** Plutôt que la piste écartée le 08/09 (rendre le
+décalage relatif à la direction radiale, qui touche `yaw`), empêché la
+position visée de se rapprocher du centre plus que le héros lui-même : si
+`(x, z)` calculé tombe à un rayon inférieur à celui du héros, il est
+redimensionné radialement jusqu'au rayon du héros (même direction, magnitude
+étendue). Comme `surfaceY` ne dépend que du rayon, ce plancher restaure
+exactement l'hypothèse dont dépend le calcul de hauteur : caméra et héros au
+même rayon (ou plus loin), donc à peu près à la même hauteur de sol. Ne
+touche ni `cameraControl.yaw` ni sa direction — donc pas d'impact sur la
+conversion du joystick dans `Hero.tsx`, qui reste inchangée. Le plancher ne se
+déclenche jamais en jeu normal près du centre (rayon héros ≈ 0 < rayon caméra
+naturel ≈ 13), donc aucun risque sur le cadrage par défaut, dont dépendent
+toutes les captures existantes.
+
+**Fait**
+
+- `scene/Camera.tsx` : calcul de `targetX`/`targetZ` inchangé dans le
+  principe, mais si leur rayon (`Math.hypot`) tombe sous le rayon du héros, il
+  est redimensionné à ce rayon (repli sur `heroPos` lui-même si le vecteur
+  calculé est quasi nul, pour éviter une division par une valeur proche de
+  zéro). Commentaire ajouté expliquant l'hypothèse sur `surfaceY` et pourquoi
+  ce correctif ne touche pas `yaw`.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (la caméra n'entre dans aucun calcul de combat).
+- `node tools/game-check/smoke.mjs` : 5/5, dont le parcours « caméra tournée +
+  pose », qui exerce justement `cameraControl.yaw` en dehors de 0 — inchangé.
+- Script Playwright jetable reproduisant l'état exact du bug du 08/09
+  (héros téléporté en `[0, 0, -19]`, zones débloquées, `yaw` par défaut à 0) :
+  avant le correctif, capture identique à la description du 08/09 (vue
+  bloquée sur le village) ; après, le héros et le décor de Dunes Dorées
+  (sable doré, pitons sombres) apparaissent correctement — vue du dessus,
+  attendue puisqu'à cet angle précis le décalage est exactement opposé à la
+  direction du héros et le plancher ramène la caméra exactement au-dessus de
+  lui (voir « essayé sans succès » plus bas pour pourquoi cet angle précis
+  dégénère en vue plongeante plutôt qu'en vue de trois-quarts).
+- Même script avec `yaw` tourné d'environ 1 s vers la droite (touche flèche,
+  comme un joueur le ferait) avant la téléportation : vue de trois-quarts
+  normale sur le héros dans Dunes Dorées, aucune trace de clipping — confirme
+  que le cas plongeant ci-dessus est propre à l'alignement exact yaw=0/plein
+  sud, pas un défaut général du correctif.
+- `node tools/game-check/shot.mjs --village --out /tmp/village_apres_fix.png` :
+  comparé pixel à pixel (Pillow) à une capture d'avant le correctif — diff non
+  nul (mean 1,40/255, 6,6 % des pixels), mais deux captures **consécutives
+  après** le correctif, code strictement identique, montrent un écart du même
+  ordre (mean 0,99/255, 4,5 % des pixels) : bruit inhérent aux animations
+  suivant l'horloge réelle (étoiles, planètes, ressources qui tickent), pas un
+  effet du correctif. Confirmé aussi par simple lecture du code : au centre
+  (rayon du héros nul), le plancher ne peut jamais se déclencher, donc la vue
+  par défaut est mathématiquement inchangée, pas seulement supposée telle.
+- `node tools/game-check/shot.mjs --arsenal --wide --out /tmp/arsenal_apres.png` :
+  inspecté à l'œil, rendu correct (même raison : rayon du héros nul dans ce
+  scénario).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a pas touché `src/game/characters/`.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté à tort. Une limite du correctif à connaître, pas un échec : à
+  l'alignement exact yaw=0 plein sud (et par symétrie, aux trois autres
+  alignements cardinaux équivalents), le plancher ramène la caméra math
+  exactement à la verticale du héros (le vecteur décalage est alors
+  anti-parallèle au vecteur héros, donc leur somme reste sur le même axe) —
+  la vue passe en plongée plutôt qu'en trois-quarts. Dès que le joueur tourne
+  la boussole (n'importe quel `yaw` hors de cet axe précis, testé ci-dessus),
+  la vue redevient normale. Un cas de repli plongeant occasionnel dans un
+  angle précis, loin du centre, est une nette amélioration par rapport à une
+  caméra plantée dans un bâtiment — pas retenté de le raffiner davantage
+  (ça rejoindrait la piste « repère radial complet » déjà écartée le 08/09
+  pour son risque sur les commandes).
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le cas de repli en vue plongeante aux alignements cardinaux exacts (yaw=0/
+  90°/180°/270° avec le héros sur l'axe correspondant), loin du centre : pas
+  gênant (le joueur tourne alors la vue normalement), mais si une séance
+  future veut l'affiner, il faudrait probablement un mélange progressif entre
+  le décalage plat et le plancher radial plutôt qu'un `if` net — pas fait ici
+  pour rester sur un correctif simple à vérifier sans vrai appareil.
+- Villageois 7 (palette terne) : toujours confirmé pas un bug, pas une
+  priorité.
+
 ## 2026-09-15 — Correctif tout prêt appliqué : la barre de vie restait affichée pendant l'animation de mort
 
 **Ce qui a été trouvé en démarrant.** Pas de piège cette fois : `HEAD` local
