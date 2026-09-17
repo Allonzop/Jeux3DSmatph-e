@@ -130,10 +130,13 @@ export function BuildingPopup() {
   }
 
   // L'occupant du bâtiment, s'il en a un. Rien pour les tours ajoutées après
-  // la tourelle laser : elles n'abritent personne.
-  const residentIndex = BUILDING_RESIDENT[data.id];
+  // la tourelle laser : elles n'abritent personne. `Villagers.tsx` ne peuple
+  // que le premier exemplaire de chaque type (il itère sur l'id de base,
+  // jamais `hutte#2`) : à partir du deuxième exemplaire, aucun villageois ne
+  // vient réellement s'y installer, donc pas de portrait ni de mention ici.
+  const residentIndex = copy === 1 ? BUILDING_RESIDENT[data.id] : undefined;
   const resident =
-    data.id === 'bar'
+    data.id === 'bar' && copy === 1
       ? hunterDefs[0]
       : residentIndex !== undefined
         ? villagerDefs[residentIndex]

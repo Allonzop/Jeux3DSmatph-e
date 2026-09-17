@@ -400,6 +400,17 @@ traités, voir plus haut.
       caméra de se rapprocher du centre plus que le héros, sans toucher à la
       direction de la vue (`yaw`) ni aux commandes. Voir JOURNAL.md.)*
 
+- [x] **Le panneau d'une Hutte (ou Ferme, ou Tourelle laser) au-delà du
+      premier exemplaire promettait un villageois qui ne viendrait jamais.**
+      *(trouvé et corrigé le 2026-09-17, même situation que le 25/08 au
+      16/09 : les trois cases ci-dessus sont bloquées.
+      `scene/Villagers.tsx` ne peuple que le premier exemplaire de chaque
+      bâtiment (il itère sur l'identifiant de base dans `BUILDING_RESIDENT`,
+      jamais `hutte#2`/`tourelle#3`), mais le panneau (`BuildingPopup.tsx`)
+      affichait le même portrait et le même bandeau « OCCUPANT » pour tous
+      les exemplaires, et le blurb de la Hutte affirmait « Un villageois
+      vient s'y installer » quel que soit l'exemplaire. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

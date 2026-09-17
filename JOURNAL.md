@@ -11,6 +11,105 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-17 — Le panneau d'un deuxième exemplaire de bâtiment promettait un villageois qui ne viendrait jamais
+
+**Ce qui a été trouvé en démarrant.** Pas de piège cette fois : `HEAD` local
+(`7898425`, le correctif de la caméra du 16/09) et `origin/main` pointaient
+déjà sur le même commit après `git fetch origin main` (`git log
+origin/main` montrait la même tip). Branche recréée depuis `origin/main`
+(`git checkout -B claude/bold-brown-e0j2g4 origin/main`). `pnpm install`
+(`node_modules` absent).
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+33 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : `pnpm run typecheck` (passe),
+`node tools/game-check/wave.mjs --check` (2/2), capture `--village` — rien
+de cassé à l'œil nu.
+
+**Recherche.** Déléguée à un agent d'exploration en tâche de fond : lecture
+complète de `JOURNAL.md` (4128 lignes) et `BACKLOG.md` pour lister tout ce
+qui a déjà été vérifié correct ou écarté, puis recherche dans le code actuel
+d'un texte affiché qui ne correspond plus à la logique réelle — le motif le
+plus fréquent des 30+ dernières séances.
+
+L'agent a trouvé un vrai défaut, apparu après les relectures précédentes des
+`blurb` de bâtiments (09-04, 09-05, qui ne couvraient que le cas à un seul
+exemplaire) : `scene/Villagers.tsx` fait apparaître un villageois en
+parcourant `BUILDING_RESIDENT` (`gamedata.ts`) par identifiant de **base**
+(`hutte`, `ferme`, `marche`, `bar`, `antenne`, `tourelle`) et en testant
+`buildingLevels[buildingId]` — jamais `hutte#2` ou `tourelle#3`, qui
+n'existent dans `buildingLevels` que depuis l'ajout des exemplaires
+multiples le 21/08. Construire une deuxième ou troisième Hutte (ou Ferme,
+ou Tourelle laser — les trois seuls types à la fois dans
+`BUILDING_RESIDENT` et à `maxInstances` supérieur à 1) ne fait donc jamais
+venir de second villageois. Or `BuildingPopup.tsx` résolvait le portrait et
+le bandeau « OCCUPANT » sur `data.id`, l'identifiant de base partagé par
+tous les exemplaires (`data = buildingData(selectedBuilding)`), donc
+affichait le même portrait pour « Hutte n°2 » que pour la première — et le
+blurb de la Hutte disait explicitement « Un villageois vient s'y installer »
+quel que soit l'exemplaire construit.
+
+Vérifié par lecture de code (les trois fichiers) puis confirmé en direct :
+script Playwright jetable réutilisant le scénario `ARSENAL` de `shot.mjs`
+(qui construit déjà `hutte#2` et `tourelle#2`), panneau ouvert par
+`selectBuilding('hutte#2')` — texte DOM extrait montrait bien « OCCUPANT »
+et « Un villageois vient s'y installer » pour la Hutte n°2, comme pour la
+première.
+
+**Fait**
+
+- `gamedata.ts` : blurb de la Hutte réduit à « Produit des boulons en
+  continu tant que la partie est ouverte. » — la phrase sur le villageois
+  n'était vraie que pour le premier exemplaire ; le portrait + bandeau
+  « OCCUPANT » du panneau suffit à communiquer l'information pour celui-là,
+  sans texte redondant à corriger par exemplaire.
+- `BuildingPopup.tsx` : le calcul de `residentIndex`/`resident` (portrait +
+  bandeau « OCCUPANT »/« Recrute ») est désormais conditionné à
+  `copy === 1` (`copy = instanceNumber(selectedBuilding)`, déjà lu plus haut
+  dans le fichier pour le suffixe « n°2 » du titre) — plus aucun portrait
+  pour un exemplaire au-delà du premier, cohérent avec ce que
+  `Villagers.tsx` peuple réellement.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (le panneau d'un bâtiment n'entre dans aucun calcul de
+  vague).
+- Script Playwright jetable (scénario `ARSENAL`, non gardé) : panneau ouvert
+  successivement sur `hutte`, `hutte#2` et `tourelle#2`. Avant le correctif,
+  les trois affichaient « OCCUPANT » (et `hutte`/`hutte#2` la phrase sur le
+  villageois). Après : `hutte` affiche toujours le portrait et « OCCUPANT »
+  (capture à l'appui, mise en page inchangée, blurb réduit sans la phrase
+  redondante) ; `hutte#2` et `tourelle#2` n'affichent plus ni portrait ni
+  bandeau, seule la description de production/défense reste, sans trou dans
+  la mise en page (le bloc entier disparaît proprement, pas de portrait vide).
+- `node tools/game-check/shot.mjs --village --out /tmp/apres_village.png` :
+  identique à avant (le scénario `--village` n'a qu'un seul exemplaire de
+  chaque bâtiment, aucun panneau ouvert non plus).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a touché ni le rig ni les registres de personnages,
+  seulement le texte et l'affichage du panneau du jeu.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté à tort. Piste unique proposée par l'agent de recherche,
+  vérifiée exacte à la première lecture — pas de fausse piste explorée
+  cette séance.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le cas de repli en vue plongeante aux alignements cardinaux exacts du
+  correctif de caméra du 16/09 : toujours pas raffiné, toujours pas gênant
+  (voir cette entrée).
+- Villageois 7 (palette terne) : toujours confirmé pas un bug, pas une
+  priorité.
+
 ## 2026-09-16 — La caméra coincée au sud (signalée depuis le 08/09) enfin corrigée
 
 **Ce qui a été trouvé en démarrant.** Pas de piège cette fois : `HEAD` local
