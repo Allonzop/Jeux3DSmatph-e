@@ -411,6 +411,16 @@ traités, voir plus haut.
       les exemplaires, et le blurb de la Hutte affirmait « Un villageois
       vient s'y installer » quel que soit l'exemplaire. Voir JOURNAL.md.)*
 
+- [x] **Le cristal du noyau tournait au rouge sous 50 % de vie, alors que le
+      commentaire du fichier dit explicitement qu'il doit garder son cyan.**
+      *(trouvé et corrigé le 2026-09-18, même situation que le 25/08 au
+      17/09 : les trois cases ci-dessus sont bloquées.
+      `CrystalCore.tsx` calculait `color` à partir de `isDanger` (santé du
+      noyau), contredisant le docstring du fichier qui raconte justement
+      avoir sorti le cristal de ce rôle après un playtest confus (« on ne
+      comprend pas pourquoi il devient rouge ou bleu ») pour ne laisser le
+      code vert/ambre/rouge qu'à l'anneau au sol. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

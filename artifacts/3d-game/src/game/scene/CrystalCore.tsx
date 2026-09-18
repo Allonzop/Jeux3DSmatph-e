@@ -52,7 +52,7 @@ export function CrystalCore() {
   const isDanger = hpPercent < 0.5;
 
   /** Le cristal garde son cyan : c'est son identite, pas sa sante. */
-  const color = isDanger ? '#ff4444' : '#7df9ff';
+  const color = '#7df9ff';
   /** L'anneau, lui, dit la sante — vert, ambre, rouge. */
   const ringColor = hpPercent > 0.6 ? '#34d399' : hpPercent > 0.3 ? '#fbbf24' : '#f87171';
   const gradientMap = useToonGradient();

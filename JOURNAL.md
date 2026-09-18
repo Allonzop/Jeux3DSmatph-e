@@ -11,6 +11,88 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-18 — Le cristal du noyau tournait au rouge, contre son propre commentaire
+
+**Ce qui a été trouvé en démarrant.** Pas de piège : `HEAD` local
+(`da99169`, le correctif du panneau villageois du 17/09) et `origin/main`
+pointaient déjà sur le même commit après `git fetch origin main`
+(`git merge-base --is-ancestor HEAD origin/main` vrai immédiatement).
+Branche recréée depuis `origin/main` (`git checkout -B
+claude/bold-brown-fyqd94 origin/main`). `pnpm install` (`node_modules`
+absent). `pnpm run typecheck` (passe), `node tools/game-check/wave.mjs
+--check` (2/2), capture `--village` — rien de cassé à l'œil nu.
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête
+de `BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil
+requis, 34 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : recherche large d'un bug de
+contenu ou d'affichage, déléguée à un agent d'exploration en tâche de fond
+avec la liste complète des sujets déjà couverts depuis le 25/08 (pour ne
+rien reproposer).
+
+**Recherche.** L'agent a relu `JOURNAL.md` et le code, et trouvé
+`CrystalCore.tsx` (lignes 51-58), jamais mentionné dans les 34 séances
+précédentes. Le docstring du fichier (lignes 22-38) raconte un retour de
+playtest — « on ne comprend pas pourquoi il devient rouge ou bleu » — et
+annonce la correction : « le cyan est la couleur d'identité du cristal, pas
+celle de sa santé (...) seul le cristal lui-même reste cyan », tout le code
+vert → ambre → rouge étant déplacé sur l'anneau au sol. Le code
+n'implémentait pas cette promesse : `const color = isDanger ? '#ff4444' :
+'#7df9ff'` faisait dépendre la couleur du cristal (`isDanger = hpPercent <
+0.5`) de la même santé que l'anneau, avec un seuil différent (50 % contre
+60 %/30 % pour l'anneau) — deux signaux de danger désynchronisés sur le
+même objet, exactement la confusion que le commentaire dit avoir éliminée.
+`color` est réutilisé par le maillage du cristal, son enveloppe filaire,
+les trois éclats flottants et le point light : toute l'identité visuelle du
+noyau basculait donc au rouge sous 50 % de vie.
+
+Vérifié par lecture de code puis en direct : script Playwright jetable
+(scénario `--village`, `store.setState({ coreHp: 30 })` pour passer sous le
+seuil de 50 %) — avant le correctif, cristal, enveloppe et éclats rouges ;
+capture à l'appui après correctif : cristal resté cyan à 30/100 PV, seul
+l'anneau au sol vire au rouge (sous 30 %, comme prévu).
+
+**Fait**
+
+- `CrystalCore.tsx` : `color` fixé à `'#7df9ff'` (le cyan constant), plus
+  de dépendance à `isDanger`. `isDanger` reste utilisé ailleurs dans le
+  fichier (vitesse de rotation, pulsation de l'anneau), non touché — seule
+  la couleur du cristal correspondait au bug signalé par le commentaire.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle,
+  victoire avec — inchangé (la couleur du cristal n'entre dans aucun calcul
+  de combat).
+- `node tools/game-check/shot.mjs --village --out /tmp/apres_village.png` :
+  rendu normal, cristal cyan à pleine vie.
+- Script Playwright jetable : `store.setState({ coreHp: 30 })` sur le
+  scénario `--village` — capture montre le cristal toujours cyan à 30/100
+  PV, l'anneau au sol rouge (sous le seuil de 30 % de l'anneau). Avant le
+  correctif, le cristal lui-même passait au rouge dès 50 %.
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a touché ni le rig ni les registres de personnages,
+  seulement la couleur du noyau de cristal (`scene/CrystalCore.tsx`, hors
+  système de personnages).
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté à tort. Piste unique proposée par l'agent de recherche,
+  vérifiée exacte à la première lecture — pas de fausse piste explorée
+  cette séance.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le cas de repli en vue plongeante aux alignements cardinaux exacts du
+  correctif de caméra du 16/09 : toujours pas raffiné, toujours pas gênant.
+- Villageois 7 (palette terne) : toujours confirmé pas un bug, pas une
+  priorité.
+
 ## 2026-09-17 — Le panneau d'un deuxième exemplaire de bâtiment promettait un villageois qui ne viendrait jamais
 
 **Ce qui a été trouvé en démarrant.** Pas de piège cette fois : `HEAD` local
