@@ -43,6 +43,10 @@ export function HUD() {
   const waveFailed = useGameStore(state => state.waveFailed);
   const coreHp = useGameStore(state => state.coreHp);
   const coreMaxHp = useGameStore(state => state.coreMaxHp);
+  // Mêmes seuils que l'anneau au sol du noyau (CrystalCore.tsx, ringColor) :
+  // seule source de vérité vert/ambre/rouge pour la santé du cristal.
+  const coreHpPercent = coreMaxHp > 0 ? coreHp / coreMaxHp : 1;
+  const coreHpBarColor = coreHpPercent > 0.6 ? '#34d399' : coreHpPercent > 0.3 ? '#fbbf24' : '#f87171';
   const startWave = useGameStore(state => state.startWave);
   const placingBuilding = useGameStore(state => state.placingBuilding);
   const cancelPlacing = useGameStore(state => state.cancelPlacing);
@@ -226,7 +230,8 @@ export function HUD() {
                   </div>
                   <div className="w-full bg-black/50 rounded-full h-3 border border-black overflow-hidden relative">
                     <motion.div
-                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-red-600 to-red-400"
+                      className="absolute inset-y-0 left-0"
+                      style={{ backgroundColor: coreHpBarColor }}
                       initial={{ width: '100%' }}
                       animate={{ width: `${(coreHp / coreMaxHp) * 100}%` }}
                       transition={{ type: 'spring', bounce: 0 }}

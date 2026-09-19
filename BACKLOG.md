@@ -421,6 +421,16 @@ traités, voir plus haut.
       comprend pas pourquoi il devient rouge ou bleu ») pour ne laisser le
       code vert/ambre/rouge qu'à l'anneau au sol. Voir JOURNAL.md.)*
 
+- [x] **La jauge « noyau » du mini panneau de statut de vague (HUD, coin bas
+      droit) restait toujours rouge, même à pleine vie.** *(trouvé et
+      corrigé le 2026-09-19, même situation que le 25/08 au 18/09 : les
+      trois cases ci-dessus sont bloquées. `HUD.tsx` colorait cette barre
+      avec une classe Tailwind fixe (`from-red-600 to-red-400`) : seule sa
+      largeur suivait `coreHp/coreMaxHp`, jamais sa couleur — alors que
+      l'anneau 3D au sol autour du cristal (`CrystalCore.tsx`, `ringColor`)
+      applique déjà la convention vert/ambre/rouge (seuils 60 %/30 %) pour
+      cette même information. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

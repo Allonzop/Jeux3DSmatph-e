@@ -11,6 +11,90 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-19 — La jauge « noyau » du HUD restait rouge même à pleine vie
+
+**Ce qui a été trouvé en démarrant.** Pas de piège : `HEAD` local
+(`90baf1a`, le correctif de la couleur du cristal du 18/09) et `origin/main`
+pointaient déjà sur le même commit après `git fetch origin main`
+(`git merge-base --is-ancestor HEAD origin/main` vrai immédiatement).
+Branche recréée depuis `origin/main` (`git checkout -B
+claude/bold-brown-tgr2na origin/main`). `pnpm install` (`node_modules`
+absent). `pnpm run typecheck` (passe), `node tools/game-check/wave.mjs
+--check` (2/2) — rien de cassé au départ.
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête
+de `BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil
+requis, 35 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : recherche large déléguée à un
+agent d'exploration en tâche de fond, avec la liste complète des sujets
+déjà couverts depuis le 25/08 (pour ne rien reproposer).
+
+**Recherche.** L'agent a trouvé un vrai défaut dans `HUD.tsx` (le mini
+panneau de statut affiché en bas à droite pendant une vague, à ne pas
+confondre avec l'anneau 3D autour du cristal) : la jauge « abattus » suit
+bien `waveKills/waveEnemyCount` en vert, mais la jauge « noyau », censée
+représenter `coreHp/coreMaxHp`, utilisait une classe Tailwind fixe
+(`bg-gradient-to-r from-red-600 to-red-400`) — seule sa **largeur**
+dépendait des PV réels (`animate={{ width: ... }}`), jamais sa couleur.
+Un joueur voyait donc un signal d'alarme rouge en permanence, y compris à
+100 % de vie. Or le jeu a justement posé la convention vert (> 60 %) →
+ambre (> 30 %) → rouge pour la santé du noyau, dans `CrystalCore.tsx`
+(`ringColor`, corrigé le 18/09 pour que ce soit *l'anneau au sol*, pas le
+cristal, qui porte ce code couleur) — cette jauge du HUD affiche la même
+information mais n'avait jamais reçu la même règle, contredisant le
+principe que la correction de la veille venait d'établir.
+
+Vérifié par lecture de code (`HUD.tsx` lignes 223-234 contre `CrystalCore.tsx`
+ligne 57) puis en direct : `node tools/game-check/shot.mjs --village --wave 5
+--wide` (coeur à 100/100 pendant la vague 5) montrait la barre entièrement
+rouge avant le correctif.
+
+**Fait**
+
+- `HUD.tsx` : ajout de `coreHpPercent` et `coreHpBarColor` (mêmes seuils
+  0,6/0,3 et mêmes couleurs `#34d399`/`#fbbf24`/`#f87171` que `ringColor`
+  dans `CrystalCore.tsx`), appliqués en `style={{ backgroundColor: ... }}`
+  sur la barre au lieu de la classe Tailwind statique. Un commentaire
+  renvoie explicitement à `CrystalCore.tsx` comme source de vérité des
+  seuils, pour qu'une future séance ne les fasse pas diverger.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle,
+  victoire avec — inchangé (la couleur de cette jauge n'entre dans aucun
+  calcul de combat).
+- `node tools/game-check/shot.mjs --village --wave 5 --wide
+  --out /tmp/hud_full.png` : noyau à 100/100, barre verte (avant le
+  correctif : rouge). Capture à l'appui.
+- Script Playwright jetable (non gardé) : `coreHp` forcé à 20 % puis 45 %
+  du maximum pendant la vague 5 (`store.setState`) — barre rouge à 20 %,
+  ambre à 45 %, cohérent avec les seuils de `CrystalCore.tsx`. Captures à
+  l'appui pour les trois paliers (100 %, 45 %, 20 %).
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png` :
+  identique à la référence historique (le mini panneau de statut de vague
+  ne s'affiche que pendant une vague, absent de ce scénario).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a touché ni le rig ni les registres de personnages,
+  seulement le HUD du jeu (`ui/HUD.tsx`, hors système de personnages).
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté à tort. Piste unique proposée par l'agent de recherche,
+  vérifiée exacte à la première lecture — pas de fausse piste explorée
+  cette séance.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le cas de repli en vue plongeante aux alignements cardinaux exacts du
+  correctif de caméra du 16/09 : toujours pas raffiné, toujours pas gênant.
+- Villageois 7 (palette terne) : toujours confirmé pas un bug, pas une
+  priorité.
+
 ## 2026-09-18 — Le cristal du noyau tournait au rouge, contre son propre commentaire
 
 **Ce qui a été trouvé en démarrant.** Pas de piège : `HEAD` local
