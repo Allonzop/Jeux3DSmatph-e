@@ -11,6 +11,144 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-20 — Le faisceau de la Tourelle laser s'arrêtait avant d'atteindre sa cible
+
+**Ce qui a été trouvé en démarrant.** Pas de piège : `HEAD` local (`d902830`,
+le correctif de la jauge noyau du HUD du 19/09) et `origin/main` pointaient
+déjà sur le même commit après `git fetch origin main`
+(`git merge-base --is-ancestor` vrai immédiatement). Branche recréée depuis
+`origin/main` (`git checkout -B claude/bold-brown-n9sba3 origin/main`).
+`pnpm install` (`node_modules` absent). `pnpm run typecheck` (passe),
+`node tools/game-check/wave.mjs --check` (2/2), capture `--village` — rien de
+cassé au départ.
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+37 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : recherche large déléguée à un
+agent d'exploration en tâche de fond, avec la liste complète des 26 défauts
+déjà corrigés depuis le 25/08 (pour ne rien reproposer).
+
+**Recherche.** L'agent a trouvé un vrai défaut dans `Buildings.tsx`
+(`BuildingTourelle`) : le rayon laser visible est un cylindre enfant du
+canon, positionné et dimensionné **en dur** — `position={[0, 0, 4.5]}` et
+hauteur `8` dans la géométrie — soit un segment couvrant toujours
+exactement [0,5 ; 8,5] unités devant le canon, quelle que soit la distance
+réelle de la cible verrouillée. Or la portée de la tourelle laser
+(`gamedata.ts`) va de 9,1 (niveau 1) à 12 (niveau 5), toujours strictement
+au-delà de 8,5 : le rayon visible s'arrêtait donc systématiquement avant
+d'atteindre le monstre qu'il blessait réellement (`findTargets` autorise le
+tir jusqu'à `stats.range`, bien plus loin que 8,5). Le Tesla et les
+Chasseurs spatiaux du Bar recalculent au contraire la longueur exacte de
+leur effet chaque frame (`worldToLocal` + `scale.set`) — la tourelle laser
+avait été oubliée lors de ce traitement, jamais touchée depuis sa création.
+
+Vérifié par lecture de code (`Buildings.tsx` lignes 963-967 contre
+`gamedata.ts` lignes 310-314) puis en direct, en deux temps :
+- **Visuellement** : script Playwright jetable (préréglage `--village`,
+  tourelle niveau 2, portée 9,8) avec un monstre injecté directement dans
+  `enemies` (comme le 15/09, sans passer par `startWave`, pour éviter la
+  bannière) à une distance calculée de 9,75 unités de la tourelle. Capture
+  avant correctif : le rayon s'arrête net à mi-chemin, loin avant le
+  monstre. Après correctif : le rayon s'étire jusqu'à lui. Un monstre
+  injecté marche vers le cristal à chaque frame, et sous SwiftShader une
+  seule frame peut représenter plusieurs secondes de temps simulé (déjà
+  documenté le 15/09) : les captures suivantes montrent le monstre ayant
+  dérivé plus ou moins loin selon les essais, mais toujours avec un rayon
+  qui s'étire visiblement bien au-delà de l'ancienne longueur fixe pour le
+  rejoindre — jamais un simple segment court comme avant.
+- **Numériquement, pour trancher sans dépendre du rendu** : instrumentation
+  temporaire (`console.log`, retirée avant ce commit) comparant, sur la
+  toute première frame où la cible est verrouillée (distance réelle exacte
+  de placement, 9,75 unités, non encore parcourue), la position du bout du
+  rayon en coordonnées **monde** à la position réelle de la cible. Avant
+  correctif (bout du rayon recalculé à l'ancienne longueur fixe) : écart de
+  2,10 unités. Après correctif : écart de 6,6×10⁻¹⁵ (zéro aux erreurs
+  d'arrondi flottant près). Preuve directe, indépendante du facteur
+  d'échelle du bâtiment (×1,35 à ×1,4175 selon le niveau) qui rendait la
+  comparaison des seules valeurs en repère local peu lisible.
+
+**Fait**
+
+- `Buildings.tsx` (`BuildingTourelle`) : après le `lookAt` du canon vers la
+  cible, `barrelRef.current.updateWorldMatrix(true, false)` force la mise à
+  jour de `matrixWorld` (sinon `worldToLocal` mesurerait l'orientation de la
+  frame précédente — `lookAt` ne touche que le quaternion local). La
+  distance réelle à la cible est ensuite mesurée dans le repère local du
+  canon (`worldToLocal`, même technique que les arcs du Tesla, invariante à
+  la rotation) puis appliquée au rayon : `position.z` et `scale.y`
+  calculés à partir de cette distance au lieu des valeurs fixes `4,5`/`8`.
+  Un décalage de départ (`BEAM_START = 0.5`) est conservé pour que le rayon
+  ne démarre pas visuellement dans le canon, comme avant.
+- Deux constantes nommées (`BEAM_START`, `BEAM_GEOMETRY_HEIGHT`) remplacent
+  les nombres en dur `4.5`/`8`, en commentaire au-dessus de la fonction.
+- La géométrie du cylindre (rayon dépendant du niveau, inchangé) n'a plus de
+  position fixe dans le JSX : elle est posée par le `useFrame` comme la
+  visibilité l'était déjà.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (la longueur visuelle du rayon n'entre dans aucun calcul
+  de dégâts, seul `towerDps(stats.dps)` compte, non touché).
+- `node tools/game-check/shot.mjs --village --out /tmp/apres_final.png` :
+  identique à la référence historique (aucune tourelle active dans ce
+  scénario, aucune raison que la capture change).
+- Script Playwright jetable (non gardé, deux variantes) : capture visuelle
+  avant/après (voir « Recherche » ci-dessus) et instrumentation numérique
+  avant/après (écart de 2,10 unités ramené à ~0). Les deux racontent la
+  même histoire.
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a touché ni le rig ni les registres de personnages,
+  seulement le rendu d'un effet de la tourelle laser (`scene/Buildings.tsx`,
+  hors système de personnages).
+
+**Essayé sans succès, à ne pas refaire**
+
+- **Juger le correctif à l'œil sur un monstre injecté en direct, avec une
+  seule capture après une attente fixe (400 ms).** Le monstre marche vers
+  le cristal à chaque frame, et sous SwiftShader une frame peut représenter
+  plusieurs centaines de ms à plusieurs secondes de temps simulé (déjà
+  documenté le 15/09, confirmé à nouveau ici) : une position de départ mal
+  choisie (alignée à peu près sur l'axe tourelle-cristal) ne laisse qu'une
+  marge de progression de ~0,1 unité avant de retomber sous l'ancien
+  plafond de 8,5 — largement moins qu'un seul pas de simulation. Une
+  position cherchée par script pour maximiser la marge (perpendiculaire à
+  l'axe tourelle-cristal, ~1,44 unité de marge avant 8,5) a réduit le
+  problème sans l'éliminer : plusieurs essais ont quand même montré le
+  monstre dérivé loin de sa position de départ avant la capture. **Ne pas
+  compter sur une capture d'écran unique pour juger la longueur d'un effet
+  qui suit une cible mobile dans cet environnement** — soit figer la cible
+  (aucun mécanisme simple trouvé pour cela : réécrire `store.enemies` à
+  chaque `requestAnimationFrame` ne l'a pas empêché de dériver, l'intervalle
+  entre deux réécritures laissant passer un pas de simulation parfois très
+  long), soit instrumenter le calcul directement (ce qui a été fait ici,
+  et qui a tranché sans ambiguïté).
+- **Comparer les distances en unités locales (repère du canon) directement
+  au `target.dist` retourné par `findTargets` (en unités monde).** Écart
+  inexpliqué au premier essai (9,75 contre 7,01) qui a semé le doute sur la
+  justesse du correctif, avant de comprendre qu'il s'agit simplement du
+  facteur d'échelle du bâtiment (`BUILDING_SCALE` combiné au bonus de
+  niveau, ~1,42 pour une tourelle niveau 2) : `worldToLocal` annule
+  correctement ce facteur, et l'appliquer ensuite en position/échelle dans
+  ce même repère local restitue la bonne longueur une fois rendu — comme le
+  fait déjà le Tesla. Comparer plutôt les positions **du bout du rayon** et
+  de la cible, toutes deux reconverties en coordonnées monde
+  (`localToWorld`), a tranché sans ambiguïté et évite ce piège pour une
+  future vérification similaire.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le cas de repli en vue plongeante aux alignements cardinaux exacts du
+  correctif de caméra du 16/09 : toujours pas raffiné, toujours pas gênant.
+- Villageois 7 (palette terne) : toujours confirmé pas un bug, pas une
+  priorité.
+
 ## 2026-09-19 — La jauge « noyau » du HUD restait rouge même à pleine vie
 
 **Ce qui a été trouvé en démarrant.** Pas de piège : `HEAD` local

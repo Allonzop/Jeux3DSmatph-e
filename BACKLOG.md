@@ -431,6 +431,17 @@ traités, voir plus haut.
       applique déjà la convention vert/ambre/rouge (seuils 60 %/30 %) pour
       cette même information. Voir JOURNAL.md.)*
 
+- [x] **Le faisceau de la Tourelle laser avait une longueur fixe, trop
+      courte pour la portée réelle de la tour.** *(trouvé et corrigé le
+      2026-09-20, même situation que le 25/08 au 19/09 : les trois cases
+      ci-dessus sont bloquées. Le rayon visible (`Buildings.tsx`,
+      `BuildingTourelle`) était un cylindre positionné et dimensionné en
+      dur (0,5 à 8,5 unités devant le canon), sans lien avec la distance
+      réelle de la cible — alors que la portée de la tour va de 9,1 à 12
+      unités selon le niveau, toujours au-delà. Le faisceau visible
+      s'arrêtait donc systématiquement avant d'atteindre le monstre qu'il
+      blessait réellement. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

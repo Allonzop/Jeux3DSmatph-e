@@ -20,6 +20,7 @@ import { sfx } from '../sfx';
 
 // Scratch vector reused across frames — never allocate inside useFrame.
 const _ePos = new THREE.Vector3();
+const _beamLocal = new THREE.Vector3();
 
 /** Facteur d'agrandissement des batiments construits. Voir BuildingWrapper. */
 const BUILDING_SCALE = 1.35;
@@ -868,6 +869,11 @@ function BuildingMarche(props: BuildingProps) {
 // Les tours
 // ---------------------------------------------------------------------------
 
+/** Decalage avant du faisceau (evite qu'il ne demarre dans le canon) et
+ *  hauteur de sa geometrie de base, en unites locales — voir le useFrame. */
+const BEAM_START = 0.5;
+const BEAM_GEOMETRY_HEIGHT = 8;
+
 /** Tourelle laser — le tir continu mono-cible, la tour d'origine. */
 function BuildingTourelle(props: BuildingProps) {
   const gradientMap = useToonGradient();
@@ -889,8 +895,27 @@ function BuildingTourelle(props: BuildingProps) {
       if (barrelRef.current) {
         _ePos.set(target.x, surfaceY(target.x, target.z) + 0.5, target.z);
         barrelRef.current.lookAt(_ePos);
+        // lookAt() only touches the local quaternion; matrixWorld still
+        // reflects last frame's rotation until the renderer's own update
+        // pass. Force it now so the worldToLocal() below measures this
+        // frame's orientation, not a one-frame-stale one.
+        barrelRef.current.updateWorldMatrix(true, false);
       }
-      if (beamRef.current) beamRef.current.visible = true;
+      if (beamRef.current && barrelRef.current) {
+        beamRef.current.visible = true;
+        // Beam length used to be hard-coded (position z=4.5, height 8),
+        // covering only [0.5, 8.5] units in front of the barrel — every
+        // turret level's range (9.1 to 12) exceeds that, so the beam always
+        // stopped short of the target it was visibly damaging. Measure the
+        // real distance in the barrel's local space (rotation-invariant,
+        // same technique as the Tesla arcs) and stretch the beam to match.
+        _beamLocal.copy(_ePos);
+        barrelRef.current.worldToLocal(_beamLocal);
+        const dist = Math.max(0.1, _beamLocal.length());
+        const visLen = Math.max(0.1, dist - BEAM_START);
+        beamRef.current.position.set(0, 0, BEAM_START + visLen / 2);
+        beamRef.current.scale.set(1, visLen / BEAM_GEOMETRY_HEIGHT, 1);
+      }
       // Accumulate damage and flush ~4x/sec: same DPS, far fewer store
       // updates (each one re-renders the enemy tree via its hp bars).
       dmgAcc.current += towerDps(stats.dps) * delta;
@@ -960,9 +985,10 @@ function BuildingTourelle(props: BuildingProps) {
           </group>
         ))}
 
-        {/* Laser beam — always mounted, visibility toggled imperatively in useFrame */}
-        <mesh ref={beamRef} visible={false} position={[0, 0, 4.5]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.03 + level * 0.008, 0.03 + level * 0.008, 8]} />
+        {/* Laser beam — always mounted; position/scale/visibility set imperatively
+            in useFrame to stretch to the real target distance (see BEAM_START). */}
+        <mesh ref={beamRef} visible={false} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.03 + level * 0.008, 0.03 + level * 0.008, BEAM_GEOMETRY_HEIGHT]} />
           <meshBasicMaterial color={props.color} transparent opacity={0.6} />
         </mesh>
       </group>
