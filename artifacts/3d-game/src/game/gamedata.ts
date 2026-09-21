@@ -360,7 +360,7 @@ export const BUILDINGS: Record<string, BuildingData> = {
     name: 'Bobine Tesla',
     color: '#b388eb',
     role: 'defense',
-    blurb: 'Arc qui frappe plusieurs monstres à la fois — la seule tour qui abat les volants.',
+    blurb: 'Arc qui frappe plusieurs monstres à la fois, volants compris.',
     maxLevel: 4,
     maxInstances: 2,
     footprint: 1.2,

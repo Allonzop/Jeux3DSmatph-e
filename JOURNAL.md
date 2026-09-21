@@ -11,6 +11,107 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-21 — Le push de la veille récupéré, et la fiche du Tesla mentait sur l'exclusivité anti-aérien
+
+**Ce qui a été trouvé en démarrant.** Piège cette fois, contrairement aux
+huit dernières séances : le conteneur avait persisté depuis la séance du
+20/09, `HEAD` local était déjà sur la branche `claude/bold-brown-25pnot`
+avec un commit du 20/09 (`c442af7`, le correctif du faisceau de la Tourelle
+laser) — mais `git ls-remote origin 'refs/heads/claude/*'` ne renvoyait
+**aucune** branche `claude/*` sur le dépôt distant, et `origin/main`
+pointait encore sur `d902830` (la veille de `c442af7`) : le push de fin de
+la séance du 20/09 n'avait jamais atteint le serveur. Le commit local était
+complet et déjà vérifié (voir son entrée ci-dessous) — poussé directement
+(`git push -u origin claude/bold-brown-25pnot`), sans rejouer le travail.
+La fusion automatique (`auto-merge.yml`) l'a intégré à `main` en un peu
+moins d'une minute (`git fetch origin main` confirmant `origin/main` à
+`c442af7`). Branche ensuite redémarrée depuis `origin/main`
+(`git checkout -B claude/bold-brown-25pnot origin/main`), comme demandé
+quand la branche de la veille a déjà été fusionnée. `pnpm install`
+(`node_modules` absent). `pnpm run typecheck` (passe), `node
+tools/game-check/wave.mjs --check` (2/2), capture `--village` — rien de
+cassé au départ, une fois le retard rattrapé.
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête
+de `BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil
+requis, 38 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : recherche large déléguée à un
+agent d'exploration, avec la liste complète des 28 défauts déjà corrigés
+depuis le 25/08 (pour ne rien reproposer).
+
+**Recherche.** L'agent a trouvé un vrai défaut dans `gamedata.ts` (ligne
+363, blurb de la Bobine Tesla) : « Arc qui frappe plusieurs monstres à la
+fois — la seule tour qui abat les volants. » Or le Cryo-diffuseur a lui
+aussi `hitsAir: true` à ses trois niveaux (lignes 348, 351, 354), bel et
+bien exploité en combat (`Buildings.tsx:455` filtre les cibles volantes sur
+ce champ, `:485`/`:1043` appliquent les dégâts de zone en conséquence) — et
+sa propre fiche le confirme sans détour : « Ralentit tous les monstres de
+sa zone, volants compris. » (ligne 342). Le commentaire de code
+équivalent, au-dessus de la définition des tours (lignes 295-299), avait
+déjà été identifié faux et corrigé le 09/09 (commit `6481f53`) — mais ce
+correctif n'avait touché que le commentaire interne, jamais le texte
+réellement affiché au joueur dans le panneau de construction
+(`BuildSheet.tsx:191`, `{data.blurb}`) et la fiche du bâtiment posé
+(`BuildingPopup.tsx:221`, même rendu direct). Un même mensonge factuel,
+recopié une fois du commentaire de code vers le texte joueur, jamais
+corrigé de ce côté-là en douze jours.
+
+Vérifié par lecture de code des deux côtés (`gamedata.ts` lignes 342-363
+contre `Buildings.tsx` lignes 455, 485, 1043) : aucune ambiguïté, le champ
+`hitsAir` est identique sur les deux tours et produit le même effet réel en
+combat.
+
+**Fait**
+
+- `gamedata.ts` (blurb du Tesla) : « la seule tour qui abat les volants »
+  remplacé par « volants compris », au même gabarit que le blurb du Cryo
+  qui dit déjà « volants compris » — sans revendiquer d'exclusivité que le
+  code ne tient pas.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle,
+  victoire avec — inchangé (un texte de fiche n'entre dans aucun calcul de
+  combat).
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png` :
+  identique à la référence historique (un changement de texte de fiche
+  n'affecte aucun rendu 3D visible dans ce scénario).
+- Lecture directe des deux composants qui rendent `data.blurb`
+  (`BuildSheet.tsx:191`, `BuildingPopup.tsx:221`) : rendu brut, sans
+  transformation ni troncature — le nouveau texte s'affichera tel quel.
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a touché ni le rig ni les registres de personnages,
+  seulement un texte de fiche de bâtiment (`gamedata.ts`, hors système de
+  personnages).
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté à tort. Piste unique proposée par l'agent de recherche,
+  vérifiée exacte à la première lecture — pas de fausse piste explorée
+  cette séance.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le piège du push oublié (déjà vu les 29/08, 31/08, 01/09, 06/09, 08/09) a
+  refait surface, sous une forme légèrement différente : cette fois le
+  conteneur avait persisté d'une séance à l'autre au lieu d'être recréé,
+  et l'entrée du 20/09 ne mentionne aucune trace d'un `git push` exécuté
+  ni de son résultat — le commit était prêt et vérifié, mais semble n'avoir
+  jamais été poussé. Le contrôle `git merge-base --is-ancestor HEAD
+  origin/main` en tout début de séance (la parade posée après le 08/09)
+  a de nouveau fait son travail : détecté immédiatement, corrigé en un
+  `git push` avant de commencer le vrai travail du jour. Toujours la bonne
+  habitude à garder en ouverture de chaque séance.
+- Le cas de repli en vue plongeante aux alignements cardinaux exacts du
+  correctif de caméra du 16/09 : toujours pas raffiné, toujours pas gênant.
+- Villageois 7 (palette terne) : toujours confirmé pas un bug, pas une
+  priorité.
+
 ## 2026-09-20 — Le faisceau de la Tourelle laser s'arrêtait avant d'atteindre sa cible
 
 **Ce qui a été trouvé en démarrant.** Pas de piège : `HEAD` local (`d902830`,

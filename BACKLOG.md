@@ -442,6 +442,18 @@ traités, voir plus haut.
       s'arrêtait donc systématiquement avant d'atteindre le monstre qu'il
       blessait réellement. Voir JOURNAL.md.)*
 
+- [x] **La fiche de la Bobine Tesla mentait : « la seule tour qui abat les
+      volants ».** *(trouvé et corrigé le 2026-09-21, même situation que le
+      25/08 au 20/09 : les trois cases ci-dessus sont bloquées. Le
+      Cryo-diffuseur a lui aussi `hitsAir: true` (`gamedata.ts`) à ses trois
+      niveaux, bien utilisé en combat (`Buildings.tsx`, filtrage des cibles
+      et dégâts de zone) — sa propre fiche le dit d'ailleurs (« volants
+      compris »). Le commentaire de code équivalent (au-dessus de la
+      définition des tours) avait déjà été corrigé le 09/09, mais pas le
+      texte réellement affiché au joueur dans le panneau de construction
+      (`BuildSheet.tsx`) et la fiche du bâtiment posé (`BuildingPopup.tsx`),
+      qui rendent tous deux `data.blurb` directement. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.
