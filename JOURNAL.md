@@ -11,6 +11,104 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-22 — Le panneau Construire ne s'ouvrait pas sur l'onglet promis par le tutoriel
+
+**Ce qui a été trouvé en démarrant.** Pas de piège : `HEAD` local et
+`origin/main` pointaient déjà sur le même commit (`c8df817`, la fiche du
+Tesla corrigée le 21/09) après `git fetch origin main` — la branche de la
+veille avait bien été fusionnée. Branche redémarrée depuis `origin/main`
+(`git checkout -B claude/bold-brown-jhakbo origin/main`, comme demandé quand
+la branche précédente est déjà fusionnée). `pnpm install` (`node_modules`
+absent). `pnpm run typecheck` (passe), `node tools/game-check/wave.mjs
+--check` (2/2), capture `--village` — rien de cassé au départ.
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+39 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : recherche large déléguée à un
+agent d'exploration, avec la liste complète des 29 défauts déjà corrigés
+depuis le 25/08 (pour ne rien reproposer).
+
+**Recherche.** L'agent a trouvé un vrai défaut dans `BuildSheet.tsx` (ligne
+82) : l'onglet actif du panneau de construction était initialisé par
+`useState<Tab>(tutorialStep === 2 ? 'production' : 'defense')`, avec un
+commentaire explicite juste au-dessus disant l'intention : pendant l'étape
+« bâtissez une hutte » du tutoriel, la feuille doit s'ouvrir directement sur
+l'onglet Production, puisque le tutoriel l'annonce (`Tutorial.tsx` ligne 64 :
+« Choisissez la hutte : Onglet « Production », puis « Placer » »).
+
+Le problème : l'argument passé à `useState` n'est évalué qu'**une seule
+fois**, au montage du composant — sémantique standard de React, pas une
+supposition. `BuildSheet` est monté en permanence dès le début de partie :
+`App.tsx` rend `<HUD />` sans condition, et `HUD.tsx` (ligne 255) rend
+toujours `<BuildSheet open={sheetOpen} .../>` — seul le contenu interne est
+montré ou caché via `open`, le composant lui-même n'est jamais
+démonté/remonté (pas de `key`, vérifié par recherche du seul appel du
+composant dans tout `src/`). Au moment du montage, en tout début de partie,
+`tutorialStep` vaut `0` (`store.ts` ligne 253) : l'initialisation figeait
+donc `tab` sur `'defense'` pour toujours, rien ne le resynchronisant ensuite
+(aucun `useEffect`, seuls les clics sur les boutons d'onglet changent `tab`).
+Le joueur qui atteint réellement l'étape 2 et ouvre « Construire » tombait
+donc sur l'onglet Défense, devait chercher lui-même l'onglet Production —
+exactement ce que le commentaire disait vouloir éviter.
+
+Vérifié par lecture de code (`BuildSheet.tsx` lignes 73-88, `HUD.tsx` ligne
+255, `App.tsx` ligne 31, `store.ts` ligne 253, `Tutorial.tsx` lignes 60-66),
+puis en direct : script Playwright jetable (sauvegarde `tutorialStep: 2`,
+clic sur le bouton « Construire », lecture des classes/styles des quatre
+boutons d'onglet). Avant correctif : l'onglet Défense porte la classe active
+(fond blanc translucide, texte blanc), Production reste au style inactif.
+Après correctif : c'est Production qui porte `background-color: rgb(74, 222,
+128)` (le vert du rôle) et le style actif, Défense retombe au style inactif
+— capture jointe (`tab_check.png`) montrant le panneau ouvert directement sur
+Production, avec la Hutte cerclée du liseré magenta du tutoriel en tête de
+liste.
+
+**Fait**
+
+- `BuildSheet.tsx` : l'initialiseur figé de `useState<Tab>` est remplacé par
+  `useState<Tab>('defense')` plus un `useEffect` qui bascule sur
+  `'production'` quand la feuille s'ouvre (`open`) pendant l'étape 2 du
+  tutoriel (`tutorialStep === 2`). Import de `useEffect` ajouté. Le
+  commentaire d'intention est conservé et complété pour expliquer pourquoi un
+  simple initialiseur ne suffisait pas (composant monté en permanence).
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (l'onglet ouvert par défaut n'entre dans aucun calcul de
+  combat).
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png` :
+  identique à la référence historique (le scénario `--village` démarre avec
+  `tutorialStep: 5`, hors de l'étape concernée, aucune raison que la capture
+  change).
+- Script Playwright jetable (non gardé) : sauvegarde `tutorialStep: 2`, clic
+  sur « Construire », lecture des classes/styles des boutons d'onglet avant
+  et après correctif (voir « Recherche » ci-dessus) — bascule confirmée sans
+  ambiguïté, capture visuelle à l'appui.
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a touché ni le rig ni les registres de personnages,
+  seulement l'onglet par défaut d'un panneau UI du jeu (hors système de
+  personnages).
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté à tort. Piste unique proposée par l'agent de recherche,
+  vérifiée exacte à la première lecture puis confirmée en direct — pas de
+  fausse piste explorée cette séance.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le cas de repli en vue plongeante aux alignements cardinaux exacts du
+  correctif de caméra du 16/09 : toujours pas raffiné, toujours pas gênant.
+- Villageois 7 (palette terne) : toujours confirmé pas un bug, pas une
+  priorité.
+
 ## 2026-09-21 — Le push de la veille récupéré, et la fiche du Tesla mentait sur l'exclusivité anti-aérien
 
 **Ce qui a été trouvé en démarrant.** Piège cette fois, contrairement aux

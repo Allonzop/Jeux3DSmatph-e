@@ -454,6 +454,19 @@ traités, voir plus haut.
       (`BuildSheet.tsx`) et la fiche du bâtiment posé (`BuildingPopup.tsx`),
       qui rendent tous deux `data.blurb` directement. Voir JOURNAL.md.)*
 
+- [x] **Le panneau Construire ne s'ouvrait jamais sur l'onglet Production
+      pendant le tutoriel, contrairement à ce que le code disait faire.**
+      *(trouvé et corrigé le 2026-09-22, même situation que le 25/08 au
+      21/09 : les trois cases ci-dessus sont bloquées. `BuildSheet.tsx`
+      initialisait l'onglet actif avec `useState<Tab>(tutorialStep === 2 ?
+      'production' : 'defense')` — un initialiseur qui ne s'exécute qu'au
+      montage. Or `BuildSheet` reste monté en permanence depuis le début de
+      partie (`HUD.tsx` le rend toujours, seul `open` le montre ou le
+      cache), et `tutorialStep` vaut `0` à ce moment-là : l'onglet restait
+      figé sur Défense, jamais Production, quand le joueur atteignait
+      vraiment l'étape « Choisissez la hutte : Onglet « Production » »
+      (`Tutorial.tsx`). Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, ResourceType, Resources } from '../store';
 import {
@@ -76,10 +76,16 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
   const startPlacing = useGameStore((s) => s.startPlacing);
   const selectBuilding = useGameStore((s) => s.selectBuilding);
   const tutorialStep = useGameStore((s) => s.tutorialStep);
+  const [tab, setTab] = useState<Tab>('defense');
   // Pendant l'etape « batissez une hutte », la feuille s'ouvre directement sur
   // l'onglet ou elle se trouve : le tutoriel dit « onglet Production », autant
-  // que ce soit deja fait quand il l'annonce.
-  const [tab, setTab] = useState<Tab>(tutorialStep === 2 ? 'production' : 'defense');
+  // que ce soit deja fait quand il l'annonce. `BuildSheet` reste monte en
+  // permanence (seul `open` le montre ou le cache), donc un initialiseur de
+  // useState ne suffit pas : il ne s'execute qu'au montage, bien avant que le
+  // joueur atteigne cette etape.
+  useEffect(() => {
+    if (open && tutorialStep === 2) setTab('production');
+  }, [open, tutorialStep]);
 
   const groups = ROLE_ORDER.map((role) => ({
     role,
