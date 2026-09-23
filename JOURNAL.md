@@ -11,6 +11,148 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-23 — La fiche du Cryo-diffuseur mentait sur son ralentissement une fois la Toundra annexée
+
+**Ce qui a été trouvé en démarrant.** Pas de piège cette fois : `git
+ls-remote origin refs/heads/main` renvoyait déjà `ad4acac` (le correctif du
+22/09, onglet Production), et un premier `git fetch origin main` local avait
+affiché par erreur `d902830` (cache/latence) avant qu'un second fetch ne
+confirme `ad4acac` — la branche de la veille avait bien été fusionnée et
+supprimée (`git ls-remote origin 'refs/heads/claude/*'` : rien). Branche
+redémarrée depuis `origin/main` (`git checkout -B claude/bold-brown-4m90ap
+origin/main`, comme demandé quand la branche précédente est déjà fusionnée).
+`pnpm install` (`node_modules` absent). `pnpm run typecheck` (passe), `node
+tools/game-check/wave.mjs --check` (2/2), capture `--village` — rien de
+cassé au départ.
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+40 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : recherche large déléguée à un
+agent d'exploration, avec la liste complète des 30 défauts déjà corrigés
+depuis le 25/08 (pour ne rien reproposer), plus les deux non-bugs déjà
+écartés (Villageois 7, cas de repli caméra aux alignements cardinaux).
+
+**Recherche.** L'agent a trouvé un vrai défaut dans `BuildingPopup.tsx`
+(`TurretSheet`, ligne 71-76 avant correctif) : la ligne « Ralentissement »
+de la fiche du Cryo-diffuseur affichait `stats.slow` brut (35/45/55 % selon
+le niveau), sans jamais tenir compte du bonus de secteur — exactement le
+même genre de défaut que celui corrigé le 13/09 pour la ligne « Dégâts »
+d'une tour (non multipliée par `zoneEffects().towerDamage`), et dont le
+commentaire laissé au-dessus de `TurretSheet` avertissait explicitement
+(« Les degats affiches doivent donc... tenir compte du bonus... ») — mais
+sans jamais étendre l'avertissement au ralentissement, son cas jumeau.
+
+Le combat réel (`scene/Enemies.tsx` lignes 224-242) additionne au
+ralentissement du Cryo-diffuseur (`slow`, écrit sur le monstre par la tour)
+le froid ambiant de la zone « Toundra de Givre » une fois annexée
+(`zoneChill = zoneEffects(...).enemySlow`, +12 %, `zones.ts` ligne 128),
+plafonné à 85 % (`Math.min(0.85, slow + zoneChill)`). Un Cryo-diffuseur de
+niveau 1 (35 % affiché) ralentissait donc réellement les monstres de 47 %
+une fois la Toundra annexée, sans que la fiche ne le dise jamais.
+
+En vérifiant en direct (voir « Vérifié comment »), un second défaut est
+apparu, provoqué par le premier correctif : `gamedata.ts` portait aussi un
+champ `effect` statique et redondant sur les trois niveaux du
+Cryo-diffuseur (`'Ralentit de 35 % dans un rayon de 5,7'`), qui dupliquait
+exactement les deux mêmes informations (pourcentage + rayon) déjà rendues,
+correctement et dynamiquement, par les lignes « Ralentissement » et « Zone
+de gel » de `TurretSheet` juste en dessous. Avant le correctif du jour, ce
+texte statique et la ligne dynamique affichaient par coïncidence le même
+chiffre faux (35 %) ; après avoir corrigé la ligne dynamique, les deux se
+sont mis à se contredire dans le même panneau (35 % contre 47 %) —
+nouvelle incohérence introduite par le premier correctif, repérée sur la
+capture de vérification avant de committer. Plutôt que dupliquer le calcul
+une seconde fois dans une nouvelle chaîne, le champ `effect` — purement
+redondant — a été supprimé des trois niveaux du Cryo-diffuseur.
+
+Cette suppression a révélé un troisième problème, préexistant celui-là et
+sans lien avec le ralentissement : le bloc « Après amélioration » de
+`BuildingPopup.tsx` (ligne ~283) s'affichait sans condition dès que
+`level > 0`, même quand `nextLevelData.passive` est vide et
+`nextLevelData.effect` absent — un encadré bleu vide, juste l'en-tête sans
+contenu. Repéré sur la capture après suppression du champ `effect` du
+Cryo-diffuseur (encadré vide), puis confirmé déjà présent avant toute
+modification de cette séance pour la Tourelle laser et le Mortier (aucun
+des deux n'a jamais eu de champ `effect` ni de `passive` non vide à aucun
+niveau) — donc déjà en production, invisible faute d'avoir jamais regardé
+ce panneau précis pour ces deux tours avec `--wave`/`--village` seuls (ni
+l'un ni l'autre n'ouvre de fiche). Corrigé en conditionnant l'affichage du
+bloc à la présence réelle de contenu (`passive` non vide OU `effect`
+défini), comme le fait déjà le bloc « Actuellement » juste au-dessus
+(`hasPassive`/`shownLevelData?.effect`/`shownLevelData?.turret`).
+
+**Fait**
+
+- `BuildingPopup.tsx` (`TurretSheet`) : lecture de `zoneEffects().enemySlow`
+  en plus de `.towerDamage` (un seul `useGameStore`, renommé `zoneFx`),
+  ligne « Ralentissement » recalculée en `Math.min(0.85, stats.slow +
+  zoneFx.enemySlow)` pour la valeur actuelle et la valeur « après
+  amélioration », au même plafond que `scene/Enemies.tsx`. Commentaire de
+  tête de `TurretSheet` complété pour couvrir ce cas jumeau.
+- `gamedata.ts` : champ `effect` retiré des trois niveaux du
+  Cryo-diffuseur (texte statique et redondant, devenu incohérent avec la
+  ligne dynamique corrigée).
+- `BuildingPopup.tsx` : le bloc « Après amélioration » ne s'affiche plus
+  que s'il a un contenu réel (`passive` non vide ou `effect` présent) —
+  corrige un encadré vide préexistant pour la Tourelle laser et le
+  Mortier, révélé par la suppression du champ `effect` du Cryo-diffuseur.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe, avant et après le dernier
+  correctif du bloc « Après amélioration ».
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle,
+  victoire avec — inchangé (aucune des trois corrections ne touche au
+  calcul de combat, seulement à son affichage).
+- `node tools/game-check/shot.mjs --village --out /tmp/apres-village.png` :
+  identique à la référence historique.
+- `node tools/game-check/shot.mjs --arsenal --out /tmp/apres-arsenal.png` :
+  rien de changé dans la vue d'ensemble (aucune fiche ouverte dans ce
+  scénario).
+- Trois scripts Playwright jetables (non gardés, basés sur
+  `tools/game-check/lib.mjs`) : (1) Cryo-diffuseur niveau 1 posé, panneau
+  ouvert via `window.__villageStore.setState({selectedBuilding: 'cryo'})`,
+  d'abord sans zone débloquée (35 % → 45 %, comme avant), puis avec
+  `unlockedZones: {givre: true}` posé par le même `setState` — capture
+  montrant bien « 47 % → 57 % » sur la ligne Ralentissement, et « 5,7 →
+  6,9 » sur Zone de gel, cohérents entre eux ; capture intermédiaire ayant
+  servi à repérer l'encadré vide, capture finale confirmant sa disparition.
+  (2) Même méthode pour la Bobine Tesla (a un vrai `effect`, « 2 cibles
+  simultanées ») : encadré « Après amélioration » toujours affiché avec son
+  contenu, non affecté par le changement de condition. (3) Tourelle laser
+  niveau 2 : plus d'encadré vide sous « Coût du niveau suivant ».
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a touché ni le rig ni les registres de personnages,
+  seulement des fiches et des données de tour (hors système de
+  personnages).
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté à tort au sens propre, mais une fausse bonne idée évitée de
+  justesse : corriger uniquement la ligne « Ralentissement » sans toucher
+  au champ `effect` du Cryo-diffuseur aurait laissé la fiche se contredire
+  elle-même (35 % dans la phrase, 47 % dans le tableau juste en dessous) —
+  repéré seulement grâce à la capture de vérification avec zone débloquée,
+  pas par la seule lecture du diff. Sans cette capture, cette séance aurait
+  fini avec un nouveau mensonge à la place de l'ancien.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le cas de repli en vue plongeante aux alignements cardinaux exacts du
+  correctif de caméra du 16/09 : toujours pas raffiné, toujours pas gênant.
+- Villageois 7 (palette terne) : toujours confirmé pas un bug, pas une
+  priorité.
+- Aucun autre champ `effect` statique ne duplique une donnée affectée par
+  un bonus de secteur (vérifié : seuls Cryo-diffuseur et Antenne avaient un
+  `effect` chiffré ; Antenne décrit un bonus du héros non lu par
+  `zoneEffects()`, Tesla décrit un nombre de cibles non affecté par les
+  zones) — rien d'autre à corriger dans l'immédiat sur ce point précis.
+
 ## 2026-09-22 — Le panneau Construire ne s'ouvrait pas sur l'onglet promis par le tutoriel
 
 **Ce qui a été trouvé en démarrant.** Pas de piège : `HEAD` local et

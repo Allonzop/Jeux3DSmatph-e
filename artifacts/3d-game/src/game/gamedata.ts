@@ -345,14 +345,11 @@ export const BUILDINGS: Record<string, BuildingData> = {
     footprint: 1.15,
     levels: [
       { cost: { boulons: 540, matiere_floue: 30 }, passive: {},
-        turret: { mode: 'cryo', range: 5.7, dps: 8, splash: 5.7, targets: 99, slow: 0.35, hitsAir: true },
-        effect: 'Ralentit de 35 % dans un rayon de 5,7' },
+        turret: { mode: 'cryo', range: 5.7, dps: 8, splash: 5.7, targets: 99, slow: 0.35, hitsAir: true } },
       { cost: { boulons: 2200, matiere_floue: 70 }, passive: {},
-        turret: { mode: 'cryo', range: 6.9, dps: 12, splash: 6.9, targets: 99, slow: 0.45, hitsAir: true },
-        effect: 'Ralentit de 45 % dans un rayon de 6,9' },
+        turret: { mode: 'cryo', range: 6.9, dps: 12, splash: 6.9, targets: 99, slow: 0.45, hitsAir: true } },
       { cost: { boulons: 5000, matiere_floue: 140, energie_rire: 6 }, passive: {},
-        turret: { mode: 'cryo', range: 8, dps: 18, splash: 8, targets: 99, slow: 0.55, hitsAir: true },
-        effect: 'Ralentit de 55 % dans un rayon de 8' }
+        turret: { mode: 'cryo', range: 8, dps: 18, splash: 8, targets: 99, slow: 0.55, hitsAir: true } }
     ]
   },
   tesla: {

@@ -51,12 +51,16 @@ function PassiveYield({ passive }: { passive: Partial<Record<string, number>> })
  * Cendre » annexee, le panneau affichait le dps de base de `gamedata.ts`
  * (160/sec au niveau 5 de la tourelle laser) alors que la tour infligeait
  * bel et bien 192/sec en jeu — le commentaire ci-dessus etait alors faux.
+ * Meme regle pour le ralentissement du Cryo-diffuseur : le froid de la
+ * « Toundra de Givre » (`zoneEffects().enemySlow`) s'ajoute au sien en
+ * combat (`scene/Enemies.tsx`, `zoneChill`) — corrige le 2026-09-23 apres
+ * que ce cas jumeau soit reste oublie lors du correctif ci-dessus.
  */
 function TurretSheet({ stats, next }: { stats: TurretStats | null; next?: TurretStats | null }) {
-  const towerDamageMult = useGameStore((s) => zoneEffects(s.unlockedZones).towerDamage);
+  const zoneFx = useGameStore((s) => zoneEffects(s.unlockedZones));
   if (!stats) return null;
-  const dps = Math.round(stats.dps * towerDamageMult);
-  const nextDps = next ? Math.round(next.dps * towerDamageMult) : undefined;
+  const dps = Math.round(stats.dps * zoneFx.towerDamage);
+  const nextDps = next ? Math.round(next.dps * zoneFx.towerDamage) : undefined;
   const rows: { label: string; value: string; nextValue?: string }[] = [
     { label: 'Dégâts', value: `${dps}/sec`, nextValue: next ? `${nextDps}/sec` : undefined },
     { label: 'Portée', value: stats.range.toFixed(1), nextValue: next ? next.range.toFixed(1) : undefined },
@@ -69,10 +73,17 @@ function TurretSheet({ stats, next }: { stats: TurretStats | null; next?: Turret
     });
   }
   if (stats.slow > 0) {
+    // Le froid de la Toundra de Givre s'ajoute au ralentissement des
+    // cryo-diffuseurs en combat (`scene/Enemies.tsx`, `zoneChill`), plafonne
+    // a 85 % — la fiche doit refleter le meme total que le "Degats"
+    // ci-dessus, sinon elle recommence a mentir une fois la Toundra annexee.
+    const slowShown = Math.round(Math.min(0.85, stats.slow + zoneFx.enemySlow) * 100);
+    const nextSlowShown =
+      next && next.slow > 0 ? Math.round(Math.min(0.85, next.slow + zoneFx.enemySlow) * 100) : undefined;
     rows.push({
       label: 'Ralentissement',
-      value: `${Math.round(stats.slow * 100)} %`,
-      nextValue: next && next.slow > 0 ? `${Math.round(next.slow * 100)} %` : undefined,
+      value: `${slowShown} %`,
+      nextValue: nextSlowShown !== undefined ? `${nextSlowShown} %` : undefined,
     });
   }
   if (stats.targets > 1 && stats.targets < 90) {
@@ -269,15 +280,16 @@ export function BuildingPopup() {
                   })}
                 </div>
 
-                {level > 0 && (
-                  <div className="text-sm bg-blue-500/10 text-blue-300 p-3 rounded-xl border border-blue-500/20 flex flex-col gap-1">
-                    <span className="font-bold uppercase text-xs">Après amélioration</span>
-                    {Object.keys(nextLevelData!.passive || {}).length > 0 && (
-                      <PassiveYield passive={nextLevelData!.passive} />
-                    )}
-                    {nextLevelData!.effect && <span>{nextLevelData!.effect}</span>}
-                  </div>
-                )}
+                {level > 0 &&
+                  (Object.keys(nextLevelData!.passive || {}).length > 0 || nextLevelData!.effect) && (
+                    <div className="text-sm bg-blue-500/10 text-blue-300 p-3 rounded-xl border border-blue-500/20 flex flex-col gap-1">
+                      <span className="font-bold uppercase text-xs">Après amélioration</span>
+                      {Object.keys(nextLevelData!.passive || {}).length > 0 && (
+                        <PassiveYield passive={nextLevelData!.passive} />
+                      )}
+                      {nextLevelData!.effect && <span>{nextLevelData!.effect}</span>}
+                    </div>
+                  )}
 
                 <button
                   disabled={!canAfford}

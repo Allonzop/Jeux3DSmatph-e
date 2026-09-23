@@ -467,6 +467,21 @@ traités, voir plus haut.
       vraiment l'étape « Choisissez la hutte : Onglet « Production » »
       (`Tutorial.tsx`). Voir JOURNAL.md.)*
 
+- [x] **La fiche du Cryo-diffuseur mentait sur son ralentissement une fois
+      « Toundra de Givre » annexée.** *(trouvé et corrigé le 2026-09-23,
+      même situation que le 25/08 au 22/09 : les trois cases ci-dessus sont
+      bloquées. Même défaut que la fiche d'une tour du 13/09 (dégâts non
+      multipliés par le bonus de secteur), jamais corrigé pour le
+      ralentissement : `BuildingPopup.tsx` (`TurretSheet`) affichait
+      `stats.slow` brut (35/45/55 % selon le niveau du Cryo-diffuseur),
+      alors que le combat (`scene/Enemies.tsx`, `zoneChill`) ajoute le bonus
+      de froid de la Toundra de Givre (+12 %, plafonné à 85 %) au
+      ralentissement réellement subi par les monstres. Un texte statique
+      redondant dans `gamedata.ts` (`effect: 'Ralentit de 35 % dans un rayon
+      de 5,7'`) affichait le même chiffre non corrigé ; supprimé plutôt que
+      dupliqué, la fiche l'affiche déjà correctement via les lignes
+      Ralentissement/Zone de gel. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.
