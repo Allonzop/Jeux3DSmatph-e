@@ -1,5 +1,5 @@
 import type { GameState } from './store';
-import { BUILDINGS, instanceIds } from './gamedata';
+import { BUILDINGS, buildingData, instanceIds } from './gamedata';
 
 /**
  * L'objectif du moment, en une phrase.
@@ -33,6 +33,16 @@ function builtCount(state: GameState, base: string): number {
   let n = 0;
   for (const id of instanceIds(base)) if ((state.buildingLevels[id] || 0) > 0) n += 1;
   return n;
+}
+
+/** Boulons/seconde produits par tous les exemplaires deja construits d'un type. */
+function passiveBoulons(state: GameState, base: string): number {
+  let total = 0;
+  for (const id of instanceIds(base)) {
+    const level = state.buildingLevels[id] || 0;
+    if (level > 0) total += buildingData(id)?.levels[level - 1]?.passive.boulons || 0;
+  }
+  return total;
 }
 
 /** Nombre total de tours construites, tous types confondus. */
@@ -92,7 +102,19 @@ export function nextObjective(state: GameState): Objective {
     return { text: 'Un Cryo-diffuseur ralentirait tout ça' };
   }
   if (placedCount(state, 'hutte') < 2) {
-    return { text: 'Une seconde hutte doublerait vos boulons' };
+    // « Doublerait » n'est vrai que si la premiere hutte est encore au
+    // niveau 1 (la seconde demarre toujours a ce niveau, +4 boulons/s).
+    // Cet objectif peut s'afficher bien plus tard (apres les paliers de
+    // mi-partie ci-dessus, vague 6+), une fois la premiere hutte montee :
+    // le gain n'est alors qu'une fraction, jamais un doublement.
+    const current = passiveBoulons(state, 'hutte');
+    const firstLevelBoulons = BUILDINGS.hutte.levels[0].passive.boulons || 0;
+    const wouldDouble = current > 0 && firstLevelBoulons >= current;
+    return {
+      text: wouldDouble
+        ? 'Une seconde hutte doublerait vos boulons'
+        : 'Une seconde hutte augmenterait vos boulons',
+    };
   }
 
   return {

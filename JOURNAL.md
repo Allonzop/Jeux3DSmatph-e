@@ -11,6 +11,97 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-24 — L'objectif « une seconde hutte doublerait vos boulons » mentait passé le niveau 1
+
+**Ce qui a été trouvé en démarrant.** Pas de piège : `HEAD` local et
+`origin/main` pointaient déjà sur le même commit (`81270d3`, le correctif du
+23/09, fiche du Cryo-diffuseur) après `git fetch origin main`
+(`git ls-remote origin 'refs/heads/claude/*'` : rien, la branche de la veille
+avait bien été fusionnée puis supprimée). Branche déjà positionnée sur
+`claude/bold-brown-p0w8pa` à ce même commit. `pnpm install` (`node_modules`
+absent). `pnpm run typecheck` (passe), `node tools/game-check/wave.mjs
+--check` (2/2), capture `--village` — rien de cassé au départ.
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+41 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : recherche large déléguée à un
+agent d'exploration, avec la liste complète des 31 défauts déjà corrigés
+depuis le 25/08 et les deux non-bugs déjà écartés (Villageois 7, cas de
+repli caméra aux alignements cardinaux), pour ne rien reproposer.
+
+**Recherche.** L'agent a trouvé un vrai défaut dans `objectives.ts` (ligne
+94-96, avant correctif) : dès que le joueur n'a qu'une seule hutte posée,
+l'objectif affiché est « Une seconde hutte doublerait vos boulons », sans
+condition sur le niveau de cette hutte. Or chaque exemplaire produit pour
+son propre compte (`gamedata.ts`, `levels[i].passive.boulons` : 4/6/8/11/16
+selon le niveau 1 à 5 ; `GameCanvas.tsx`, `PassiveTicker`, somme sur tous les
+exemplaires) et une seconde hutte démarre toujours au niveau 1 (+4/s) : le
+doublement n'est vrai que si la première hutte est encore au niveau 1
+elle-même. Cet objectif ne s'affiche qu'en dernier dans l'échelle de
+conditions (après « deuxième défense » vague 3, Bar vague 4, Tesla vague 5,
+Cryo vague 6) — au moment où le joueur l'atteint réellement, sa première
+hutte est le plus souvent déjà montée : niveau 3 (8/s) + 4/s = 12/s, soit
++50 %, pas +100 % ; niveau 4 (11/s) + 4/s = 15/s, soit +36 %. Le même genre
+de défaut que les fiches de tour corrigées le 13/09 et le 23/09 (un chiffre
+affiché qui ignore l'état réel du bâtiment), mais dans le système
+d'objectifs plutôt qu'une fiche.
+
+**Fait**
+
+- `objectives.ts` : nouvelle fonction `passiveBoulons(state, base)` qui
+  additionne la production réelle de tous les exemplaires déjà construits
+  d'un type (même logique que `PassiveTicker`, via `buildingData(id)` comme
+  l'exige le commentaire de tête de `gamedata.ts`). La condition « moins de
+  deux huttes posées » compare maintenant la production actuelle de la
+  première hutte au gain d'une seconde hutte fraîche (toujours +4, niveau
+  1) : le texte reste « doublerait » seulement si ce gain double ou plus le
+  total actuel, sinon bascule sur « augmenterait vos boulons » — vrai dans
+  tous les cas, sans jamais chiffrer un ratio qu'il ne peut pas garantir.
+- `BUILDINGS` et `buildingData` importés ensemble depuis `gamedata.ts`
+  (`buildingData` ajouté à l'import existant).
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle,
+  victoire avec — inchangé (le texte d'un objectif n'entre dans aucun
+  calcul de combat).
+- `node tools/game-check/shot.mjs --village --out /tmp/apres-village.png` :
+  identique à la référence historique (le scénario `--village` a deux
+  huttes dès le départ dans une version antérieure du village de référence,
+  et de toute façon `tutorialStep: 5` masque `ObjectiveChip` seulement au
+  tout début — capture non affectée par ce changement de texte).
+- Script Playwright jetable (non gardé, basé sur `tools/game-check/lib.mjs`
+  et `build.mjs`) : une seule hutte posée, tourelle + tourelle#2 + bar +
+  tesla + cryo construits, `waveNumber: 6` (pour dépasser tous les paliers
+  de mi-partie et atteindre la branche « seconde hutte »), lecture directe
+  du texte affiché par `ObjectiveChip`. Hutte au niveau 1 : « Une seconde
+  hutte doublerait vos boulons » (inchangé, cas où l'affirmation reste
+  vraie). Hutte au niveau 3 : « Une seconde hutte augmenterait vos boulons »
+  (avant correctif, affichait à tort « doublerait »). Les deux captures
+  confirment la bascule exactement au seuil attendu.
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a touché ni le rig ni les registres de personnages,
+  seulement un texte d'objectif du jeu (hors système de personnages).
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté à tort. Piste unique proposée par l'agent de recherche,
+  vérifiée exacte à la première lecture puis confirmée en direct — pas de
+  fausse piste explorée cette séance.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le cas de repli en vue plongeante aux alignements cardinaux exacts du
+  correctif de caméra du 16/09 : toujours pas raffiné, toujours pas gênant.
+- Villageois 7 (palette terne) : toujours confirmé pas un bug, pas une
+  priorité.
+
 ## 2026-09-23 — La fiche du Cryo-diffuseur mentait sur son ralentissement une fois la Toundra annexée
 
 **Ce qui a été trouvé en démarrant.** Pas de piège cette fois : `git

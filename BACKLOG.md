@@ -482,6 +482,20 @@ traités, voir plus haut.
       dupliqué, la fiche l'affiche déjà correctement via les lignes
       Ralentissement/Zone de gel. Voir JOURNAL.md.)*
 
+- [x] **L'objectif « Une seconde hutte doublerait vos boulons » restait
+      affiché bien après que la production ait cessé de doubler.**
+      *(trouvé et corrigé le 2026-09-24, même situation que le 25/08 au
+      23/09 : les trois cases ci-dessus sont bloquées. `objectives.ts`
+      promettait un doublement fixe dès que le joueur n'avait qu'une seule
+      hutte posée — vrai seulement si cette hutte est encore au niveau 1 (la
+      seconde démarre toujours à ce niveau, +4 boulons/s). Cet objectif ne
+      s'affichant qu'en dernier, après tous les paliers de mi-partie
+      (vague 6+), la première hutte est le plus souvent déjà montée en
+      niveau à ce moment-là — le message devient alors objectivement faux
+      (ex. niveau 3 : 8 → 12 boulons/s, +50 %, pas +100 %). Le texte bascule
+      maintenant sur « augmenterait » dès que le gain réel n'atteint plus le
+      double. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.
