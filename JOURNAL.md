@@ -11,6 +11,111 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-25 — L'Onde de choc du héros touchait des monstres bien au-delà de ce que montrait son propre éclair visuel
+
+**Ce qui a été trouvé en démarrant.** Pas de piège : `origin/main` a
+fast-forward de `d902830` à `288127e` (correctif du 24/09, objectif de la
+seconde hutte) pendant le premier `git fetch origin`, confirmant que la
+branche de la veille avait bien été fusionnée. Branche locale
+`claude/bold-brown-pcji9z` déjà à jour sur ce commit, rien à rebaser.
+`pnpm install` (`node_modules` absent), `pnpm run typecheck` (passe), `node
+tools/game-check/wave.mjs --check` (2/2), capture `--village` — rien de
+cassé au départ.
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+42 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : recherche large déléguée à un
+agent d'exploration, avec la liste complète des 32 défauts déjà corrigés
+depuis le 25/08 et les deux non-bugs déjà écartés (Villageois 7, cas de
+repli caméra aux alignements cardinaux), pour ne rien reproposer.
+
+**Recherche.** L'agent a trouvé un défaut dans `heroPowers.ts` (ligne 96
+avant correctif) : le déclenchement du pouvoir « Onde de choc » calcule les
+dégâts et la poussée sur un vrai rayon, `SHOCK_RADIUS = 6.5` (`hero.ts`),
+mais appelle `spawnBurst(hx, hy + 0.8, hz, POWERS.onde.color, 2.6, 0.65)` —
+un `power` de 2,6 choisi indépendamment de ce rayon. Le rendu de l'anneau
+(`scene/CombatEffects.tsx`, ligne 119 : `r = t * power * 2.1`, appliqué à
+une géométrie de rayon de base 0,78) n'atteint donc que
+`0,78 × 2,6 × 2,1 ≈ 4,26` unités à pleine expansion — 65 % du rayon réel de
+6,5. Un monstre touché entre 4,3 et 6,5 unités du héros encaisse les 220
+dégâts (`SHOCK_DAMAGE`) et se fait repousser sans que l'éclair ne semble
+l'atteindre. Confirmé en direct par l'agent de recherche : quatre monstres
+placés à 6,4 unités ont bien perdu 220 pv en déclenchant le pouvoir via le
+vrai bouton du HUD, largement au-delà du rayon que l'anneau visuel peut
+couvrir.
+
+**Fait**
+
+- `heroPowers.ts`, ligne 96 : `power` passé à `spawnBurst` remplacé par
+  `SHOCK_RADIUS * 0.8` (au lieu de `2.6` fixe) — même convention que le
+  mortier (`scene/Buildings.tsx` ligne 1044, `stats.splash * 0.8`), le seul
+  autre appel de `spawnBurst` déjà dérivé d'un vrai rayon de jeu plutôt que
+  d'un facteur d'échelle arbitraire. Rayon visuel maximal désormais
+  `0,78 × (6,5 × 0,8) × 2,1 ≈ 8,52` : l'anneau dépasse le rayon réel
+  d'environ 31 %, exactement comme le fait déjà le mortier pour son propre
+  rayon de zone — aucun monstre dans le vrai rayon de dégâts ne peut plus
+  rester hors de portée visuelle de l'anneau en expansion.
+- Aucun changement à `SHOCK_DAMAGE`, `SHOCK_RADIUS`, `SHOCK_PUSH` ni à la
+  logique de dégâts/poussée elle-même (`triggerPower` lignes 78-93,
+  inchangées) : uniquement la taille du retour visuel, pas l'équilibrage.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle,
+  victoire avec — inchangé (le pouvoir du héros n'entre dans aucun des deux
+  scénarios, qui ne touchent jamais aux boutons de pouvoir).
+- `node tools/game-check/shot.mjs --village --out …` : identique à la
+  référence — capture statique du village, aucun pouvoir déclenché, non
+  affectée par ce changement.
+- Script Playwright jetable (non gardé, basé sur `lib.mjs`/`build.mjs`,
+  méthode reprise de l'agent de recherche) : vague lancée, niveau du
+  commandant forcé à 5 (débloque le pouvoir, requiredLevel 4), clic sur le
+  vrai bouton « Onde de choc » du HUD une fois des monstres en approche.
+  Un monstre passe de 120 à ~0 pv (le `SHOCK_DAMAGE` de 220 dépasse ses 120
+  pv de base) au déclenchement — le pouvoir touche toujours normalement.
+  Tentative de mesurer la distance exacte du monstre touché : le champ
+  `enemy.pos` du magasin est la position de **spawn**, pas la position
+  vivante (tenue dans `enemyPositions`, une `Map` interne à la scène, non
+  exposée sur `window`) — non concluant, abandonné au profit du calcul
+  géométrique ci-dessus (exact, ne dépend d'aucune mesure en direct) et de
+  la vérification déjà faite par l'agent de recherche à distance connue
+  (6,4 unités).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a touché ni le rig ni les registres de personnages,
+  seulement les effets visuels de combat du jeu (hors système de
+  personnages).
+
+**Essayé sans succès, à ne pas refaire**
+
+- Mesurer la distance réelle du monstre touché via `enemy.pos` dans le
+  magasin (`window.__villageStore.getState().enemies`) : ce champ est figé
+  au point d'apparition de la vague, pas la position courante pendant la
+  marche vers le cœur. Pour une prochaine séance qui aurait besoin de la
+  position vivante d'un monstre depuis un script externe, il faudrait soit
+  exposer `enemyPositions` (actuellement interne à `scene/utils.ts`) sur
+  `window` à des fins de test, soit lire les coordonnées d'un objet 3D
+  directement via Three.js — pas fait ici, le calcul géométrique a suffi.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le cas de repli en vue plongeante aux alignements cardinaux exacts du
+  correctif de caméra du 16/09 : toujours pas raffiné, toujours pas gênant.
+- Villageois 7 (palette terne) : toujours confirmé pas un bug, pas une
+  priorité.
+- L'anneau de l'Onde de choc dépasse maintenant le vrai rayon d'environ
+  31 %, comme celui du mortier — cohérent avec la convention existante,
+  mais si une séance future veut une correspondance exacte plutôt
+  qu'approximative pour tous les bursts liés à un vrai rayon de jeu, il
+  faudrait revoir ensemble les constantes de `scene/CombatEffects.tsx`
+  (rayon de base 0,78, facteur 2,1) et le mortier en même temps — pas fait
+  ici pour rester sur un correctif minimal d'une seule séance.
+
 ## 2026-09-24 — L'objectif « une seconde hutte doublerait vos boulons » mentait passé le niveau 1
 
 **Ce qui a été trouvé en démarrant.** Pas de piège : `HEAD` local et

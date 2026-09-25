@@ -496,6 +496,11 @@ traités, voir plus haut.
       maintenant sur « augmenterait » dès que le gain réel n'atteint plus le
       double. Voir JOURNAL.md.)*
 
+- [x] **L'Onde de choc du héros touchait des monstres bien au-delà de ce que
+      montrait son propre éclair visuel.** *(trouvé et corrigé le 2026-09-25,
+      même situation que le 25/08 au 24/09 : les trois cases ci-dessus sont
+      bloquées. Voir JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

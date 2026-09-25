@@ -93,7 +93,11 @@ export function triggerPower(id: PowerId): boolean {
   }
 
   useGameStore.getState().damageEnemies(hit, SHOCK_DAMAGE);
-  spawnBurst(hx, hy + 0.8, hz, POWERS.onde.color, 2.6, 0.65);
+  // power proportionnel au vrai rayon (comme le mortier, `stats.splash * 0.8`
+  // dans Buildings.tsx) : avant, 2,6 fixe ne couvrait visuellement qu'environ
+  // les deux tiers de SHOCK_RADIUS, un monstre touché a 5-6 unités semblait
+  // frappé hors de l'éclair.
+  spawnBurst(hx, hy + 0.8, hz, POWERS.onde.color, SHOCK_RADIUS * 0.8, 0.65);
   addShake(0.7);
   sfx.boom();
   if (hit.length > 0) {
