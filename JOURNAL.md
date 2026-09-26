@@ -11,6 +11,100 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-26 — Le radar de vague annonçait un monstre qui n'apparaissait pas dans la vague
+
+**Ce qui a été trouvé en démarrant.** Pas de piège : `origin/main` a
+fast-forward de `d902830` à `600c2e5` (correctif du 25/09, Onde de choc)
+pendant `git fetch origin main --prune`, confirmant que la branche de la
+veille avait bien été fusionnée. Branche `claude/bold-brown-dzgemi` créée
+fraîche depuis ce commit (aucune trace de la branche sur le remote au début
+de la séance). `pnpm install` (`node_modules` absent), `pnpm run typecheck`
+(passe), `node tools/game-check/wave.mjs --check` (2/2), capture `--village`
+— rien de cassé au départ.
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+43 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : recherche large déléguée à un
+agent d'exploration, avec la liste complète des ~45 défauts déjà corrigés
+depuis le 25/08 et les deux non-bugs déjà écartés (Villageois 7, cas de
+repli caméra aux alignements cardinaux), pour ne rien reproposer, en
+ciblant explicitement des fichiers pas encore cités (fiches d'ennemis,
+autres jauges du HUD, popups de secteur/décor, objectifs autres que la
+hutte, progress.ts).
+
+**Recherche.** L'agent a trouvé un vrai défaut dans `ui/WaveRadar.tsx`
+(lignes 27-31 avant correctif). Le docstring du fichier promet : « La
+composition est deterministe (voir `composeWave`), donc ce qui est annonce
+est exactement ce qui sortira. » Le bandeau « Nouveau : {nom} » calculait
+pourtant `newcomer` en comparant `rosterForWave(next)` (les profils
+*éligibles* à partir de cette vague) à `rosterForWave(next - 1)` — jamais le
+contenu réel tiré par `composeWave(next, count)`, la fonction qui pondère et
+tire au sort (`enemies.ts`) ce qui compose vraiment la vague. Un profil qui
+vient de devenir éligible peut très bien ne pas être tiré du tout dans une
+petite vague. Rejoué le PRNG exact (mulberry32, graine `wave * 0x9e3779b1`,
+copié tel quel depuis `enemies.ts`) dans un script jetable :
+- **Vague 3** (7 monstres, Fileur devient éligible à `from: 3`) : composition
+  réelle 100 % Grognard, aucun Fileur — le bandeau affichait pourtant
+  « Nouveau : Fileur — Deux fois plus rapide, mais fragile. »
+- **Vague 8** (17 monstres, Spectre devient éligible à `from: 8`) :
+  composition réelle grognard/écumeur/fileur/bombeur uniquement, aucun
+  Spectre — le bandeau affichait « Nouveau : Spectre — … ».
+
+Déterministe et systématique pour ces deux vagues précises tant que
+`WAVE_ROSTER` et la formule de graine ne changent pas (la graine ne dépend
+que du numéro de vague, pas d'un tirage de partie).
+
+**Fait**
+
+- `ui/WaveRadar.tsx` : `kinds = composeWave(next, count)` calculé une seule
+  fois (déjà nécessaire pour `summary`, réutilisé pour `newcomer`) ; un
+  `Set<EnemyKind>` `present` en dérive. `newcomer` ne retient plus qu'un
+  profil à la fois nouvellement éligible (`!previous.includes`) **et**
+  réellement tiré dans cette vague (`present.has`). Aucun changement à
+  `composeWave`, `rosterForWave` ni `WAVE_ROSTER` : uniquement la condition
+  d'affichage du bandeau, pas le tirage lui-même.
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (le radar n'entre dans aucun calcul de combat).
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png` : ouverte
+  et regardée — vague 1, bandeau « Nouveau : Grognard » toujours affiché
+  correctement (cas où l'annonce reste vraie, la vague 1 est 100 % grognard).
+- Script Node jetable (non gardé) reproduisant exactement `WAVE_ROSTER`,
+  `composeWave` et l'ancien vs nouveau calcul de `newcomer` : confirme que
+  l'ancien calcul annonçait bien « fileur » en vague 3 et « spectre » en
+  vague 8 (les deux faux positifs trouvés par l'agent de recherche) et que
+  le nouveau calcul renvoie `undefined` dans les deux cas — plus aucune
+  fausse annonce pour ces vagues, sans toucher aux autres.
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a touché ni le rig ni les registres de personnages,
+  seulement l'affichage du radar de vague (hors système de personnages).
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté à tort. Piste unique proposée par l'agent de recherche,
+  vérifiée exacte par lecture directe du code puis confirmée par rejeu du
+  PRNG dans un script indépendant — pas de fausse piste explorée cette
+  séance.
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le cas de repli en vue plongeante aux alignements cardinaux exacts du
+  correctif de caméra du 16/09 : toujours pas raffiné, toujours pas gênant.
+- Villageois 7 (palette terne) : toujours confirmé pas un bug, pas une
+  priorité.
+- D'autres bandeaux ou textes du jeu pourraient avoir le même genre de
+  défaut (afficher une catégorie éligible plutôt qu'un résultat réellement
+  tiré) — l'agent de recherche a relu la quasi-totalité de `ui/*.tsx` et
+  plusieurs fichiers de `scene/` sans en trouver d'autre cette fois-ci.
+
 ## 2026-09-25 — L'Onde de choc du héros touchait des monstres bien au-delà de ce que montrait son propre éclair visuel
 
 **Ce qui a été trouvé en démarrant.** Pas de piège : `origin/main` a

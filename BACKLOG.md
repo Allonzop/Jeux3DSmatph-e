@@ -501,6 +501,11 @@ traités, voir plus haut.
       même situation que le 25/08 au 24/09 : les trois cases ci-dessus sont
       bloquées. Voir JOURNAL.md.)*
 
+- [x] **Le radar de vague annonçait parfois un monstre qui n'apparaissait pas
+      dans la vague.** *(trouvé et corrigé le 2026-09-26, même situation que
+      le 25/08 au 25/09 : les trois cases ci-dessus sont bloquées. Voir
+      JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

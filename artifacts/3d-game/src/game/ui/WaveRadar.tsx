@@ -22,13 +22,20 @@ export function WaveRadar() {
 
   const next = waveFailed ? waveNumber : waveNumber + 1;
   const count = 1 + next * 2;
-  const summary = waveSummary(composeWave(next, count));
+  const kinds = composeWave(next, count);
+  const summary = waveSummary(kinds);
 
-  // Un profil qui entre en scene a cette vague : on le signale explicitement,
-  // c'est le moment ou le joueur doit adapter ses defenses.
-  const roster = rosterForWave(next);
+  // Un profil qui entre en scene a cette vague ET qui est reellement tire
+  // dans cette composition : on le signale explicitement, c'est le moment ou
+  // le joueur doit adapter ses defenses. Un profil devenu eligible mais pas
+  // tire (petite vague, poids faible) ne doit pas etre annonce — le
+  // docstring ci-dessus promet que ce qui est annonce est exactement ce qui
+  // sortira.
+  const present = new Set(kinds);
   const previous = rosterForWave(next - 1).map((t) => t.kind);
-  const newcomer = roster.find((t) => !previous.includes(t.kind));
+  const newcomer = rosterForWave(next).find(
+    (t) => !previous.includes(t.kind) && present.has(t.kind),
+  );
 
   return (
     <div className="pointer-events-none flex flex-col items-end gap-1">
