@@ -506,6 +506,11 @@ traités, voir plus haut.
       le 25/08 au 25/09 : les trois cases ci-dessus sont bloquées. Voir
       JOURNAL.md.)*
 
+- [x] **La fiche du Marché mentait sur son bonus de butin une fois « Dunes
+      Dorées » annexée.** *(trouvé et corrigé le 2026-09-27, même situation
+      que le 25/08 au 26/09 : les trois cases ci-dessus sont bloquées. Voir
+      JOURNAL.md.)*
+
 ## Fait
 
 Voir `JOURNAL.md` — l'agent y consigne chaque séance.

@@ -5,6 +5,7 @@ import {
   instanceNumber,
   ROLE_LABEL,
   BUILDING_RESIDENT,
+  MARCHE_LOOT_BONUS,
   type BuildingRole,
   type TurretStats,
 } from '../gamedata';
@@ -13,7 +14,21 @@ import { CharacterPortrait } from './CharacterPortrait';
 import { ResourceIcon, BuildingIcon, CloseIcon, MoveIcon } from './icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { sfx } from '../sfx';
-import { zoneEffects } from '../zones';
+import { zoneEffects, type ZoneEffects } from '../zones';
+
+/**
+ * Le Marche affiche un texte fige (`gamedata.ts`, `effect`) qui ne compte
+ * que son propre bonus de niveau. Le vrai multiplicateur de butin
+ * (`store.ts`, `lootBonus`) l'associe multiplicativement au bonus de secteur
+ * des Dunes Dorees une fois annexees (`zoneEffects().loot`) — sans ca, la
+ * fiche mentait des le niveau 1 (+15 % annonce contre +49,5 % reel une fois
+ * le secteur pris). Meme genre de defaut que les fiches de tour (13/09,
+ * 23/09), mais pour le Marche.
+ */
+function marcheLootEffect(level: number, zoneFx: ZoneEffects): string {
+  const pct = Math.round(((1 + MARCHE_LOOT_BONUS * level) * zoneFx.loot - 1) * 100);
+  return `Butin de vague +${pct} %`;
+}
 
 const ROLE_TINT: Record<BuildingRole, string> = {
   defense: '#f87171',
@@ -119,6 +134,7 @@ export function BuildingPopup() {
   const upgradeBuilding = useGameStore(state => state.upgradeBuilding);
   const resources = useGameStore(state => state.resources);
   const startPlacing = useGameStore(state => state.startPlacing);
+  const zoneFx = useGameStore((s) => zoneEffects(s.unlockedZones));
 
   if (!selectedBuilding) return null;
 
@@ -155,6 +171,14 @@ export function BuildingPopup() {
 
   const shownLevelData = level > 0 ? currentLevelData : nextLevelData;
   const hasPassive = Object.keys(shownLevelData?.passive || {}).length > 0;
+  const shownEffect =
+    data.id === 'marche' && shownLevelData?.effect
+      ? marcheLootEffect(level > 0 ? level : 1, zoneFx)
+      : shownLevelData?.effect;
+  const nextEffect =
+    data.id === 'marche' && nextLevelData?.effect
+      ? marcheLootEffect(level + 1, zoneFx)
+      : nextLevelData?.effect;
 
   return (
     <AnimatePresence>
@@ -246,14 +270,14 @@ export function BuildingPopup() {
                   <PassiveYield passive={shownLevelData?.passive || {}} />
                 </div>
               )}
-              {shownLevelData?.effect && (
-                <div className="text-white/80 text-sm">{shownLevelData.effect}</div>
+              {shownEffect && (
+                <div className="text-white/80 text-sm">{shownEffect}</div>
               )}
               <TurretSheet
                 stats={shownLevelData?.turret ?? null}
                 next={level > 0 ? nextLevelData?.turret ?? null : null}
               />
-              {!hasPassive && !shownLevelData?.effect && !shownLevelData?.turret && (
+              {!hasPassive && !shownEffect && !shownLevelData?.turret && (
                 <span className="text-white/40">—</span>
               )}
             </div>
@@ -287,7 +311,7 @@ export function BuildingPopup() {
                       {Object.keys(nextLevelData!.passive || {}).length > 0 && (
                         <PassiveYield passive={nextLevelData!.passive} />
                       )}
-                      {nextLevelData!.effect && <span>{nextLevelData!.effect}</span>}
+                      {nextEffect && <span>{nextEffect}</span>}
                     </div>
                   )}
 

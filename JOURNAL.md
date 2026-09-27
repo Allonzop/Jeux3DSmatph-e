@@ -11,6 +11,99 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-27 — La fiche du Marché mentait sur son bonus de butin une fois « Dunes Dorées » annexée
+
+**Ce qui a été trouvé en démarrant.** Pas de piège : `HEAD` local
+(`claude/bold-brown-hq5puy`) et `origin/main` pointaient déjà sur le même
+commit (`6f57da5`, le correctif du 26/09, radar de vague) après `git fetch
+origin main --prune` — la branche de la veille avait bien été fusionnée.
+`pnpm install` (`node_modules` absent), `pnpm run typecheck` (passe), `node
+tools/game-check/wave.mjs --check` (2/2), capture `--village` — rien de cassé
+au départ.
+
+**Choix de la tâche.** Toujours les trois mêmes cases non cochées en tête de
+`BACKLOG.md` : « équilibrage du combat au ressenti » (vrai appareil requis,
+44 séances de suite écartée depuis le 15/08), « faire le tour de la
+planète » et « deuxième planète » (chantiers à part entière depuis le
+22/08). Suivant la consigne pour ce cas : recherche large déléguée à un
+agent d'exploration, avec la liste complète des ~47 défauts déjà corrigés
+depuis le 25/08 et les deux non-bugs déjà écartés (Villageois 7, cas de
+repli caméra aux alignements cardinaux), en ciblant explicitement des zones
+moins fouillées que `ui/*.tsx` et `scene/*.tsx` (déjà passés au peigne fin le
+25/09 et le 26/09) : `gamedata.ts` bâtiment par bâtiment, `zones.ts`,
+`objectives.ts`, `progress.ts`, character-studio, panneaux Empire/secteur.
+
+**Recherche.** L'agent a trouvé un défaut dans `gamedata.ts` (lignes
+287-289, blurb du Marché) : le champ `effect` de chaque niveau du Marché
+(« Butin de vague +15 % / +30 % / +45 % ») ne compte que le propre bonus de
+niveau du bâtiment (`MARCHE_LOOT_BONUS = 0.15` par niveau), rendu tel quel
+par `ui/BuildingPopup.tsx` (avant correctif, lignes 249-250 et 290). Or le
+vrai multiplicateur appliqué à chaque victoire de vague (`store.ts` lignes
+217-220, `lootBonus`) combine ce bonus **multiplicativement** avec
+`zoneEffects(unlockedZones).loot`, qui inclut le bonus du secteur « Dunes
+Dorées » une fois annexé (+30 %, `zones.ts` ligne 156) — jamais reflété dans
+le texte. Même famille de défaut que les fiches de tour du 13/09 et du
+23/09 (dégâts/ralentissement non multipliés par le bonus de secteur), mais
+jamais traité pour le Marché : `TurretSheet` dans le même fichier recalcule
+déjà `dps`/`slow` avec `zoneFx`, rien d'équivalent n'existait pour le Marché.
+
+**Scénario concret vérifié en direct** (Playwright, script jetable) : Marché
+niveau 3 (« Butin de vague +45 % » affiché) + secteur Dunes Dorées annexé.
+Multiplicateur réel : (1 + 0,45) × (1 + 0,30) = 1,885, soit +88,5 % — presque
+le double de ce qu'annonçait le texte. Déjà faux dès le niveau 1 (+15 %
+annoncé contre +49,5 % réel une fois le secteur pris).
+
+**Fait**
+
+- `ui/BuildingPopup.tsx` : nouvelle fonction `marcheLootEffect(level,
+  zoneFx)` qui recalcule le pourcentage réel à partir de
+  `MARCHE_LOOT_BONUS` (exporté de `gamedata.ts`) et `zoneFx.loot` (déjà
+  disponible via `zoneEffects`, importé pour `TurretSheet`). `shownEffect`
+  et `nextEffect` remplacent les accès directs à `shownLevelData.effect` /
+  `nextLevelData.effect` : pour tout bâtiment autre que le Marché, aucun
+  changement (le texte brut de `gamedata.ts` continue d'être affiché tel
+  quel) ; pour le Marché, le texte est recalculé à l'affichage avec le
+  bonus de secteur courant, exactement comme `TurretSheet` le fait déjà pour
+  dps/ralentissement.
+- Aucun changement à `MARCHE_LOOT_BONUS`, à `store.ts` ni à `zones.ts` :
+  uniquement le texte affiché, pas le calcul réel (déjà correct).
+
+**Vérifié comment**
+
+- `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (le Marché n'entre dans aucun des deux scénarios).
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png` : ouverte
+  et regardée — village inchangé, aucune régression visuelle.
+- Script Playwright jetable (non gardé, basé sur `lib.mjs` : sauvegarde avec
+  Marché niveau 3, `window.__villageStore.setState` pour annexer `dunes` et
+  sélectionner le bâtiment) : popup affiche bien « Butin de vague +89 % »
+  (arrondi de 88,5 %) secteur annexé, puis « Butin de vague +45 % » une fois
+  `dunes` retiré de `unlockedZones` — les deux valeurs correspondent
+  exactement au calcul de `store.ts`, plus au texte figé d'avant correctif.
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` :
+  5/5 — cette séance n'a touché ni le rig ni les registres de personnages,
+  seulement le panneau de bâtiment du jeu.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté à tort. Piste unique proposée par l'agent de recherche,
+  vérifiée par lecture directe de `store.ts`/`zones.ts` puis confirmée en
+  direct dans le jeu réel (popup affiché, deux valeurs avant/après secteur).
+
+**Reste ouvert**
+
+- Toujours ouvert (voir `BACKLOG.md`) : équilibrage du combat au ressenti
+  (vrai appareil requis), faire le tour de la planète (refonte moteur),
+  deuxième planète (fonctionnalité neuve).
+- Le cas de repli en vue plongeante aux alignements cardinaux exacts du
+  correctif de caméra du 16/09 : toujours pas raffiné, toujours pas gênant.
+- Villageois 7 (palette terne) : toujours confirmé pas un bug, pas une
+  priorité.
+- L'agent de recherche a aussi relu `objectives.ts`, `progress.ts`, les
+  blurbs de Ferme/Hutte/Antenne/tours dans `gamedata.ts` et les commentaires
+  de `zones.ts` sans trouver d'autre défaut de ce type cette fois-ci.
+
 ## 2026-09-26 — Le radar de vague annonçait un monstre qui n'apparaissait pas dans la vague
 
 **Ce qui a été trouvé en démarrant.** Pas de piège : `origin/main` a
