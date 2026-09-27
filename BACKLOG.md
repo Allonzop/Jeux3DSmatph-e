@@ -17,6 +17,68 @@ Pour ajouter quelque chose depuis GitHub : ouvrir ce fichier, le crayon en haut
 
 Par ordre d'importance — l'agent prend celle du haut.
 
+### Décisions d'Allonzo du 28/09 — à prendre en premier, dans l'ordre
+
+Allonzo a tranché les trois cases sautées depuis le 15/08 (réponses
+recueillies par Jarvis). Une case par séance, de haut en bas. Si une case ne
+tient pas en une séance, découpe-la ici en cases plus petites plutôt que de
+la sauter.
+
+**1. Le rythme de progression.** Ce qu'Allonzo en dit : le début est assez
+rapide, sauf la récolte des ressources ; mais ensuite tout va à la même
+vitesse du début à la fin, on ne ressent aucune friction, la progression
+n'est pas grisante. Ça reprend la « Refonte de la Time Curve » du 15/08
+(plus bas), qui n'était pas une case et n'a donc jamais été prise.
+
+- [ ] **Accélérer la récolte des ressources en début de partie.** C'est le
+      seul point lent du début. Récolte nettement plus rapide pendant les
+      premières minutes, sans rien changer au milieu ni à la fin de partie
+      (que les deux cases suivantes vont justement ralentir). Relève les
+      chiffres avant/après dans le journal.
+- [ ] **Faire monter les coûts avec la progression.** Aujourd'hui l'effort
+      reste le même du début à la fin. Coûts d'amélioration bon marché aux
+      premiers niveaux, puis de plus en plus chers (courbe qui accélère),
+      pour qu'un niveau élevé se mérite. Tableau des coûts avant/après,
+      niveau par niveau, dans le journal. `wave.mjs --check` doit passer.
+- [ ] **Ajouter une attente qui grandit : les temps d'amélioration.** Façon
+      Clash of Clans, demandé dès le 15/08 : instantané aux premiers
+      niveaux, quelques secondes ensuite, plus long aux niveaux élevés, avec
+      un compte à rebours visible sur le bâtiment. Si le jeu a déjà des
+      temps, allonge seulement la fin de la courbe.
+
+**2. La deuxième planète.** Allonzo choisit la deuxième planète et abandonne
+l'idée de faire le tour de la première (barrée plus bas). Le jeu doit rester
+jouable à chaque étape : rien de visible à moitié fait sur `main`.
+
+- [ ] **2e planète, étape 1 — la donnée.** Notion de planète courante
+      (planète 1 = celle d'aujourd'hui) et fiche de la planète 2 : nom,
+      ambiance, couleurs du sol et du ciel, décor, secteurs (sur le modèle
+      de `zones.ts`). Rien de visible pour le joueur ; les sauvegardes
+      existantes se chargent sans migration. Thème : si Allonzo ne l'a pas
+      écrit ici avant ta séance, choisis-en un et écris-le en une phrase à
+      la fin de cette case, pour qu'il puisse le changer.
+- [ ] **2e planète, étape 2 — l'afficher.** Quand la planète courante est la
+      2, la scène montre son sol, son ciel, son décor et ses couleurs.
+      Accessible seulement en test (`shot.mjs` ou un drapeau de dev), pas
+      encore depuis le jeu. Regarde la capture.
+- [ ] **2e planète, étape 3 — y aller et revenir.** Depuis le panneau
+      Empire : partir sur la planète 2 et revenir, avec une condition de
+      déblocage écrite dans le panneau. Chaque planète garde sa propre
+      progression dans la sauvegarde. Ajoute l'aller-retour à `smoke.mjs`.
+- [ ] **2e planète, étape 4 — y construire.** Son cœur de cristal et une
+      base de départ ; les bâtiments s'y posent.
+- [ ] **2e planète, étape 5 — ses vagues.** Des vagues propres à la planète
+      2, avec au moins un monstre qu'on ne voit pas sur la première.
+- [ ] **2e planète, étape 6 — ce qu'elle rapporte.** Ce qui donne envie d'y
+      aller : ses ressources, et un effet sur la planète 1 (sur le modèle
+      des bonus de secteur). Puis coche aussi « Deuxième planète » plus bas.
+
+**3. L'équilibrage du combat au ressenti** est déplacé tout en bas (« En
+attente d'Allonzo ») : il le fera lui-même sur son iPhone. Ne le prends
+plus.
+
+### Suite de la liste (historique)
+
 - [x] **Redessiner les bâtiments pour la vue de dessus.** Ils ont été dessinés
       de profil : portes, tabourets, cageots sont sur les façades, invisibles
       depuis la caméra qui les regarde d'en haut. Il leur faut des toits, des
@@ -38,10 +100,8 @@ Par ordre d'importance — l'agent prend celle du haut.
       et le niveau 0 affiche désormais le rendement prévu au lieu de « — ».
       Voir JOURNAL.md.)*
 
-- [ ] **Régler l'équilibrage du combat au ressenti.** Portée et dégâts du héros
-      (`HERO_RANGE`, `HERO_DPS` dans `Hero.tsx`) sont un premier jet posé sans
-      pouvoir juger : le rendu logiciel tourne à quelques images par seconde. À
-      reprendre sur un vrai appareil.
+- *(28/09 : « Régler l'équilibrage du combat au ressenti » déplacée tout en
+  bas, section « En attente d'Allonzo ».)*
 
 - [x] **Les monstres n'ont pas d'animation de mort.** *(2026-08-18 : corrigé —
       `damageEnemy` ne retire plus l'ennemi du magasin dès 0 pv, il y reste le
@@ -201,14 +261,17 @@ traités, voir plus haut.
       cachée a un relief. *Faire réellement le tour n'est pas fait* — voir
       ci-dessous.
 
-- [ ] **Faire le tour de la planète.** Demande de déplacer le héros en
+- ~~**Faire le tour de la planète.** Demande de déplacer le héros en
       coordonnées sphériques : tout le jeu raisonne en (x, z) plat, et au-delà
       de l'équateur deux points de la sphère tombent sur le même (x, z). C'est
       une refonte du déplacement, du ciblage et du placement — pas un réglage.
       À traiter comme un chantier à part entière, ou à laisser de côté au
-      profit d'une deuxième planète.
+      profit d'une deuxième planète.~~ *(28/09 : écarté par Allonzo, au profit
+      de la deuxième planète.)*
 - [ ] **Deuxième planète.** L'empire spatial promis. Le panneau Empire est le
       point d'entrée tout trouvé ; `zones.ts` montre comment découper un monde.
+      *(28/09 : décidée par Allonzo, découpée en six étapes en haut de la
+      liste. À cocher avec la dernière.)*
 
 - [x] **Anneau de portée trompeur en déplaçant une tour améliorée.** *(trouvé
       et corrigé le 2026-08-25, aucune entrée du backlog n'étant traitable
@@ -510,6 +573,16 @@ traités, voir plus haut.
       Dorées » annexée.** *(trouvé et corrigé le 2026-09-27, même situation
       que le 25/08 au 26/09 : les trois cases ci-dessus sont bloquées. Voir
       JOURNAL.md.)*
+
+### En attente d'Allonzo — ne pas prendre
+
+Demande de jouer sur un vrai iPhone : c'est Allonzo qui la fera. Ne la prends
+pas et ne la cite plus comme blocage dans le journal.
+
+- [ ] **Régler l'équilibrage du combat au ressenti.** Portée et dégâts du héros
+      (`HERO_RANGE`, `HERO_DPS` dans `Hero.tsx`) sont un premier jet posé sans
+      pouvoir juger : le rendu logiciel tourne à quelques images par seconde. À
+      reprendre sur un vrai appareil. *(28/09 : déplacée ici par Allonzo.)*
 
 ## Fait
 
