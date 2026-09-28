@@ -9,6 +9,7 @@ import {
   coreUpgradeCost,
   BUILDINGS,
   MARCHE_LOOT_BONUS,
+  earlyGameBoost,
 } from './gamedata';
 import { composeWave, ENEMY_TYPES, type EnemyKind } from './enemies';
 import { clearableKind, checkPlacement, type ClearableKind } from './world';
@@ -97,6 +98,8 @@ export interface GameState {
   /** taille de la vague en cours, et nombre de monstres réellement abattus */
   waveEnemyCount: number;
   waveKills: number;
+  /** Horodatage du debut de cette partie, pour le boost de recolte du tout debut. Voir `earlyGameBoost`. */
+  gameStartedAt: number;
 
   // ---- Progression du joueur ----
   /** Experience accumulee dans le niveau en cours. */
@@ -255,6 +258,7 @@ const initialGameState = () => ({
   breachDamage: 0,
   waveEnemyCount: 0,
   waveKills: 0,
+  gameStartedAt: Date.now(),
   xp: 0,
   playerLevel: 1,
   levelUp: null,
@@ -274,13 +278,19 @@ export const useGameStore = create<GameState>()(
       ...initialGameState(),
 
       addResources: (res) =>
-        set((state) => ({
-          resources: {
-            boulons: state.resources.boulons + (res.boulons || 0),
-            matiere_floue: state.resources.matiere_floue + (res.matiere_floue || 0),
-            energie_rire: state.resources.energie_rire + (res.energie_rire || 0),
-          },
-        })),
+        set((state) => {
+          // Boost actif seulement dans les toutes premieres minutes d'une
+          // partie (voir `earlyGameBoost`) : vaut 1 (aucun effet) passe ce
+          // delai, donc rien ne change au milieu ni a la fin de partie.
+          const boost = earlyGameBoost(state.gameStartedAt);
+          return {
+            resources: {
+              boulons: state.resources.boulons + (res.boulons || 0) * boost,
+              matiere_floue: state.resources.matiere_floue + (res.matiere_floue || 0) * boost,
+              energie_rire: state.resources.energie_rire + (res.energie_rire || 0) * boost,
+            },
+          };
+        }),
 
       spendResources: (res) => {
         const state = get();
@@ -668,7 +678,7 @@ export const useGameStore = create<GameState>()(
     }),
     {
       name: 'village-spatial-storage',
-      version: 2,
+      version: 3,
       partialize: (state) => ({
         resources: state.resources,
         buildingLevels: state.buildingLevels,
@@ -685,6 +695,7 @@ export const useGameStore = create<GameState>()(
         clearedDecor: state.clearedDecor,
         unlockedZones: state.unlockedZones,
         heroUpgrades: state.heroUpgrades,
+        gameStartedAt: state.gameStartedAt,
       }),
       migrate: (persisted: any, version) => {
         if (version < 2 && persisted) {
@@ -698,6 +709,15 @@ export const useGameStore = create<GameState>()(
             }
           }
           persisted.buildingPositions = positions;
+        }
+        if (version < 3 && persisted) {
+          // Sauvegardes d'avant le boost de recolte du debut de partie : pas
+          // d'horodatage de depart, donc pas de moyen de savoir si elles sont
+          // « en debut de partie ». Fixe a une date lointaine plutot que
+          // `Date.now()` pour que le boost reste inactif — une partie deja
+          // avancee ne doit pas se retrouver boostee au premier chargement
+          // apres cette mise a jour.
+          persisted.gameStartedAt = 0;
         }
         return persisted;
       },

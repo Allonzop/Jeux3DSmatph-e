@@ -11,6 +11,100 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-28 — Récolte boostée en tout début de partie
+
+**Choix de la tâche.** Allonzo a tranché trois cases le 28/09 (voir
+`BACKLOG.md`, section « Décisions d'Allonzo du 28/09 ») et demande de les
+prendre une par séance, dans l'ordre. Première case : « le début est assez
+rapide, sauf la récolte des ressources ; mais ensuite tout va à la même
+vitesse ». Les deux cases suivantes (coûts qui montent, temps d'amélioration
+qui grandissent) vont justement ralentir le milieu et la fin de partie —
+cette case-ci ne doit toucher que le tout début, sans empiéter dessus.
+
+**Fait**
+
+- Un multiplicateur `EARLY_GAME_BOOST_MULTIPLIER = 2` actif pendant
+  `EARLY_GAME_BOOST_DURATION_MS = 3 minutes` après le début d'une partie
+  neuve (`gamedata.ts`, fonction `earlyGameBoost`).
+- Appliqué à un seul endroit : `addResources` dans `store.ts`. C'est le seul
+  point qui reçoit à la fois la production passive des bâtiments
+  (`tickPassive`, appelé depuis `PassiveTicker` dans `GameCanvas.tsx`) *et*
+  la récolte manuelle sur les gisements (`ResourceNodes.tsx`, tap sur un
+  gisement) — vérifié en cherchant tous les appelants des deux fonctions
+  (`grep addResources( tickPassive(` sur tout `src/`, deux appelants trouvés,
+  tous deux couverts). Le déblayage de décor (`clearDecor`) et le butin de
+  vague (`rewardVictory`) écrivent `resources` directement sans passer par
+  `addResources` : ils ne sont pas concernés, volontairement — la demande
+  porte sur la « récolte », pas sur ces deux systèmes à part.
+- Nouveau champ `gameStartedAt` dans le store, horodatage posé à `Date.now()`
+  à la création d'une partie neuve (`initialGameState`) et à chaque
+  `resetGame()`. **Persisté** (ajouté à `partialize`) : sans ça, un simple
+  rechargement de page aurait redémarré le minuteur pour n'importe quelle
+  partie, boostant aussi une partie déjà avancée à chaque réouverture — ce
+  qui aurait justement violé la contrainte « sans rien changer au milieu ni
+  à la fin ». Version de sauvegarde montée à 3 ; `migrate` fixe
+  `gameStartedAt = 0` (donc boost déjà expiré) pour toute sauvegarde
+  antérieure à ce champ, plutôt que `Date.now()` — une partie déjà en cours
+  ne doit pas se retrouver boostée au premier chargement après cette mise à
+  jour.
+- Le calcul est `(res.x || 0) * boost` avec `boost` qui vaut exactement `1`
+  hors de la fenêtre des 3 minutes : la formule redevient bit à bit celle
+  d'avant cette séance dès que le boost n'est pas actif, aucune valeur
+  numérique existante n'a changé.
+
+**Vérifié comment**
+
+- `pnpm install` (nécessaire, `node_modules` absent au démarrage de la
+  séance) puis `pnpm run typecheck` (les 6 projets) : passe.
+- `node tools/game-check/wave.mjs --check` : défaite sans tourelle, victoire
+  avec — inchangé (le scénario `--tourelle` construit sa sauvegarde avec
+  `version: 2`, donc migrée à `gameStartedAt = 0`, boost inactif : le combat
+  n'est pas concerné par cette séance de toute façon).
+- `node tools/game-check/shot.mjs --village --out /tmp/apres.png`, ouvert :
+  aucune régression (changement de données/logique pures, aucun rendu
+  touché).
+- `cd artifacts/character-studio && pnpm --silent run studio selftest` : 5/5
+  — cette séance n'a pas touché `src/game/characters/`.
+- **Le chiffre avant/après, seule preuve qu'un multiplicateur temporel
+  fonctionne réellement** (aucune des commandes standard ne mesure un débit
+  dans le temps) : script Playwright ad hoc réutilisant `getChromium`/
+  `serveStatic` de `lib.mjs`, partie neuve (aucune sauvegarde en
+  `localStorage`, donc `gameStartedAt` tout juste posé), Hutte niveau 1
+  posée via `window.__villageStore.setState`, lecture de `resources.boulons`
+  à t=0 puis t=6s :
+  - **Avec boost** (partie de moins de 3 minutes) : 50 → 98 boulons sur 6 s,
+    soit **8,00/s** — exactement le double des 4/s de la Hutte niveau 1
+    (`gamedata.ts`), comme attendu.
+  - **Sans boost** (`gameStartedAt` forcé à 0, simulant une partie hors de
+    la fenêtre ou une sauvegarde migrée) : 50 → 74 boulons sur 6 s, soit
+    **4,00/s** — identique au taux d'avant cette séance, confirmant qu'aucun
+    changement n'atteint le milieu ni la fin de partie.
+  Script jetable, non ajouté au dépôt.
+
+**Essayé sans succès, à ne pas refaire**
+
+- Rien écarté cette séance côté implémentation. Une alternative envisagée
+  puis abandonnée avant tout code : ne pas persister `gameStartedAt` et le
+  fixer une seule fois au chargement du module JS (donc à chaque ouverture
+  d'onglet). Plus simple, mais boosterait aussi une partie avancée à chaque
+  rechargement de page — contraire à la demande explicite « sans rien
+  changer au milieu ni à la fin ». Persister le champ et le figer au tout
+  premier `Date.now()` d'une partie neuve règle ça proprement.
+
+**Reste ouvert**
+
+- Voir `BACKLOG.md` : la suite des décisions du 28/09 — coûts qui montent
+  avec la progression, puis temps d'amélioration croissants façon Clash of
+  Clans. Ces deux cases vont ralentir le milieu/la fin de partie, exactement
+  ce que cette case-ci ne devait pas toucher.
+- La durée (3 min) et le multiplicateur (×2) sont un premier chiffre
+  raisonnable, pas calibré au ressenti sur un vrai appareil : à resserrer
+  dans `gamedata.ts` (`EARLY_GAME_BOOST_DURATION_MS`,
+  `EARLY_GAME_BOOST_MULTIPLIER`) si Allonzo le trouve trop court/long ou pas
+  assez marqué une fois testé.
+
+---
+
 ## 2026-09-27 — La fiche du Marché mentait sur son bonus de butin une fois « Dunes Dorées » annexée
 
 **Ce qui a été trouvé en démarrant.** Pas de piège : `HEAD` local

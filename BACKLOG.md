@@ -30,11 +30,11 @@ vitesse du début à la fin, on ne ressent aucune friction, la progression
 n'est pas grisante. Ça reprend la « Refonte de la Time Curve » du 15/08
 (plus bas), qui n'était pas une case et n'a donc jamais été prise.
 
-- [ ] **Accélérer la récolte des ressources en début de partie.** C'est le
-      seul point lent du début. Récolte nettement plus rapide pendant les
-      premières minutes, sans rien changer au milieu ni à la fin de partie
-      (que les deux cases suivantes vont justement ralentir). Relève les
-      chiffres avant/après dans le journal.
+- [x] **Accélérer la récolte des ressources en début de partie.** *(2026-09-28 :
+      fait — un multiplicateur ×2 actif pendant les 3 premières minutes
+      d'une partie neuve, sur la production passive et la récolte manuelle
+      confondues. Passé ce délai, ou pour une partie déjà en cours,
+      inchangé. Voir JOURNAL.md.)*
 - [ ] **Faire monter les coûts avec la progression.** Aujourd'hui l'effort
       reste le même du début à la fin. Coûts d'amélioration bon marché aux
       premiers niveaux, puis de plus en plus chers (courbe qui accélère),

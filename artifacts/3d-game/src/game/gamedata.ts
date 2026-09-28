@@ -175,6 +175,24 @@ export function waveDefeatLoss(resources: Resources): Partial<Resources> {
   };
 }
 
+// ---- Recolte boostee en tout debut de partie ----
+//
+// « Le debut est assez rapide, sauf la recolte des ressources » (Allonzo,
+// 28/09). Le reste du debut de partie a deja ete acceleree (production de la
+// Hutte doublee le 20/08, couts de niveau 1 rabotes le 22/08) : il ne restait
+// que la recolte elle-meme. Un multiplicateur temporaire, actif seulement
+// dans les toutes premieres minutes d'une partie, evite de toucher au milieu
+// ou a la fin — que les deux prochaines cases du backlog vont justement
+// ralentir. Applique une seule fois, dans `addResources` (store.ts), le seul
+// point qui recoit a la fois la production passive des batiments et la
+// recolte manuelle sur les gisements (`ResourceNodes.tsx`).
+export const EARLY_GAME_BOOST_DURATION_MS = 3 * 60 * 1000;
+export const EARLY_GAME_BOOST_MULTIPLIER = 2;
+
+export function earlyGameBoost(gameStartedAt: number, now = Date.now()): number {
+  return now - gameStartedAt < EARLY_GAME_BOOST_DURATION_MS ? EARLY_GAME_BOOST_MULTIPLIER : 1;
+}
+
 // ---- Effets des batiments de soutien ----
 
 /** Portee et degats du heros gagnes par niveau d'Antenne. */
