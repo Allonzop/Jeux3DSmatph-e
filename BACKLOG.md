@@ -35,7 +35,7 @@ n'est pas grisante. Ça reprend la « Refonte de la Time Curve » du 15/08
       d'une partie neuve, sur la production passive et la récolte manuelle
       confondues. Passé ce délai, ou pour une partie déjà en cours,
       inchangé. Voir JOURNAL.md.)*
-- [ ] **Faire monter les coûts avec la progression.** Aujourd'hui l'effort
+- [x] **Faire monter les coûts avec la progression.** *(2026-09-29 : fait — niveaux 1-2 inchangés, ×1,15/×1,4/×1,8 aux niveaux 3/4/5, noyau 3200 puis 9000. Tableau dans JOURNAL.md.)* Aujourd'hui l'effort
       reste le même du début à la fin. Coûts d'amélioration bon marché aux
       premiers niveaux, puis de plus en plus chers (courbe qui accélère),
       pour qu'un niveau élevé se mérite. Tableau des coûts avant/après,

@@ -11,6 +11,38 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-29 — Les coûts d'amélioration accélèrent en fin de courbe
+
+**Fait.** `gamedata.ts` : les niveaux 1 et 2 de chaque bâtiment gardent leur
+prix (début de partie généreux, coût de déblocage des tourelles intact) ;
+boulons et matière floue sont multipliés par 1,15 / 1,4 / 1,8 aux niveaux
+3 / 4 / 5 (arrondis à 5 ou 50). Table de base renommée `BASE_BUILDINGS`,
+`BUILDINGS` en est dérivé. Constat de départ : plusieurs pentes *baissaient*
+en fin de course (tourelle ×4,4 → ×2,5 → ×2 → ×2). Noyau : 1200 / 3000 / 7000
+→ 1200 / 3200 / 9000 (matière floue 180 → 200).
+
+Boulons, niveau par niveau (avant → après) :
+
+| bâtiment | avant | après |
+|---|---|---|
+| hutte | 50 → 120 → 400 → 900 → 2600 | 50 → 120 → 460 → 1250 → 4700 |
+| ferme | 90 → 450 → 1200 → 3000 | 90 → 450 → 1400 → 4200 |
+| bar | 150 → 700 → 2000 → 4500 | 150 → 700 → 2300 → 6300 |
+| antenne | 350 → 1500 → 3500 → 7000 | 350 → 1500 → 4000 → 9800 |
+| marché | 600 → 2500 → 5000 | 600 → 2500 → 5750 |
+| tourelle | 180 → 800 → 2000 → 4000 → 8000 | 180 → 800 → 2300 → 5600 → 14400 |
+| mortier | 420 → 1800 → 3800 → 7000 | 420 → 1800 → 4350 → 9800 |
+| cryo | 540 → 2200 → 5000 | 540 → 2200 → 5750 |
+| tesla | 720 → 2800 → 6000 → 12000 | 720 → 2800 → 6900 → 16800 |
+
+**Vérifié.** typecheck 6 projets OK ; `wave.mjs --check` 2/2 ; capture
+`--village` sans erreur ; `studio selftest` 5/5. Tableau calculé à part
+(pas de tsx dans le dépôt pour l'importer).
+
+**Essayé sans succès.** Rien d'écarté. Limite : les rapports restent non
+monotones sur quelques bâtiments (le saut 1→2 est le plus fort), seule la fin
+de courbe a été relevée. Chiffres non calibrés sur appareil réel.
+
 ## 2026-09-28 — Récolte boostée en tout début de partie
 
 **Choix de la tâche.** Allonzo a tranché trois cases le 28/09 (voir

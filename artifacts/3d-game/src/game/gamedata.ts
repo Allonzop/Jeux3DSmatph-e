@@ -144,8 +144,8 @@ export const CORE_MAX_LEVEL = 3;
 export function coreUpgradeCost(level: number): Partial<Resources> {
   const tiers: Partial<Resources>[] = [
     { boulons: 1200, matiere_floue: 40 },
-    { boulons: 3000, matiere_floue: 90, energie_rire: 6 },
-    { boulons: 7000, matiere_floue: 180, energie_rire: 18 },
+    { boulons: 3200, matiere_floue: 90, energie_rire: 6 },
+    { boulons: 9000, matiere_floue: 200, energie_rire: 18 },
   ];
   return tiers[level] ?? tiers[tiers.length - 1];
 }
@@ -220,7 +220,7 @@ const laser = (range: number, dps: number): TurretStats => ({
 // aucun timer de construction : l'attente du debut de partie, c'est le temps
 // d'accumuler des boulons. Rien d'autre n'a bouge — couts des niveaux 2 et
 // plus, production passive — pour garder la pente qui ralentit ensuite.
-export const BUILDINGS: Record<string, BuildingData> = {
+const BASE_BUILDINGS: Record<string, BuildingData> = {
   hutte: {
     id: 'hutte',
     name: 'Hutte',
@@ -395,6 +395,36 @@ export const BUILDINGS: Record<string, BuildingData> = {
     ]
   }
 };
+
+/**
+ * La courbe des couts qui accelere. Les niveaux 1 et 2 gardent leur prix (le
+ * debut de partie reste genereux) ; a partir du 3, chaque niveau coute plus
+ * cher que sa table de base : x1,15 / x1,4 / x1,8 aux niveaux 3 / 4 / 5.
+ * Avant, plusieurs batiments (tourelle : 4,4 puis 2,5 puis 2 puis 2 fois le
+ * niveau precedent) voyaient leur pente *baisser* en fin de course.
+ */
+const LATE_COST_FACTOR = [1, 1, 1.15, 1.4, 1.8];
+
+function roundCost(n: number): number {
+  return n >= 1000 ? Math.round(n / 50) * 50 : Math.round(n / 5) * 5;
+}
+
+export const BUILDINGS: Record<string, BuildingData> = Object.fromEntries(
+  Object.entries(BASE_BUILDINGS).map(([id, b]) => [
+    id,
+    {
+      ...b,
+      levels: b.levels.map((lv, i) => {
+        const f = LATE_COST_FACTOR[i] ?? 1;
+        if (f === 1) return lv;
+        const cost: Partial<Resources> = { ...lv.cost };
+        if (cost.boulons) cost.boulons = roundCost(cost.boulons * f);
+        if (cost.matiere_floue) cost.matiere_floue = roundCost(cost.matiere_floue * f);
+        return { ...lv, cost };
+      }),
+    },
+  ]),
+);
 
 /** Les statistiques de tour d'un batiment a son niveau courant, ou null. */
 export function turretStats(instanceId: string, level: number): TurretStats | null {
