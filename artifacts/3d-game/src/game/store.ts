@@ -10,6 +10,7 @@ import {
   BUILDINGS,
   MARCHE_LOOT_BONUS,
   earlyGameBoost,
+  upgradeDurationMs,
 } from './gamedata';
 import { composeWave, ENEMY_TYPES, type EnemyKind } from './enemies';
 import { clearableKind, checkPlacement, type ClearableKind } from './world';
@@ -100,6 +101,8 @@ export interface GameState {
   waveKills: number;
   /** Horodatage du debut de cette partie, pour le boost de recolte du tout debut. Voir `earlyGameBoost`. */
   gameStartedAt: number;
+  /** Ameliorations en cours : id de batiment -> horodatage de fin. */
+  upgrading: Record<string, number>;
 
   // ---- Progression du joueur ----
   /** Experience accumulee dans le niveau en cours. */
@@ -134,6 +137,8 @@ export interface GameState {
   addResources: (res: Partial<Resources>) => void;
   spendResources: (res: Partial<Resources>) => boolean;
   upgradeBuilding: (id: string, cost: Partial<Resources>) => void;
+  /** Termine les ameliorations dont l'echeance est passee. */
+  finishUpgrades: () => void;
   setHeroPos: (pos: [number, number, number]) => void;
   setHeroDir: (dir: [number, number]) => void;
   selectBuilding: (id: string | null) => void;
@@ -259,6 +264,7 @@ const initialGameState = () => ({
   waveEnemyCount: 0,
   waveKills: 0,
   gameStartedAt: Date.now(),
+  upgrading: {} as Record<string, number>,
   xp: 0,
   playerLevel: 1,
   levelUp: null,
@@ -313,14 +319,36 @@ export const useGameStore = create<GameState>()(
       },
 
       upgradeBuilding: (id, cost) => {
+        if (get().upgrading[id]) return;
+        const target = (get().buildingLevels[id] || 0) + 1;
+        const duration = upgradeDurationMs(target);
         const spent = get().spendResources(cost);
-        if (spent) {
-          set((state) => ({
-            buildingLevels: {
-              ...state.buildingLevels,
-              [id]: (state.buildingLevels[id] || 0) + 1,
-            },
-          }));
+        if (!spent) return;
+        if (duration > 0) {
+          set((state) => ({ upgrading: { ...state.upgrading, [id]: Date.now() + duration } }));
+          return;
+        }
+        set((state) => ({
+          buildingLevels: { ...state.buildingLevels, [id]: target },
+        }));
+        get().notifyTutorial('build');
+        get().addXp(XP.build);
+      },
+
+      finishUpgrades: () => {
+        const now = Date.now();
+        const done = Object.keys(get().upgrading).filter((id) => get().upgrading[id] <= now);
+        if (done.length === 0) return;
+        set((state) => {
+          const upgrading = { ...state.upgrading };
+          const buildingLevels = { ...state.buildingLevels };
+          for (const id of done) {
+            delete upgrading[id];
+            buildingLevels[id] = (buildingLevels[id] || 0) + 1;
+          }
+          return { upgrading, buildingLevels };
+        });
+        for (let i = 0; i < done.length; i++) {
           get().notifyTutorial('build');
           get().addXp(XP.build);
         }
@@ -696,6 +724,7 @@ export const useGameStore = create<GameState>()(
         unlockedZones: state.unlockedZones,
         heroUpgrades: state.heroUpgrades,
         gameStartedAt: state.gameStartedAt,
+        upgrading: state.upgrading,
       }),
       migrate: (persisted: any, version) => {
         if (version < 2 && persisted) {

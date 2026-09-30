@@ -11,6 +11,26 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-09-30 — Temps d'amélioration croissants
+
+**Fait.** `gamedata.ts` : `upgradeDurationMs(niveauCible)` — construction et
+niveau 2 instantanés, puis 10 s / 30 s / 90 s vers les niveaux 3 / 4 / 5.
+`store.ts` : `upgrading` (id → horodatage de fin, persisté, donc l'attente
+survit à la fermeture de l'onglet) ; `upgradeBuilding` paie tout de suite puis
+démarre le minuteur ; `finishUpgrades` (appelé chaque seconde par
+`PassiveTicker`) monte le niveau, donne l'XP et notifie le tutoriel. Le
+bâtiment garde son niveau et sa production pendant l'attente. Fiche : durée
+annoncée avant, compte à rebours à la place du bouton pendant. Scène :
+pastille « ⚒ 9 s » au-dessus du bâtiment. Outil : `shot.mjs --upgrading`.
+
+**Vérifié.** typecheck 6 projets OK ; `wave.mjs --check` 2/2 ; capture
+`--village --upgrading` ouverte : pastille visible sur la tourelle, aucune
+erreur ; `studio selftest` OK.
+
+**Essayé sans succès.** Rien d'écarté. Non fait : pas de « terminer
+maintenant » payant, pas de file de plusieurs améliorations en parallèle
+limitée (elles le sont, une par bâtiment). Durées non calibrées sur appareil.
+
 ## 2026-09-29 — Les coûts d'amélioration accélèrent en fin de courbe
 
 **Fait.** `gamedata.ts` : les niveaux 1 et 2 de chaque bâtiment gardent leur

@@ -6,6 +6,8 @@ import {
   ROLE_LABEL,
   BUILDING_RESIDENT,
   MARCHE_LOOT_BONUS,
+  upgradeDurationMs,
+  formatCountdown,
   type BuildingRole,
   type TurretStats,
 } from '../gamedata';
@@ -127,6 +129,16 @@ function TurretSheet({ stats, next }: { stats: TurretStats | null; next?: Turret
   );
 }
 
+function useNow(active: boolean) {
+  const [now, setNow] = React.useState(Date.now());
+  React.useEffect(() => {
+    if (!active) return;
+    const t = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(t);
+  }, [active]);
+  return now;
+}
+
 export function BuildingPopup() {
   const selectedBuilding = useGameStore(state => state.selectedBuilding);
   const selectBuilding = useGameStore(state => state.selectBuilding);
@@ -135,6 +147,8 @@ export function BuildingPopup() {
   const resources = useGameStore(state => state.resources);
   const startPlacing = useGameStore(state => state.startPlacing);
   const zoneFx = useGameStore((s) => zoneEffects(s.unlockedZones));
+  const endsAt = useGameStore((s) => (selectedBuilding ? s.upgrading[selectedBuilding] : undefined));
+  const now = useNow(!!endsAt);
 
   if (!selectedBuilding) return null;
 
@@ -315,6 +329,17 @@ export function BuildingPopup() {
                     </div>
                   )}
 
+                {endsAt ? (
+                  <div className="mt-1 py-3 px-6 rounded-xl font-bold uppercase tracking-wider text-center bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                    Amélioration en cours — {formatCountdown(endsAt - now)}
+                  </div>
+                ) : (
+                <>
+                {upgradeDurationMs(level + 1) > 0 && (
+                  <div className="text-sm text-white/60">
+                    Durée : {formatCountdown(upgradeDurationMs(level + 1))}
+                  </div>
+                )}
                 <button
                   disabled={!canAfford}
                   onClick={() => {
@@ -330,6 +355,8 @@ export function BuildingPopup() {
                 >
                   {canAfford ? (level === 0 ? 'Construire' : 'Améliorer') : 'Ressources insuffisantes'}
                 </button>
+                </>
+                )}
               </div>
             ) : (
               <div className="py-8 text-center flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-transparent to-black/20 rounded-xl">

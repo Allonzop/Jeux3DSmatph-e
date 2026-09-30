@@ -11,6 +11,7 @@
  *   --arsenal        le village complet : deux huttes, les quatre tours, tout au max
  *   --empty          partie neuve, tutoriel actif
  *   --wave <n>       lance la vague n et capture en plein combat
+ *   --upgrading      lance l'amelioration de la tourelle (compte a rebours visible)
  *   --wide           cadre bureau (1280×900) au lieu du cadre téléphone
  *   --wait <ms>      attente avant la capture (défaut 30000)
  *   --out <fichier>  destination (défaut game-shot.png)
@@ -89,6 +90,18 @@ await page.waitForTimeout(Number(opt('wait', SETTLE_MS)));
  * seule voie depuis un navigateur, la sauvegarde ne portant pas le numéro de
  * vague.
  */
+if (flag('upgrading')) {
+  // Lance l'amelioration (10 s) de la tourelle portee au niveau 2 : on voit le compte a rebours.
+  await page.evaluate(() => {
+    const store = window.__villageStore;
+    store.setState({ resources: { boulons: 99999, matiere_floue: 9999, energie_rire: 999 } });
+    const lv = store.getState().buildingLevels;
+    store.setState({ buildingLevels: { ...lv, tourelle: 2 } });
+    store.getState().upgradeBuilding('tourelle', {});
+  });
+  await page.waitForTimeout(1500);
+}
+
 const waveArg = opt('wave', null);
 if (waveArg) {
   const started = await page.evaluate((n) => {

@@ -40,7 +40,7 @@ n'est pas grisante. Ça reprend la « Refonte de la Time Curve » du 15/08
       premiers niveaux, puis de plus en plus chers (courbe qui accélère),
       pour qu'un niveau élevé se mérite. Tableau des coûts avant/après,
       niveau par niveau, dans le journal. `wave.mjs --check` doit passer.
-- [ ] **Ajouter une attente qui grandit : les temps d'amélioration.** Façon
+- [x] **Ajouter une attente qui grandit : les temps d'amélioration.** *(2026-09-30 : fait — 0/0/10 s/30 s/90 s vers les niveaux 1 à 5, compte à rebours sur le bâtiment et dans sa fiche. Voir JOURNAL.md.)* Façon
       Clash of Clans, demandé dès le 15/08 : instantané aux premiers
       niveaux, quelques secondes ensuite, plus long aux niveaux élevés, avec
       un compte à rebours visible sur le bâtiment. Si le jeu a déjà des

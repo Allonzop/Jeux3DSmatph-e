@@ -1,8 +1,8 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { useFrame, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from '../store';
-import { BUILDINGS, buildingData, baseId, turretStats, type TurretStats } from '../gamedata';
+import { BUILDINGS, buildingData, baseId, formatCountdown, turretStats, type TurretStats } from '../gamedata';
 import { useToonGradient, enemyPositions, enemyStates } from './utils';
 import {
   WORLD_RADIUS,
@@ -240,6 +240,24 @@ function PlacementController() {
  * Chaque batiment ajoute par-dessus ses propres pieces de niveau (etage,
  * canons, paraboles) — voir chaque composant.
  */
+function UpgradeCountdown({ id }: { id: string }) {
+  const endsAt = useGameStore((s) => s.upgrading[id]);
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (!endsAt) return;
+    const t = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(t);
+  }, [endsAt]);
+  if (!endsAt) return null;
+  return (
+    <Html position={[0, 2.6, 0]} center style={{ pointerEvents: 'none' }}>
+      <div className="px-2 py-1 rounded-lg text-xs font-bold whitespace-nowrap border bg-black/70 text-amber-300 border-amber-400/60">
+        ⚒ {formatCountdown(endsAt - now)}
+      </div>
+    </Html>
+  );
+}
+
 function BuildingWrapper({ id, pos, color, children }: BuildingProps & { children: React.ReactNode }) {
   const level = useGameStore(state => state.buildingLevels[id] || 0);
   const selectBuilding = useGameStore(state => state.selectBuilding);
@@ -349,6 +367,7 @@ function BuildingWrapper({ id, pos, color, children }: BuildingProps & { childre
         </group>
       ) : (
         <group onPointerDown={tap}>
+          <UpgradeCountdown id={id} />
           {/* Socle octogonal : identifie chaque bâtiment par sa couleur même
               quand son toit sursature sous le bloom (voir le patch blanc du
               même problème plus haut). `meshBasicMaterial`, non éclairé donc

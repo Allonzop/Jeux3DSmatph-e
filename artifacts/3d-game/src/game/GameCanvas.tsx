@@ -22,6 +22,7 @@ function PassiveTicker() {
   
   useEffect(() => {
     const interval = setInterval(() => {
+      useGameStore.getState().finishUpgrades();
       const state = useGameStore.getState();
       const amounts = { boulons: 0, matiere_floue: 0, energie_rire: 0 };
       

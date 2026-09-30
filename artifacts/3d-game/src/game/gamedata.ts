@@ -409,6 +409,23 @@ function roundCost(n: number): number {
   return n >= 1000 ? Math.round(n / 50) * 50 : Math.round(n / 5) * 5;
 }
 
+/**
+ * Duree (secondes) de l'amelioration qui MENE au niveau donne (index = niveau
+ * cible - 1). Construction et niveau 2 restent instantanes, comme les prix de
+ * ces niveaux ; l'attente ne grandit qu'ensuite. Le batiment garde son niveau
+ * courant (et sa production) pendant l'attente.
+ */
+const UPGRADE_SECONDS = [0, 0, 10, 30, 90];
+
+export function upgradeDurationMs(targetLevel: number): number {
+  return (UPGRADE_SECONDS[targetLevel - 1] ?? 0) * 1000;
+}
+
+export function formatCountdown(ms: number): string {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  return s >= 60 ? `${Math.floor(s / 60)} min ${String(s % 60).padStart(2, '0')} s` : `${s} s`;
+}
+
 export const BUILDINGS: Record<string, BuildingData> = Object.fromEntries(
   Object.entries(BASE_BUILDINGS).map(([id, b]) => [
     id,
