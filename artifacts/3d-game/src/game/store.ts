@@ -14,6 +14,7 @@ import {
 } from './gamedata';
 import { composeWave, ENEMY_TYPES, type EnemyKind } from './enemies';
 import { clearableKind, checkPlacement, type ClearableKind } from './world';
+import { DEFAULT_PLANET, type PlanetId } from './planets';
 import { ZONES, maxRadiusAt, zoneEffects } from './zones';
 import { heroTrack, type HeroTrackId } from './hero';
 import { xpForLevel, levelUpReward, XP } from './progress';
@@ -129,6 +130,9 @@ export interface GameState {
   unlockedZones: Record<string, true>;
   /** Secteur dont la fiche d'annexion est ouverte. */
   selectedZone: string | null;
+
+  /** Planete courante. Voir planets.ts. */
+  currentPlanet: PlanetId;
 
   // ---- Le heros ----
   /** Niveau atteint sur chaque piste d'amelioration. Voir hero.ts. */
@@ -275,6 +279,7 @@ const initialGameState = () => ({
   selectedDecor: null,
   unlockedZones: {} as Record<string, true>,
   selectedZone: null,
+  currentPlanet: DEFAULT_PLANET as PlanetId,
   heroUpgrades: {} as Record<string, number>,
 });
 
@@ -722,6 +727,7 @@ export const useGameStore = create<GameState>()(
         coreLevel: state.coreLevel,
         clearedDecor: state.clearedDecor,
         unlockedZones: state.unlockedZones,
+        currentPlanet: state.currentPlanet,
         heroUpgrades: state.heroUpgrades,
         gameStartedAt: state.gameStartedAt,
         upgrading: state.upgrading,

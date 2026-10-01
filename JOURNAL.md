@@ -11,6 +11,25 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-01 — 2e planète, étape 1 : la donnée
+
+**Fait.** Nouveau `src/game/planets.ts` : `PlanetId` (`terre` | `cristalline`),
+`PlanetDef` (nom, ambiance, palette dont `sky`, décor, secteurs sur le modèle de
+`ZoneDef`), `PLANETS`, `planetById`. Planète 1 réutilise `ZONES` telle quelle.
+Planète 2 « Cristalline » : cristal violet sous une aurore permanente (thème
+choisi par l'agent, modifiable), deux secteurs (Champ de Géodes, Lac des
+Miroirs). `store.ts` : `currentPlanet` (défaut `terre`), persisté sans
+migration — une ancienne sauvegarde garde la valeur initiale. Rien de visible.
+
+**Vérifié.** typecheck 6 projets OK (après `pnpm install`, node_modules
+absents) ; `wave.mjs --check` 2/2 ; capture `--village` ouverte, identique à
+avant, aucune erreur ; `studio selftest` 5/5.
+
+**Essayé sans succès.** Rien d'écarté. Notes pour l'étape 2 : le décor de
+Cristalline réutilise provisoirement `'ice'` (type `ZoneDef.decor` limité à 4
+formes) ; l'étape 2 devra décider d'un vrai décor `crystal`. Les coûts des
+secteurs de planète 2 ne sont pas calibrés.
+
 ## 2026-09-30 — Temps d'amélioration croissants
 
 **Fait.** `gamedata.ts` : `upgradeDurationMs(niveauCible)` — construction et

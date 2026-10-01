@@ -50,7 +50,7 @@ n'est pas grisante. Ça reprend la « Refonte de la Time Curve » du 15/08
 l'idée de faire le tour de la première (barrée plus bas). Le jeu doit rester
 jouable à chaque étape : rien de visible à moitié fait sur `main`.
 
-- [ ] **2e planète, étape 1 — la donnée.** Notion de planète courante
+- [x] **2e planète, étape 1 — la donnée.** *(2026-10-01 : fait — `planets.ts`, `currentPlanet` dans le store. Thème choisi : planète de cristal violet sous une aurore permanente, « Cristalline » ; à changer si Allonzo veut autre chose. Voir JOURNAL.md.)* Notion de planète courante
       (planète 1 = celle d'aujourd'hui) et fiche de la planète 2 : nom,
       ambiance, couleurs du sol et du ciel, décor, secteurs (sur le modèle
       de `zones.ts`). Rien de visible pour le joueur ; les sauvegardes
