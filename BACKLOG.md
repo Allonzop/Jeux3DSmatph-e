@@ -57,7 +57,7 @@ jouable à chaque étape : rien de visible à moitié fait sur `main`.
       existantes se chargent sans migration. Thème : si Allonzo ne l'a pas
       écrit ici avant ta séance, choisis-en un et écris-le en une phrase à
       la fin de cette case, pour qu'il puisse le changer.
-- [ ] **2e planète, étape 2 — l'afficher.** Quand la planète courante est la
+- [x] **2e planète, étape 2 — l'afficher.** *(2026-10-02 : fait — sol, roche, ciel, décor de cristal et secteurs suivent `currentPlanet` ; test via `shot.mjs --planet cristalline`. Voir JOURNAL.md.)* Quand la planète courante est la
       2, la scène montre son sol, son ciel, son décor et ses couleurs.
       Accessible seulement en test (`shot.mjs` ou un drapeau de dev), pas
       encore depuis le jeu. Regarde la capture.

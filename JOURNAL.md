@@ -11,6 +11,24 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-02 — 2e planète, étape 2 : l'afficher
+
+**Fait.** La scène lit `currentPlanet` : `GameCanvas.tsx` (`SkyColor`, fond =
+`palette.sky`), `Ground.tsx` (couleur d'herbe et de roche de la planète, secteurs
+= `planet.zones`, arbres/buissons remplacés par des pointes de cristal
+`CrystalSpire`, fleurs et champignons masqués, étang teinté). Planète 1 : rendu
+identique. Outil : `shot.mjs --planet cristalline`. Toujours inaccessible depuis
+le jeu (étape 3).
+
+**Vérifié.** typecheck 6 projets OK ; `wave.mjs --check` 2/2 ; captures
+`--village` (terre, inchangée) et `--village --planet cristalline` ouvertes :
+sol violet, pointes lumineuses, aucune erreur ; `studio selftest` 5/5.
+
+**Essayé sans succès.** Rien d'écarté. Restes : le ciel ne diffère que par la
+couleur de fond (les étoiles/lunes/anneau sont ceux de la Terre) ; les bâtiments,
+héros et ennemis gardent leurs couleurs ; `ZONES` reste utilisé hors rendu
+(bonus, placement) — à traiter aux étapes 4-6.
+
 ## 2026-10-01 — 2e planète, étape 1 : la donnée
 
 **Fait.** Nouveau `src/game/planets.ts` : `PlanetId` (`terre` | `cristalline`),

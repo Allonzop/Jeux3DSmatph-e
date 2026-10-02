@@ -15,7 +15,8 @@ import * as THREE from 'three';
 import { useGameStore } from '../store';
 import type { ScatterItem } from '../world';
 import { sfx } from '../sfx';
-import { ZONES, ZONE_THETA_INNER, ZONE_THETA_OUTER, ZONE_OUTER_RADIUS, type ZoneDef } from '../zones';
+import { planetById } from '../planets';
+import { ZONE_THETA_INNER, ZONE_THETA_OUTER, ZONE_OUTER_RADIUS, type ZoneDef } from '../zones';
 
 /**
  * La planète.
@@ -32,6 +33,30 @@ import { ZONES, ZONE_THETA_INNER, ZONE_THETA_OUTER, ZONE_OUTER_RADIUS, type Zone
  * `y = 0` se pose maintenant à `surfaceY(x, z)`, et rien d'autre ne bouge.
  */
 
+/** Pointe de cristal : le « végétal » de Cristalline. */
+function CrystalSpire({
+  scale, rot, palette, tall,
+}: {
+  scale: number; rot: number; palette: { accent: string; glow: string }; tall: boolean;
+}) {
+  return (
+    <group scale={scale} rotation={[0, rot, 0]}>
+      <mesh position={[0, tall ? 0.9 : 0.5, 0]} scale={[0.4, tall ? 1.7 : 1, 0.4]} castShadow>
+        <octahedronGeometry args={[0.6, 0]} />
+        <meshStandardMaterial color={palette.accent} emissive={palette.glow} emissiveIntensity={0.6} flatShading />
+      </mesh>
+      <mesh position={[0.3, 0.3, 0.1]} rotation={[0, 0, 0.35]} scale={[0.25, 0.8, 0.25]} castShadow>
+        <octahedronGeometry args={[0.5, 0]} />
+        <meshStandardMaterial color={palette.glow} emissive={palette.glow} emissiveIntensity={0.5} flatShading />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
+        <circleGeometry args={[0.7, 20]} />
+        <meshBasicMaterial color={palette.glow} transparent opacity={0.22} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+}
+
 /** Centre de la planète, sous le noyau. */
 const PLANET_CENTER: [number, number, number] = [0, -PLANET_RADIUS, 0];
 
@@ -44,12 +69,14 @@ export function Ground() {
   const gradientMap = useToonGradient();
   const { trees, bushes, flowers, rocks, pond, crystals, mushrooms } = SCATTER;
   const cleared = useGameStore((state) => state.clearedDecor);
+  const planet = planetById(useGameStore((state) => state.currentPlanet));
+  const crystal = planet.decor === 'crystal';
 
   return (
     <group>
-      <PlanetBody gradientMap={gradientMap} />
+      <PlanetBody gradientMap={gradientMap} ground={planet.palette.ground} rock={crystal ? planet.palette.rock : undefined} />
       <FarSide gradientMap={gradientMap} />
-      <Zones gradientMap={gradientMap} />
+      <Zones gradientMap={gradientMap} zones={planet.zones} />
       <Atmosphere />
       <PlanetRing />
       <Moons gradientMap={gradientMap} />
@@ -58,7 +85,7 @@ export function Ground() {
       <OnSurface x={pond.pos[0]} z={pond.pos[2]} lift={0.02}>
         <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <circleGeometry args={[1.5, 32]} />
-          <meshStandardMaterial color="#4cc9f0" roughness={0.1} emissive="#4cc9f0" emissiveIntensity={0.2} />
+          <meshStandardMaterial color={crystal ? planet.palette.accent : '#4cc9f0'} roughness={0.1} emissive={crystal ? planet.palette.glow : '#4cc9f0'} emissiveIntensity={0.2} />
         </mesh>
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
           <torusGeometry args={[1.5, 0.15, 8, 32]} />
@@ -69,6 +96,7 @@ export function Ground() {
       {/* Arbres */}
       {trees.map((t, i) => (
         <Clearable key={t.id} item={t} cleared={cleared}>
+          {crystal ? <CrystalSpire scale={t.scale} rot={t.rot} palette={planet.palette} tall={true} /> : (
           <group scale={t.scale} rotation={[0, t.rot, 0]}>
             <mesh position={[0, 0.6, 0]} castShadow receiveShadow>
               <cylinderGeometry args={[0.1, 0.2, 1.2, 8]} />
@@ -87,12 +115,14 @@ export function Ground() {
               <meshToonMaterial color="#57cc99" gradientMap={gradientMap} />
             </mesh>
           </group>
+          )}
         </Clearable>
       ))}
 
       {/* Buissons */}
       {bushes.map((b, i) => (
         <Clearable key={b.id} item={b} cleared={cleared}>
+          {crystal ? <CrystalSpire scale={b.scale} rot={b.rot} palette={planet.palette} tall={false} /> : (
           <group scale={b.scale}>
             <mesh position={[0, 0.2, 0]} scale={[1, 0.8, 1]} castShadow receiveShadow>
               <sphereGeometry args={[0.4, 16, 16]} />
@@ -107,11 +137,12 @@ export function Ground() {
               <meshToonMaterial color="#57cc99" gradientMap={gradientMap} />
             </mesh>
           </group>
+          )}
         </Clearable>
       ))}
 
       {/* Fleurs */}
-      {flowers.map((f, i) => (
+      {!crystal && flowers.map((f, i) => (
         <OnSurface key={`flower-${i}`} x={f.pos[0]} z={f.pos[2]}>
           <group scale={f.scale}>
             <mesh position={[0, 0.2, 0]} castShadow>
@@ -188,7 +219,7 @@ export function Ground() {
       ))}
 
       {/* Champignons géants */}
-      {mushrooms.map((m, i) => (
+      {!crystal && mushrooms.map((m, i) => (
         <Clearable key={m.id} item={m} cleared={cleared}>
           <group scale={m.scale} rotation={[0, m.rot, 0]}>
             <mesh position={[0, 0.35, 0]} castShadow>
@@ -312,7 +343,7 @@ export function OnSurface({
 }
 
 /** La sphère elle-même : calotte d'herbe, corps rocheux, falaise de bord. */
-function PlanetBody({ gradientMap }: { gradientMap: THREE.Texture }) {
+function PlanetBody({ gradientMap, ground, rock }: { gradientMap: THREE.Texture; ground: string; rock?: string }) {
   return (
     <group position={PLANET_CENTER}>
       {/* Herbe : sommet de la sphère, exactement la zone jouable. */}
@@ -321,7 +352,7 @@ function PlanetBody({ gradientMap }: { gradientMap: THREE.Texture }) {
             demandé, pas à la sphère entière, donc 96×64 y mettait douze mille
             triangles pour une surface qu'on regarde de très loin. */}
         <sphereGeometry args={[PLANET_RADIUS, 64, 20, 0, Math.PI * 2, 0, PLATEAU_THETA + 0.02]} />
-        <meshToonMaterial color="#6ede8a" gradientMap={gradientMap} />
+        <meshToonMaterial color={ground} gradientMap={gradientMap} />
       </mesh>
 
       {/* Roche : le reste de la même sphère, même rayon donc aucun raccord
@@ -332,7 +363,7 @@ function PlanetBody({ gradientMap }: { gradientMap: THREE.Texture }) {
         <sphereGeometry
           args={[PLANET_RADIUS, 40, 28, 0, Math.PI * 2, ZONE_THETA_OUTER, Math.PI]}
         />
-        <meshStandardMaterial color="#6d5468" flatShading roughness={1} />
+        <meshStandardMaterial color={rock ?? '#6d5468'} flatShading roughness={1} />
       </mesh>
 
       {/* Noyau minéral plus sombre, visible entre les facettes du bas. */}
@@ -359,11 +390,11 @@ function PlanetBody({ gradientMap }: { gradientMap: THREE.Texture }) {
  * `phiStart = π − to` et `phiLength = to − from`. C'est **le seul endroit** du
  * projet qui fait cette conversion.
  */
-function Zones({ gradientMap }: { gradientMap: THREE.Texture }) {
+function Zones({ gradientMap, zones }: { gradientMap: THREE.Texture; zones: ZoneDef[] }) {
   const unlocked = useGameStore((state) => state.unlockedZones);
   return (
     <group>
-      {ZONES.map((zone) => (
+      {zones.map((zone) => (
         <ZoneSector key={zone.id} zone={zone} unlocked={!!unlocked[zone.id]} gradientMap={gradientMap} />
       ))}
     </group>

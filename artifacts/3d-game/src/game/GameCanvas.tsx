@@ -16,6 +16,13 @@ import { CombatEffects } from './scene/CombatEffects';
 import { useGameStore } from './store';
 import { buildingData } from './gamedata';
 import { setCombatMusic } from './sfx';
+import { planetById } from './planets';
+
+/** Le fond de scène suit la planète courante (ciel de Cristalline : aurore sombre). */
+function SkyColor() {
+  const sky = useGameStore((state) => planetById(state.currentPlanet).palette.sky);
+  return <color attach="background" args={[sky]} />;
+}
 
 function PassiveTicker() {
   const tickPassive = useGameStore(state => state.tickPassive);
@@ -64,7 +71,7 @@ export function GameCanvas() {
       <PassiveTicker />
       <MusicMood />
       <Canvas shadows dpr={[1, 2]}>
-        <color attach="background" args={['#0d1117']} />
+        <SkyColor />
         
         {/* Warmer key light and softer ambient as requested */}
         <ambientLight intensity={0.45} color="#b8c4ff" />

@@ -12,6 +12,7 @@
  *   --empty          partie neuve, tutoriel actif
  *   --wave <n>       lance la vague n et capture en plein combat
  *   --upgrading      lance l'amelioration de la tourelle (compte a rebours visible)
+ *   --planet <id>   affiche une autre planète (ex. cristalline) ; pas encore accessible depuis le jeu
  *   --wide           cadre bureau (1280×900) au lieu du cadre téléphone
  *   --wait <ms>      attente avant la capture (défaut 30000)
  *   --out <fichier>  destination (défaut game-shot.png)
@@ -100,6 +101,12 @@ if (flag('upgrading')) {
     store.getState().upgradeBuilding('tourelle', {});
   });
   await page.waitForTimeout(1500);
+}
+
+const planetArg = opt('planet', null);
+if (planetArg) {
+  await page.evaluate((id) => window.__villageStore.setState({ currentPlanet: id }), planetArg);
+  await page.waitForTimeout(2000);
 }
 
 const waveArg = opt('wave', null);
