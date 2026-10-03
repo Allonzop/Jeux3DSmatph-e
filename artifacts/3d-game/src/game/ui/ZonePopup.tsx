@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, ResourceType, Resources } from '../store';
 import { ZONES } from '../zones';
+import { PLANETS, PLANET_UNLOCK_TEXT, planetUnlocked, planetById, type PlanetId } from '../planets';
 import { ResourceIcon, CloseIcon } from './icons';
 import { sfx } from '../sfx';
 
@@ -169,24 +170,36 @@ export function EmpirePanel({ onClose }: { onClose: () => void }) {
   const selectZone = useGameStore((s) => s.selectZone);
   const playerLevel = useGameStore((s) => s.playerLevel);
   const resources = useGameStore((s) => s.resources);
+  const currentPlanet = useGameStore((s) => s.currentPlanet);
+  const travelTo = useGameStore((s) => s.travelTo);
+  const waveActive = useGameStore((s) => s.waveActive);
+  const terreZones = useGameStore((s) => s.planetSaves.terre?.unlockedZones);
+  const homeZones = currentPlanet === 'terre' ? unlocked : (terreZones ?? {});
 
+  const onHome = currentPlanet === 'terre';
   const owned = ZONES.filter((z) => unlocked[z.id]).length;
 
   return (
     <div className="flex flex-col gap-2.5">
       <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
         <div className="flex items-baseline justify-between">
-          <span className="font-bold text-white text-[0.92rem]">Planète Racine</span>
-          <span className="text-[0.65rem] font-mono text-white/45">
-            {owned + 1}/{ZONES.length + 1} secteurs
+          <span className="font-bold text-white text-[0.92rem]">
+            {onHome ? 'Planète Racine' : planetById(currentPlanet).name}
           </span>
+          {onHome && (
+            <span className="text-[0.65rem] font-mono text-white/45">
+              {owned + 1}/{ZONES.length + 1} secteurs
+            </span>
+          )}
         </div>
         <p className="text-white/50 text-[0.72rem] leading-snug mt-0.5">
-          Votre monde de départ. Le plateau central est à vous ; le reste s’annexe.
+          {onHome
+            ? 'Votre monde de départ. Le plateau central est à vous ; le reste s’annexe.'
+            : `${planetById(currentPlanet).blurb} Ses secteurs ne sont pas encore annexables.`}
         </p>
       </div>
 
-      {ZONES.map((zone) => {
+      {(onHome ? ZONES : []).map((zone) => {
         const isOwned = !!unlocked[zone.id];
         const levelOk = playerLevel >= zone.requiredLevel;
         const canPay = (Object.entries(zone.cost) as [ResourceType, number][])
@@ -237,20 +250,40 @@ export function EmpirePanel({ onClose }: { onClose: () => void }) {
         );
       })}
 
-      {/* La suite, annoncée pour ce qu'elle est : une étape de développement,
-          pas une fonctionnalité verrouillée dans le jeu. La formulation
-          précédente laissait croire qu'il y avait quelque chose à débloquer. */}
-      <div className="rounded-2xl border border-dashed border-white/12 bg-black/15 p-3">
-        <div className="flex items-baseline justify-between">
-          <span className="font-bold text-white/60 text-[0.9rem]">Deuxième planète</span>
-          <span className="text-[0.62rem] font-mono text-white/30 uppercase">pas encore là</span>
-        </div>
-        <p className="text-white/35 text-[0.72rem] leading-snug mt-0.5">
-          {owned === ZONES.length
-            ? 'La Racine est entièrement à vous. La suite de l’empire arrive dans une prochaine mise à jour.'
-            : 'Elle n’existe pas encore dans le jeu — c’est la prochaine étape prévue. En attendant, la Racine a encore des secteurs à prendre.'}
-        </p>
-      </div>
+      {(Object.keys(PLANETS) as PlanetId[]).filter((id) => id !== currentPlanet).map((id) => {
+        const target = planetById(id);
+        const ok = planetUnlocked(id, homeZones) && !waveActive;
+        return (
+          <div
+            key={id}
+            className="rounded-2xl border border-white/10 bg-black/25 p-3 flex gap-3 items-center"
+            style={{ boxShadow: `inset 3px 0 0 ${planetUnlocked(id, homeZones) ? target.palette.glow : '#4a4356'}` }}
+          >
+            <div
+              className="w-10 h-10 shrink-0 rounded-xl border border-white/10"
+              style={{ background: `linear-gradient(135deg, ${target.palette.ground}, ${target.palette.accent})` }}
+            />
+            <div className="min-w-0 flex-1">
+              <div className="font-bold text-white text-[0.88rem] truncate">{target.name}</div>
+              <p className="text-white/50 text-[0.7rem] leading-snug">
+                {planetUnlocked(id, homeZones)
+                  ? waveActive ? 'Impossible de partir pendant une vague.' : target.blurb
+                  : PLANET_UNLOCK_TEXT[id]}
+              </p>
+            </div>
+            <button
+              disabled={!ok}
+              onClick={() => { sfx.tap(); if (travelTo(id)) onClose(); }}
+              className={`shrink-0 px-3 py-1.5 rounded-xl text-[0.7rem] font-black uppercase tracking-wider ${
+                ok ? 'text-black' : 'bg-white/8 border border-white/10 text-white/40'
+              }`}
+              style={ok ? { backgroundColor: target.palette.glow } : undefined}
+            >
+              {id === 'terre' ? 'Rentrer' : 'Partir'}
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }

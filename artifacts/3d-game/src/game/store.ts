@@ -14,7 +14,7 @@ import {
 } from './gamedata';
 import { composeWave, ENEMY_TYPES, type EnemyKind } from './enemies';
 import { clearableKind, checkPlacement, type ClearableKind } from './world';
-import { DEFAULT_PLANET, type PlanetId } from './planets';
+import { DEFAULT_PLANET, type PlanetId, planetUnlocked } from './planets';
 import { ZONES, maxRadiusAt, zoneEffects } from './zones';
 import { heroTrack, type HeroTrackId } from './hero';
 import { xpForLevel, levelUpReward, XP } from './progress';
@@ -133,6 +133,11 @@ export interface GameState {
 
   /** Planete courante. Voir planets.ts. */
   currentPlanet: PlanetId;
+  /**
+   * Progression des planetes qu'on a quittees : la planete courante vit dans
+   * les champs du store, les autres dorment ici. Voir `travelTo`.
+   */
+  planetSaves: Partial<Record<PlanetId, PlanetProgress>>;
 
   // ---- Le heros ----
   /** Niveau atteint sur chaque piste d'amelioration. Voir hero.ts. */
@@ -169,6 +174,8 @@ export interface GameState {
   /** Monte d'un cran une piste d'amelioration du heros. */
   upgradeHero: (track: HeroTrackId) => boolean;
   selectZone: (id: string | null) => void;
+  /** Part vers une autre planete (ou revient). Refuse en pleine vague ou si elle est verrouillee. */
+  travelTo: (id: PlanetId) => boolean;
   /** Annexe un secteur si le niveau et les ressources suivent. */
   unlockZone: (id: string) => boolean;
   selectDecor: (id: string | null) => void;
@@ -181,6 +188,23 @@ export interface GameState {
   upgradeCore: () => boolean;
   /** Dev/test helper: wipes the save and restarts the whole game from zero. */
   resetGame: () => void;
+}
+
+/**
+ * Ce qui est propre a une planete : ses batiments, son decor deblaye, ses
+ * secteurs, son noyau. Ressources, niveau du commandant, heros et record sont
+ * partages par tout l'empire.
+ */
+const PLANET_FIELDS = [
+  'buildingLevels', 'buildingPositions', 'upgrading',
+  'clearedDecor', 'unlockedZones', 'coreLevel',
+] as const;
+export type PlanetProgress = Pick<GameState, (typeof PLANET_FIELDS)[number]>;
+
+/** Etat d'une planete vierge : celui d'une partie neuve, sans les parts de l'empire. */
+function freshPlanetProgress(): PlanetProgress {
+  const init = initialGameState();
+  return Object.fromEntries(PLANET_FIELDS.map((k) => [k, init[k]])) as PlanetProgress;
 }
 
 /**
@@ -280,6 +304,7 @@ const initialGameState = () => ({
   unlockedZones: {} as Record<string, true>,
   selectedZone: null,
   currentPlanet: DEFAULT_PLANET as PlanetId,
+  planetSaves: {} as Partial<Record<PlanetId, PlanetProgress>>,
   heroUpgrades: {} as Record<string, number>,
 });
 
@@ -628,6 +653,25 @@ export const useGameStore = create<GameState>()(
         return true;
       },
 
+      travelTo: (id) => {
+        const state = get();
+        if (id === state.currentPlanet || state.waveActive) return false;
+        if (!planetUnlocked(id, state.currentPlanet === 'terre' ? state.unlockedZones : (state.planetSaves.terre?.unlockedZones ?? {}))) return false;
+        const leaving = Object.fromEntries(PLANET_FIELDS.map((k) => [k, state[k]])) as PlanetProgress;
+        const { [id]: arriving, ...others } = state.planetSaves;
+        set({
+          ...(arriving ?? freshPlanetProgress()),
+          planetSaves: { ...others, [state.currentPlanet]: leaving },
+          currentPlanet: id,
+          // Rien de la scene precedente ne doit suivre le joueur.
+          enemies: [], particles: [], waveNumber: 0, waveFailed: false,
+          coreHp: state.coreMaxHp, lastWaveOutcome: null,
+          selectedBuilding: null, placingBuilding: null, pendingPlacement: null,
+          selectedZone: null, selectedDecor: null, heroPos: [0, 0, 0],
+        });
+        return true;
+      },
+
       selectDecor: (id) => set({ selectedDecor: id }),
 
       clearDecor: (id) => {
@@ -728,6 +772,7 @@ export const useGameStore = create<GameState>()(
         clearedDecor: state.clearedDecor,
         unlockedZones: state.unlockedZones,
         currentPlanet: state.currentPlanet,
+        planetSaves: state.planetSaves,
         heroUpgrades: state.heroUpgrades,
         gameStartedAt: state.gameStartedAt,
         upgrading: state.upgrading,

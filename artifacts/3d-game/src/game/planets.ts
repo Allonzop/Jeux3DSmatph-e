@@ -86,3 +86,15 @@ export const PLANETS: Record<PlanetId, PlanetDef> = {
 export function planetById(id: string | undefined): PlanetDef {
   return PLANETS[id as PlanetId] ?? PLANETS[DEFAULT_PLANET];
 }
+
+/** Ce qu'il faut avoir fait sur la Terre pour partir vers Cristalline. */
+export const PLANET_UNLOCK_TEXT: Record<PlanetId, string> = {
+  terre: '',
+  cristalline: 'Annexez les quatre secteurs de la planète d’origine.',
+};
+
+/** Vrai si le joueur peut se rendre sur cette planète. */
+export function planetUnlocked(id: PlanetId, unlockedZones: Record<string, true>): boolean {
+  if (id === 'terre') return true;
+  return ZONES.every((z) => unlockedZones[z.id]);
+}

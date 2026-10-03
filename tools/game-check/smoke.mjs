@@ -189,6 +189,39 @@ await scenario('deux tourelles + déplacer la seconde', makeSave({
   }
 });
 
+// 6. Aller-retour entre planètes depuis le panneau Empire : verrouillé tant que
+// les secteurs ne sont pas annexés, puis chaque planète garde ses bâtiments.
+await scenario('voyage planète 2 et retour', makeSave({
+  resources: { boulons: 90000, matiere_floue: 2000, energie_rire: 600 },
+  buildingLevels: { hutte: 2 },
+  buildingPositions: { hutte: [-5, 0, -4] },
+}), async (page) => {
+  const st = (fn, arg) => page.evaluate(fn, arg);
+  await page.locator('button:has-text("Construire")').first().click();
+  await page.waitForTimeout(800);
+  await page.locator('button:has-text("Empire")').first().click();
+  await page.waitForTimeout(500);
+  if (!(await page.locator('button:has-text("Partir")').isDisabled())) throw new Error('« Partir » actif alors que les secteurs ne sont pas annexés');
+  await st(() => {
+    const s = window.__villageStore;
+    s.setState({ playerLevel: 15 });
+    for (const id of ['cendres', 'givre', 'spores', 'dunes']) s.getState().unlockZone(id);
+  });
+  await page.waitForTimeout(500);
+  await page.locator('button:has-text("Partir")').click();
+  await page.waitForTimeout(2500);
+  let g = await st(() => { const x = window.__villageStore.getState(); return { p: x.currentPlanet, h: x.buildingLevels.hutte, z: Object.keys(x.unlockedZones).length }; });
+  if (g.p !== 'cristalline' || g.h !== 0 || g.z !== 0) throw new Error(`arrivée inattendue : ${JSON.stringify(g)}`);
+  await st(() => window.__villageStore.setState({ buildingLevels: { ...window.__villageStore.getState().buildingLevels, bar: 1 } }));
+  await page.locator('button:has-text("Construire")').first().click();
+  await page.waitForTimeout(800);
+  await page.locator('button:has-text("Empire")').first().click();
+  await page.locator('button:has-text("Rentrer")').click();
+  await page.waitForTimeout(2500);
+  g = await st(() => { const x = window.__villageStore.getState(); return { p: x.currentPlanet, h: x.buildingLevels.hutte, b: x.buildingLevels.bar, z: Object.keys(x.unlockedZones).length }; });
+  if (g.p !== 'terre' || g.h !== 2 || g.b || g.z !== 4) throw new Error(`retour inattendu : ${JSON.stringify(g)}`);
+});
+
 server.close();
 let bad = 0;
 for (const r of results) {

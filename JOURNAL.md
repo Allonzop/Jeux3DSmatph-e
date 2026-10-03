@@ -11,6 +11,29 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-03 — 2e planète, étape 3 : y aller et revenir
+
+**Fait.** `store.ts` : `travelTo(id)` et `planetSaves` (persisté). Par planète :
+bâtiments (niveaux, positions, améliorations en cours), décor déblayé, secteurs
+annexés, niveau du noyau. Partagés : ressources, niveau/XP du commandant, héros,
+record. Refusé en pleine vague ou si verrouillé. Déblocage de Cristalline : les
+quatre secteurs de la Terre annexés (`planetUnlocked`, texte affiché dans le
+panneau). `ZonePopup.tsx` (`EmpirePanel`) : carte de l'autre planète avec
+Partir / Rentrer ; sur Cristalline la liste des secteurs terrestres disparaît
+(ses secteurs ne sont pas encore annexables, étape 4). Nouvelle sauvegarde sans
+`planetSaves` : valeur initiale, pas de migration.
+
+**Vérifié.** typecheck 6 projets OK ; `smoke.mjs` 6/6 dont le nouveau parcours
+« voyage planète 2 et retour » (Partir désactivé tant que non annexé, arrivée
+vierge, retour retrouve hutte et 4 secteurs) ; `wave.mjs --check` 2/2 ; capture
+`--village` ouverte, inchangée ; `studio selftest` 5/5.
+
+**Essayé sans succès.** Rien d'écarté. Un premier test échouait à cause du test
+(`buildingLevels.bar` vaut `undefined`, pas 0, dans une sauvegarde de test sans
+cette clé). Restes : sur Cristalline le héros repart en (0,0,0), les vagues sont
+encore celles de la Terre (étape 5), et le panneau Empire n'a pas été vérifié à
+l'œil sur Cristalline, seulement par le parcours automatisé.
+
 ## 2026-10-02 — 2e planète, étape 2 : l'afficher
 
 **Fait.** La scène lit `currentPlanet` : `GameCanvas.tsx` (`SkyColor`, fond =

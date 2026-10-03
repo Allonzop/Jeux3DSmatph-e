@@ -61,7 +61,7 @@ jouable à chaque étape : rien de visible à moitié fait sur `main`.
       2, la scène montre son sol, son ciel, son décor et ses couleurs.
       Accessible seulement en test (`shot.mjs` ou un drapeau de dev), pas
       encore depuis le jeu. Regarde la capture.
-- [ ] **2e planète, étape 3 — y aller et revenir.** Depuis le panneau
+- [x] **2e planète, étape 3 — y aller et revenir.** *(2026-10-03 : fait — boutons Partir/Rentrer dans le panneau Empire, déblocage = les 4 secteurs de la Terre annexés, `planetSaves` dans la sauvegarde, parcours ajouté à `smoke.mjs`. Voir JOURNAL.md.)* Depuis le panneau
       Empire : partir sur la planète 2 et revenir, avec une condition de
       déblocage écrite dans le panneau. Chaque planète garde sa propre
       progression dans la sauvegarde. Ajoute l'aller-retour à `smoke.mjs`.
