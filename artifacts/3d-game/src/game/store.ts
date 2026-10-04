@@ -14,7 +14,7 @@ import {
 } from './gamedata';
 import { composeWave, ENEMY_TYPES, type EnemyKind } from './enemies';
 import { clearableKind, checkPlacement, type ClearableKind } from './world';
-import { DEFAULT_PLANET, type PlanetId, planetUnlocked } from './planets';
+import { DEFAULT_PLANET, type PlanetId, planetById, planetUnlocked } from './planets';
 import { ZONES, maxRadiusAt, zoneEffects } from './zones';
 import { heroTrack, type HeroTrackId } from './hero';
 import { xpForLevel, levelUpReward, XP } from './progress';
@@ -202,9 +202,15 @@ const PLANET_FIELDS = [
 export type PlanetProgress = Pick<GameState, (typeof PLANET_FIELDS)[number]>;
 
 /** Etat d'une planete vierge : celui d'une partie neuve, sans les parts de l'empire. */
-function freshPlanetProgress(): PlanetProgress {
+function freshPlanetProgress(id: PlanetId = DEFAULT_PLANET): PlanetProgress {
   const init = initialGameState();
-  return Object.fromEntries(PLANET_FIELDS.map((k) => [k, init[k]])) as PlanetProgress;
+  const fresh = Object.fromEntries(PLANET_FIELDS.map((k) => [k, init[k]])) as PlanetProgress;
+  // La base de depart de la planete : batiments deja poses, niveau 1.
+  for (const { id: bid, pos } of planetById(id).startBase) {
+    fresh.buildingLevels = { ...fresh.buildingLevels, [bid]: 1 };
+    fresh.buildingPositions = { ...fresh.buildingPositions, [bid]: pos };
+  }
+  return fresh;
 }
 
 /**
@@ -660,7 +666,7 @@ export const useGameStore = create<GameState>()(
         const leaving = Object.fromEntries(PLANET_FIELDS.map((k) => [k, state[k]])) as PlanetProgress;
         const { [id]: arriving, ...others } = state.planetSaves;
         set({
-          ...(arriving ?? freshPlanetProgress()),
+          ...(arriving ?? freshPlanetProgress(id)),
           planetSaves: { ...others, [state.currentPlanet]: leaving },
           currentPlanet: id,
           // Rien de la scene precedente ne doit suivre le joueur.

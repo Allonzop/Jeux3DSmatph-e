@@ -5,6 +5,7 @@ import { useGameStore } from '../store';
 import { Float, Html } from '@react-three/drei';
 import { useToonGradient } from './utils';
 import { CORE_MAX_LEVEL } from '../gamedata';
+import { planetById } from '../planets';
 
 /**
  * Le noyau de cristal — ce qu'il faut proteger.
@@ -51,8 +52,8 @@ export function CrystalCore() {
   const hpPercent = coreHp / coreMaxHp;
   const isDanger = hpPercent < 0.5;
 
-  /** Le cristal garde son cyan : c'est son identite, pas sa sante. */
-  const color = '#7df9ff';
+  /** Le cristal garde la couleur de sa planete (cyan sur la Terre) : son identite, pas sa sante. */
+  const color = useGameStore(state => planetById(state.currentPlanet).coreColor);
   /** L'anneau, lui, dit la sante — vert, ambre, rouge. */
   const ringColor = hpPercent > 0.6 ? '#34d399' : hpPercent > 0.3 ? '#fbbf24' : '#f87171';
   const gradientMap = useToonGradient();

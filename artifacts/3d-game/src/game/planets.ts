@@ -25,6 +25,13 @@ export type PlanetDef = {
   decor: 'meadow' | 'crystal';
   /** Secteurs annexables, sur le modèle de `zones.ts`. */
   zones: ZoneDef[];
+  /** Couleur du cœur de cristal à protéger. */
+  coreColor: string;
+  /**
+   * Bâtiments déjà là à la première arrivée (niveau 1, déjà construits).
+   * Vide sur la Terre : une partie neuve y commence sans rien.
+   */
+  startBase: { id: string; pos: [number, number, number] }[];
 };
 
 const Q = Math.PI / 2;
@@ -72,6 +79,8 @@ export const PLANETS: Record<PlanetId, PlanetDef> = {
     palette: { ground: '#6ede8a', rock: '#7a5c47', accent: '#57cc99', glow: '#ffebc8', sky: '#0d1117' },
     decor: 'meadow',
     zones: ZONES,
+    coreColor: '#7df9ff',
+    startBase: [],
   },
   cristalline: {
     id: 'cristalline',
@@ -80,6 +89,13 @@ export const PLANETS: Record<PlanetId, PlanetDef> = {
     palette: { ground: '#7c5cbf', rock: '#2d1b4e', accent: '#d8b4fe', glow: '#c084fc', sky: '#1a0f3a' },
     decor: 'crystal',
     zones: CRISTALLINE_ZONES,
+    coreColor: '#f0abfc',
+    // Un camp de base : de quoi produire et tenir la première vague. Positions
+    // libres de décor, vérifiées par `smoke.mjs` (« voyage planète 2 »).
+    startBase: [
+      { id: 'hutte', pos: [-5.8, 0, -1.55] },
+      { id: 'tourelle', pos: [3.54, 0, -3.54] },
+    ],
   },
 };
 

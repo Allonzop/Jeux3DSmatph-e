@@ -210,8 +210,18 @@ await scenario('voyage planète 2 et retour', makeSave({
   await page.waitForTimeout(500);
   await page.locator('button:has-text("Partir")').click();
   await page.waitForTimeout(2500);
-  let g = await st(() => { const x = window.__villageStore.getState(); return { p: x.currentPlanet, h: x.buildingLevels.hutte, z: Object.keys(x.unlockedZones).length }; });
-  if (g.p !== 'cristalline' || g.h !== 0 || g.z !== 0) throw new Error(`arrivée inattendue : ${JSON.stringify(g)}`);
+  let g = await st(() => { const x = window.__villageStore.getState(); return { p: x.currentPlanet, h: x.buildingLevels.hutte, t: x.buildingLevels.tourelle, z: Object.keys(x.unlockedZones).length }; });
+  // Base de départ de Cristalline : une hutte et une tourelle de niveau 1, secteurs vierges.
+  if (g.p !== 'cristalline' || g.h !== 1 || g.t !== 1 || g.z !== 0) throw new Error(`arrivée inattendue : ${JSON.stringify(g)}`);
+  // ...posées à des endroits valides, et la planète accepte une construction de plus.
+  const bad = await st(() => {
+    const x = window.__villageStore.getState(); const { check, buildings } = window.__villagePlacement;
+    return Object.entries(x.buildingPositions).filter(([id, [px, , pz]]) => !check(px, pz, [], {}, window.__villagePlacement.maxRadiusAt(px, pz, {}), buildings[id.split("#")[0]].footprint).valid).map(([id, [px, , pz]]) => id + ":" + window.__villagePlacement.check(px, pz, [], {}, window.__villagePlacement.maxRadiusAt(px, pz, {}), 1.5).reason);
+  });
+  if (bad.length) throw new Error(`base de départ mal placée : ${bad}`);
+  await st(() => window.__villageStore.getState().placeBuilding('ferme', [0.97, 0, 3.51]));
+  if (!(await st(() => window.__villageStore.getState().buildingPositions.ferme))) throw new Error('impossible de poser un bâtiment sur Cristalline');
+  await st(() => window.__villageStore.getState().selectBuilding(null));
   await st(() => window.__villageStore.setState({ buildingLevels: { ...window.__villageStore.getState().buildingLevels, bar: 1 } }));
   await page.locator('button:has-text("Construire")').first().click();
   await page.waitForTimeout(800);

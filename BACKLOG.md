@@ -65,7 +65,7 @@ jouable à chaque étape : rien de visible à moitié fait sur `main`.
       Empire : partir sur la planète 2 et revenir, avec une condition de
       déblocage écrite dans le panneau. Chaque planète garde sa propre
       progression dans la sauvegarde. Ajoute l'aller-retour à `smoke.mjs`.
-- [ ] **2e planète, étape 4 — y construire.** Son cœur de cristal et une
+- [x] **2e planète, étape 4 — y construire.** *(2026-10-04 : fait — cœur rose propre à la planète, base de départ hutte + tourelle niveau 1 à l'arrivée (`startBase` dans `planets.ts`), construction vérifiée dans `smoke.mjs`. Voir JOURNAL.md.)* Son cœur de cristal et une
       base de départ ; les bâtiments s'y posent.
 - [ ] **2e planète, étape 5 — ses vagues.** Des vagues propres à la planète
       2, avec au moins un monstre qu'on ne voit pas sur la première.

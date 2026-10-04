@@ -11,6 +11,32 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-04 — 2e planète, étape 4 : y construire
+
+**Fait.** `planets.ts` : `PlanetDef` gagne `coreColor` (cyan sur la Terre, rose
+`#f0abfc` sur Cristalline) et `startBase` (vide sur la Terre ; hutte et tourelle
+niveau 1 sur Cristalline, en (-5.8, -1.55) et (3.54, -3.54), positions libres de
+décor). `store.ts` : `freshPlanetProgress(id)` pose la base de départ à la
+première arrivée (`travelTo`) ; un retour ensuite relit la sauvegarde de la
+planète, base comprise. `CrystalCore.tsx` lit la couleur de la planète courante.
+Construire sur Cristalline fonctionnait déjà par le code commun : rien à ajouter
+côté placement. `shot.mjs --planet` fait désormais un vrai `travelTo` (on voit
+l'arrivée), et attend le délai habituel.
+
+**Vérifié.** typecheck 6 projets OK ; `smoke.mjs` 6/6 — le parcours « voyage
+planète 2 » vérifie la base (niveaux 1, positions valides selon `checkPlacement`)
+et la pose d'un bâtiment de plus ; `wave.mjs --check` 2/2 ; captures
+`--village --planet cristalline` (étroite et `--wide --wait 60000`) ouvertes :
+cœur rose, hutte et tourelle en place ; `studio selftest` 5/5.
+
+**Essayé sans succès.** Positions de la couronne `--arsenal` pour la base : elles
+tombent sur du décor (`reason: decor`), le test l'a vu ; remplacées par des
+positions balayées avec `checkPlacement`. Premier test cassé par moi (`.ok` au
+lieu de `.valid`, et `placeBuilding` ouvre un panneau qui masquait les boutons).
+Restes : les vagues sont encore celles de la Terre (étape 5), la coque extérieure
+du cœur reste cyan clair (`#a5f3fc`), les secteurs de Cristalline ne sont pas
+annexables.
+
 ## 2026-10-03 — 2e planète, étape 3 : y aller et revenir
 
 **Fait.** `store.ts` : `travelTo(id)` et `planetSaves` (persisté). Par planète :

@@ -12,7 +12,7 @@
  *   --empty          partie neuve, tutoriel actif
  *   --wave <n>       lance la vague n et capture en plein combat
  *   --upgrading      lance l'amelioration de la tourelle (compte a rebours visible)
- *   --planet <id>   affiche une autre planète (ex. cristalline) ; pas encore accessible depuis le jeu
+ *   --planet <id>   affiche une autre planète (ex. cristalline) (voyage réel, arrivée avec la base de départ)
  *   --wide           cadre bureau (1280×900) au lieu du cadre téléphone
  *   --wait <ms>      attente avant la capture (défaut 30000)
  *   --out <fichier>  destination (défaut game-shot.png)
@@ -105,8 +105,13 @@ if (flag('upgrading')) {
 
 const planetArg = opt('planet', null);
 if (planetArg) {
-  await page.evaluate((id) => window.__villageStore.setState({ currentPlanet: id }), planetArg);
-  await page.waitForTimeout(2000);
+  // Voyage réel (`travelTo`) : on voit l'arrivée, base de départ comprise.
+  await page.evaluate((id) => {
+    const s = window.__villageStore;
+    s.setState({ unlockedZones: { cendres: true, givre: true, spores: true, dunes: true } });
+    s.getState().travelTo(id);
+  }, planetArg);
+  await page.waitForTimeout(Number(opt('wait', SETTLE_MS)));
 }
 
 const waveArg = opt('wave', null);
