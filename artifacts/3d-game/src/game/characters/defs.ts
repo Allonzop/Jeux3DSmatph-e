@@ -131,6 +131,13 @@ export const enemyDefs: CharacterDef[] = [
     skin: '#74c69d', glow: '#b7e4c7',
     headwear: 'leafCrown', back: 'cape', neck: 'glowNecklace',
     eyeShape: 'oval', mouth: 'smile', personality: 'calm' },
+
+  // Propre à Cristalline : trapu, carapace de cristal, lueur violette.
+  { id: 'geode', seed: 8808, bodyType: 'stocky', scale: 0.9, headScale: 0.9, limbThickness: 1.2,
+    primary: '#a855f7', secondary: '#3b0764', accent: '#f0abfc',
+    skin: '#c084fc', glow: '#e9d5ff',
+    headwear: 'antennaDome', back: 'shell', faceGear: 'tintedVisor',
+    eyeShape: 'round', mouth: 'neutral', personality: 'heavy' },
 ];
 
 /**

@@ -25,6 +25,7 @@ import { addShake } from '../effects';
 export function WaveIntro() {
   const waveActive = useGameStore((s) => s.waveActive);
   const waveNumber = useGameStore((s) => s.waveNumber);
+  const planet = useGameStore((s) => s.currentPlanet);
   const waveEnemyCount = useGameStore((s) => s.waveEnemyCount);
   const [showing, setShowing] = useState(false);
   const wasActive = useRef(false);
@@ -41,7 +42,7 @@ export function WaveIntro() {
     return undefined;
   }, [waveActive]);
 
-  const summary = showing ? waveSummary(composeWave(waveNumber, waveEnemyCount)) : [];
+  const summary = showing ? waveSummary(composeWave(waveNumber, waveEnemyCount, planet)) : [];
 
   return (
     <AnimatePresence>

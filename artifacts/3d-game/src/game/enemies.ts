@@ -1,5 +1,6 @@
 import type { CharacterDef } from './characters/types';
 import { enemyDefs } from './characters/defs';
+import type { PlanetId } from './planets';
 
 /** Apparences du bestiaire, indexees par id — voir `characters/defs.ts`. */
 const APPEARANCE: Record<string, CharacterDef> = Object.fromEntries(
@@ -45,7 +46,8 @@ export type EnemyKind =
   | 'ecumeur'
   | 'bombeur'
   | 'spectre'
-  | 'chaman';
+  | 'chaman'
+  | 'geode';
 
 export type EnemyType = {
   kind: EnemyKind;
@@ -58,6 +60,8 @@ export type EnemyType = {
   speed: number;
   /** Multiplicateur de degats au noyau. */
   breach: number;
+  /** Part des degats absorbee par la carapace (0 = aucune, 0.4 = -40 %). */
+  armor: number;
   /** Hauteur de vol. 0 = marche au sol. */
   altitude: number;
   /** Experience gagnee en l'abattant. */
@@ -85,6 +89,7 @@ export const ENEMY_TYPES: Record<EnemyKind, EnemyType> = {
     hp: 1,
     speed: 1,
     breach: 1,
+    armor: 0,
     altitude: 0,
     xp: 10,
     tint: '#ff4d6d',
@@ -99,6 +104,7 @@ export const ENEMY_TYPES: Record<EnemyKind, EnemyType> = {
     hp: 0.45,
     speed: 2.1,
     breach: 1,
+    armor: 0,
     altitude: 0,
     xp: 14,
     tint: '#ffe066',
@@ -112,6 +118,7 @@ export const ENEMY_TYPES: Record<EnemyKind, EnemyType> = {
     hp: 2.6,
     speed: 0.55,
     breach: 1.5,
+    armor: 0,
     altitude: 0,
     xp: 30,
     tint: '#8d99ae',
@@ -127,6 +134,7 @@ export const ENEMY_TYPES: Record<EnemyKind, EnemyType> = {
     hp: 0.75,
     speed: 1.4,
     breach: 1,
+    armor: 0,
     altitude: 2.2,
     xp: 22,
     tint: '#7dd3fc',
@@ -140,6 +148,7 @@ export const ENEMY_TYPES: Record<EnemyKind, EnemyType> = {
     hp: 1.1,
     speed: 0.9,
     breach: 1.9,
+    armor: 0,
     altitude: 0,
     xp: 26,
     tint: '#ff7b00',
@@ -154,6 +163,7 @@ export const ENEMY_TYPES: Record<EnemyKind, EnemyType> = {
     hp: 0.9,
     speed: 1.15,
     breach: 1,
+    armor: 0,
     altitude: 0.4,
     xp: 28,
     tint: '#c77dff',
@@ -167,11 +177,32 @@ export const ENEMY_TYPES: Record<EnemyKind, EnemyType> = {
     hp: 1.3,
     speed: 0.8,
     breach: 1,
+    armor: 0,
     altitude: 0,
     xp: 34,
     tint: '#52b788',
   },
+
+  // Propre a Cristalline : une carapace de cristal absorbe 40 % de chaque
+  // coup. Plus de tirs, ou des tours plus fortes, pas une autre stratégie.
+  geode: {
+    kind: 'geode',
+    name: 'Géode',
+    tip: 'Carapace de cristal : encaisse 40 % de dégâts en moins.',
+    hp: 1.2,
+    speed: 0.8,
+    breach: 1,
+    armor: 0.4,
+    altitude: 0,
+    xp: 32,
+    tint: '#d8b4fe',
+  },
 };
+
+/** Degats reellement subis apres la carapace du profil. */
+export function mitigatedDamage(kind: EnemyKind, amount: number): number {
+  return amount * (1 - (ENEMY_TYPES[kind]?.armor ?? 0));
+}
 
 /** Rayon de soin du chaman, et points de vie rendus par seconde. */
 export const CHAMAN_HEAL_RADIUS = 4.5;
@@ -202,9 +233,27 @@ const WAVE_ROSTER: RosterEntry[] = [
   { kind: 'chaman', from: 10, weight: 2 },
 ];
 
+/**
+ * Cristalline a son propre peloton : la Géode en fond de vague, les autres
+ * profils arrivent plus tôt que sur la Terre (le joueur les connaît déjà).
+ * Le compteur de vagues est commun aux planètes.
+ */
+const CRISTALLINE_ROSTER: RosterEntry[] = [
+  { kind: 'grognard', from: 1, weight: 4 },
+  { kind: 'geode', from: 1, weight: 8 },
+  { kind: 'fileur', from: 1, weight: 4 },
+  { kind: 'ecumeur', from: 4, weight: 3 },
+  { kind: 'spectre', from: 6, weight: 3 },
+  { kind: 'chaman', from: 8, weight: 2 },
+];
+
+function rosterFor(planet: PlanetId): RosterEntry[] {
+  return planet === 'cristalline' ? CRISTALLINE_ROSTER : WAVE_ROSTER;
+}
+
 /** Les profils qui peuvent apparaitre a cette vague, dans l'ordre d'entree. */
-export function rosterForWave(wave: number): EnemyType[] {
-  return WAVE_ROSTER.filter((e) => wave >= e.from).map((e) => ENEMY_TYPES[e.kind]);
+export function rosterForWave(wave: number, planet: PlanetId = 'terre'): EnemyType[] {
+  return rosterFor(planet).filter((e) => wave >= e.from).map((e) => ENEMY_TYPES[e.kind]);
 }
 
 /**
@@ -218,8 +267,8 @@ export function rosterForWave(wave: number): EnemyType[] {
  * Le premier monstre est toujours un grognard : la vague s'ouvre sur quelque
  * chose de connu, meme tard dans la partie.
  */
-export function composeWave(wave: number, count: number): EnemyKind[] {
-  const roster = WAVE_ROSTER.filter((e) => wave >= e.from);
+export function composeWave(wave: number, count: number, planet: PlanetId = 'terre'): EnemyKind[] {
+  const roster = rosterFor(planet).filter((e) => wave >= e.from);
   const total = roster.reduce((sum, e) => sum + e.weight, 0);
   const out: EnemyKind[] = [];
 

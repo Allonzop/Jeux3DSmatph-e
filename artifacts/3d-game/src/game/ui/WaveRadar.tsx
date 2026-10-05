@@ -17,12 +17,13 @@ export function WaveRadar() {
   const waveNumber = useGameStore((s) => s.waveNumber);
   const waveFailed = useGameStore((s) => s.waveFailed);
   const waveActive = useGameStore((s) => s.waveActive);
+  const planet = useGameStore((s) => s.currentPlanet);
 
   if (waveActive) return null;
 
   const next = waveFailed ? waveNumber : waveNumber + 1;
   const count = 1 + next * 2;
-  const kinds = composeWave(next, count);
+  const kinds = composeWave(next, count, planet);
   const summary = waveSummary(kinds);
 
   // Un profil qui entre en scene a cette vague ET qui est reellement tire
@@ -32,8 +33,8 @@ export function WaveRadar() {
   // docstring ci-dessus promet que ce qui est annonce est exactement ce qui
   // sortira.
   const present = new Set(kinds);
-  const previous = rosterForWave(next - 1).map((t) => t.kind);
-  const newcomer = rosterForWave(next).find(
+  const previous = rosterForWave(next - 1, planet).map((t) => t.kind);
+  const newcomer = rosterForWave(next, planet).find(
     (t) => !previous.includes(t.kind) && present.has(t.kind),
   );
 

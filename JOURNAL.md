@@ -11,6 +11,26 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-05 — 2e planète, étape 5 : ses vagues
+
+**Fait.** Nouveau monstre **Géode** (`enemies.ts` + apparence dans `characters/defs.ts`) :
+carapace de cristal, `armor: 0.4` = 40 % de dégâts en moins ; nouveau champ `armor`
+(0 pour les autres) et `mitigatedDamage()` appliqué dans `damageEnemy` et
+`damageEnemies` (`store.ts`). `CRISTALLINE_ROSTER` : peloton propre à la planète
+(géode en fond de vague, fileur dès 1, écumeur dès 4, spectre dès 6, chaman dès 8) ;
+`composeWave` / `rosterForWave` prennent la planète (défaut `terre`, donc Terre
+inchangée), `startWave`, `WaveRadar` et `WaveIntro` lui passent `currentPlanet`.
+
+**Vérifié.** typecheck 6 projets OK ; `wave.mjs --check` 2/2 ; `smoke.mjs` 6/6 ;
+`studio selftest` 5/5 (23 personnages) ; captures `--village` (inchangée) et
+`--village --planet cristalline --wave 5 --wide` ouvertes : vague de 11 monstres
+sur la planète rose, sans erreur.
+
+**Essayé sans succès / restes.** Les monstres sont petits à l'échelle de la capture
+large : je n'ai pas isolé un gros plan de la Géode pour juger sa silhouette. Le
+compteur de vagues est commun aux planètes (non sauvegardé par planète), d'où des
+`from` bas dans le peloton de Cristalline. Pas d'équilibrage fin des vagues.
+
 ## 2026-10-04 — 2e planète, étape 4 : y construire
 
 **Fait.** `planets.ts` : `PlanetDef` gagne `coreColor` (cyan sur la Terre, rose

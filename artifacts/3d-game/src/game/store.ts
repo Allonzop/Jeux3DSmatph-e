@@ -12,7 +12,7 @@ import {
   earlyGameBoost,
   upgradeDurationMs,
 } from './gamedata';
-import { composeWave, ENEMY_TYPES, type EnemyKind } from './enemies';
+import { composeWave, mitigatedDamage, ENEMY_TYPES, type EnemyKind } from './enemies';
 import { clearableKind, checkPlacement, type ClearableKind } from './world';
 import { DEFAULT_PLANET, type PlanetId, planetById, planetUnlocked } from './planets';
 import { ZONES, maxRadiusAt, zoneEffects } from './zones';
@@ -426,7 +426,7 @@ export const useGameStore = create<GameState>()(
         // 100 % grognards, donc l'equilibrage d'origine et le test de
         // non-regression (`wave.mjs --check`) jouent exactement la meme chose
         // qu'avant. La variete arrive ensuite, un profil a la fois.
-        const kinds = composeWave(nextWave, enemyCount);
+        const kinds = composeWave(nextWave, enemyCount, state.currentPlanet);
         const baseHp = 100 + nextWave * 20;
 
         const newEnemies: Enemy[] = [];
@@ -493,7 +493,7 @@ export const useGameStore = create<GameState>()(
           let justKilled = false;
           const enemies = state.enemies.map(e => {
             if (e.id === id) {
-              const hp = Math.max(0, e.hp - amount);
+              const hp = Math.max(0, e.hp - mitigatedDamage(e.kind, amount));
               if (hp === 0 && e.hp > 0) justKilled = true;
               return { ...e, hp };
             }
@@ -543,7 +543,7 @@ export const useGameStore = create<GameState>()(
         set((state) => {
           const enemies = state.enemies.map((e) => {
             if (!targets.has(e.id) || e.hp <= 0) return e;
-            const hp = Math.max(0, e.hp - amount);
+            const hp = Math.max(0, e.hp - mitigatedDamage(e.kind, amount));
             if (hp === 0) killed.push(e.kind);
             return { ...e, hp };
           });

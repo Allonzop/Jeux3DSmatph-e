@@ -67,7 +67,7 @@ jouable à chaque étape : rien de visible à moitié fait sur `main`.
       progression dans la sauvegarde. Ajoute l'aller-retour à `smoke.mjs`.
 - [x] **2e planète, étape 4 — y construire.** *(2026-10-04 : fait — cœur rose propre à la planète, base de départ hutte + tourelle niveau 1 à l'arrivée (`startBase` dans `planets.ts`), construction vérifiée dans `smoke.mjs`. Voir JOURNAL.md.)* Son cœur de cristal et une
       base de départ ; les bâtiments s'y posent.
-- [ ] **2e planète, étape 5 — ses vagues.** Des vagues propres à la planète
+- [x] **2e planète, étape 5 — ses vagues.** *(2026-10-05 : fait — Géode (−40 % de dégâts reçus) et peloton propre à Cristalline. Voir JOURNAL.md.)* Des vagues propres à la planète
       2, avec au moins un monstre qu'on ne voit pas sur la première.
 - [ ] **2e planète, étape 6 — ce qu'elle rapporte.** Ce qui donne envie d'y
       aller : ses ressources, et un effet sur la planète 1 (sur le modèle
