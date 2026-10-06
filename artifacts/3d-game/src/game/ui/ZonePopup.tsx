@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, ResourceType, Resources } from '../store';
 import { ZONES } from '../zones';
-import { PLANETS, PLANET_UNLOCK_TEXT, planetUnlocked, planetById, type PlanetId } from '../planets';
+import { PLANETS, PLANET_UNLOCK_TEXT, LOOT_EXTRA_TEXT, HOME_BONUS, planetUnlocked, planetById, type PlanetId } from '../planets';
 import { ResourceIcon, CloseIcon } from './icons';
 import { sfx } from '../sfx';
 
@@ -171,6 +171,7 @@ export function EmpirePanel({ onClose }: { onClose: () => void }) {
   const playerLevel = useGameStore((s) => s.playerLevel);
   const resources = useGameStore((s) => s.resources);
   const currentPlanet = useGameStore((s) => s.currentPlanet);
+  const cristallineBest = useGameStore((s) => s.cristallineBest);
   const travelTo = useGameStore((s) => s.travelTo);
   const waveActive = useGameStore((s) => s.waveActive);
   const terreZones = useGameStore((s) => s.planetSaves.terre?.unlockedZones);
@@ -270,6 +271,12 @@ export function EmpirePanel({ onClose }: { onClose: () => void }) {
                   ? waveActive ? 'Impossible de partir pendant une vague.' : target.blurb
                   : PLANET_UNLOCK_TEXT[id]}
               </p>
+              {LOOT_EXTRA_TEXT[id] && (
+                <p className="text-[0.68rem] leading-snug mt-1" style={{ color: target.palette.accent }}>
+                  {LOOT_EXTRA_TEXT[id]} {HOME_BONUS.label}.
+                  {cristallineBest >= HOME_BONUS.wave ? ' ✓ Acquis.' : ` (meilleure vague : ${cristallineBest}/${HOME_BONUS.wave})`}
+                </p>
+              )}
             </div>
             <button
               disabled={!ok}

@@ -14,7 +14,7 @@ import {
 } from './gamedata';
 import { composeWave, mitigatedDamage, ENEMY_TYPES, type EnemyKind } from './enemies';
 import { clearableKind, checkPlacement, type ClearableKind } from './world';
-import { DEFAULT_PLANET, type PlanetId, planetById, planetUnlocked } from './planets';
+import { DEFAULT_PLANET, type PlanetId, planetById, planetUnlocked, planetLootExtra } from './planets';
 import { ZONES, maxRadiusAt, zoneEffects } from './zones';
 import { heroTrack, type HeroTrackId } from './hero';
 import { xpForLevel, levelUpReward, XP } from './progress';
@@ -133,6 +133,8 @@ export interface GameState {
 
   /** Planete courante. Voir planets.ts. */
   currentPlanet: PlanetId;
+  /** Meilleure vague tenue sur Cristalline : debloque un bonus sur la Terre. */
+  cristallineBest: number;
   /**
    * Progression des planetes qu'on a quittees : la planete courante vit dans
    * les champs du store, les autres dorment ici. Voir `travelTo`.
@@ -260,7 +262,12 @@ function rewardVictory(
     (1 + MARCHE_LOOT_BONUS * (state.buildingLevels['marche'] || 0))
     * zoneEffects(state.unlockedZones).loot;
   const gains = waveVictoryReward(state.waveNumber, ratio, lootBonus);
+  // Le butin propre a la planete (Cristalline : matiere floue et energie de rire).
+  const extra = planetLootExtra(state.currentPlanet, state.waveNumber);
+  gains.matiere_floue = (gains.matiere_floue || 0) + (extra.matiere_floue || 0) || undefined;
+  gains.energie_rire = (gains.energie_rire || 0) + (extra.energie_rire || 0) || undefined;
   set((s) => ({
+    cristallineBest: s.currentPlanet === 'cristalline' ? Math.max(s.cristallineBest, s.waveNumber) : s.cristallineBest,
     resources: {
       boulons: s.resources.boulons + (gains.boulons || 0),
       matiere_floue: s.resources.matiere_floue + (gains.matiere_floue || 0),
@@ -310,6 +317,7 @@ const initialGameState = () => ({
   unlockedZones: {} as Record<string, true>,
   selectedZone: null,
   currentPlanet: DEFAULT_PLANET as PlanetId,
+  cristallineBest: 0,
   planetSaves: {} as Partial<Record<PlanetId, PlanetProgress>>,
   heroUpgrades: {} as Record<string, number>,
 });
@@ -778,6 +786,7 @@ export const useGameStore = create<GameState>()(
         clearedDecor: state.clearedDecor,
         unlockedZones: state.unlockedZones,
         currentPlanet: state.currentPlanet,
+        cristallineBest: state.cristallineBest,
         planetSaves: state.planetSaves,
         heroUpgrades: state.heroUpgrades,
         gameStartedAt: state.gameStartedAt,

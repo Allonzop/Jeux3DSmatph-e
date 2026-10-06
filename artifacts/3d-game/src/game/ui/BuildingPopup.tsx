@@ -17,6 +17,7 @@ import { ResourceIcon, BuildingIcon, CloseIcon, MoveIcon } from './icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { sfx } from '../sfx';
 import { zoneEffects, type ZoneEffects } from '../zones';
+import { planetTowerMultiplier } from '../planets';
 
 /**
  * Le Marche affiche un texte fige (`gamedata.ts`, `effect`) qui ne compte
@@ -75,9 +76,10 @@ function PassiveYield({ passive }: { passive: Partial<Record<string, number>> })
  */
 function TurretSheet({ stats, next }: { stats: TurretStats | null; next?: TurretStats | null }) {
   const zoneFx = useGameStore((s) => zoneEffects(s.unlockedZones));
+  const planetMult = useGameStore((s) => planetTowerMultiplier(s.currentPlanet, s.cristallineBest));
   if (!stats) return null;
-  const dps = Math.round(stats.dps * zoneFx.towerDamage);
-  const nextDps = next ? Math.round(next.dps * zoneFx.towerDamage) : undefined;
+  const dps = Math.round(stats.dps * zoneFx.towerDamage * planetMult);
+  const nextDps = next ? Math.round(next.dps * zoneFx.towerDamage * planetMult) : undefined;
   const rows: { label: string; value: string; nextValue?: string }[] = [
     { label: 'Dégâts', value: `${dps}/sec`, nextValue: next ? `${nextDps}/sec` : undefined },
     { label: 'Portée', value: stats.range.toFixed(1), nextValue: next ? next.range.toFixed(1) : undefined },

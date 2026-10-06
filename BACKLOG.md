@@ -69,7 +69,7 @@ jouable à chaque étape : rien de visible à moitié fait sur `main`.
       base de départ ; les bâtiments s'y posent.
 - [x] **2e planète, étape 5 — ses vagues.** *(2026-10-05 : fait — Géode (−40 % de dégâts reçus) et peloton propre à Cristalline. Voir JOURNAL.md.)* Des vagues propres à la planète
       2, avec au moins un monstre qu'on ne voit pas sur la première.
-- [ ] **2e planète, étape 6 — ce qu'elle rapporte.** Ce qui donne envie d'y
+- [x] **2e planète, étape 6 — ce qu'elle rapporte.** *(2026-10-06 : fait — butin de vague en plus de matière floue et d'énergie de rire sur Cristalline ; 5 vagues tenues là-bas = tours de la Terre +15 %. Voir JOURNAL.md.)* Ce qui donne envie d'y
       aller : ses ressources, et un effet sur la planète 1 (sur le modèle
       des bonus de secteur). Puis coche aussi « Deuxième planète » plus bas.
 

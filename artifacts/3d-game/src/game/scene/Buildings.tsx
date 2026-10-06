@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { useFrame, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from '../store';
+import { planetTowerMultiplier } from '../planets';
 import { BUILDINGS, buildingData, baseId, formatCountdown, turretStats, type TurretStats } from '../gamedata';
 import { useToonGradient, enemyPositions, enemyStates } from './utils';
 import {
@@ -36,7 +37,8 @@ const DAMAGE_TICK = 0.25;
  * chiffres de `gamedata.ts` restent la reference.
  */
 function towerDps(base: number): number {
-  return base * zoneEffects(useGameStore.getState().unlockedZones).towerDamage;
+  const st = useGameStore.getState();
+  return base * zoneEffects(st.unlockedZones).towerDamage * planetTowerMultiplier(st.currentPlanet, st.cristallineBest);
 }
 
 type BuildingProps = {

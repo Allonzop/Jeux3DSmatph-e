@@ -11,6 +11,27 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-06 — 2e planète, étape 6 : ce qu'elle rapporte
+
+**Fait.** `planets.ts` : `planetLootExtra` (sur Cristalline, chaque vague gagnée
+ajoute `2×vague` matière floue et `⌈vague/2⌉` énergie de rire au butin),
+`HOME_BONUS` + `planetTowerMultiplier` (avoir tenu 5 vagues sur Cristalline =
+tours de la Terre +15 %, permanent, uniquement sur la Terre). `store.ts` : champ
+`cristallineBest` (persisté, partagé, valeur initiale 0 donc sans migration),
+mis à jour dans `rewardVictory`. Le multiplicateur est lu par `towerDps`
+(`Buildings.tsx`) et par la fiche de tourelle (`BuildingPopup.tsx`), pour que
+l'affichage ne mente pas. Le panneau Empire (`ZonePopup.tsx`) annonce le butin et
+le bonus, avec la progression (meilleure vague/5).
+
+**Vérifié.** typecheck 6 projets OK ; `wave.mjs --check` 2/2 ; `smoke.mjs` 6/6 ;
+`studio selftest` 5/5 ; capture `--village` ouverte, inchangée.
+
+**Essayé sans succès / restes.** Je n'ai pas joué 5 vagues sur Cristalline pour voir
+le bonus s'activer, ni regardé le panneau Empire à l'œil : seuls le typage et les
+parcours existants le couvrent. `pnpm install` était nécessaire en début de séance
+(node_modules absent). Valeurs (+15 %, 5 vagues, butin) non équilibrées. Reste à
+cocher « Deuxième planète » plus bas dans le backlog une fois Allonzo satisfait.
+
 ## 2026-10-05 — 2e planète, étape 5 : ses vagues
 
 **Fait.** Nouveau monstre **Géode** (`enemies.ts` + apparence dans `characters/defs.ts`) :

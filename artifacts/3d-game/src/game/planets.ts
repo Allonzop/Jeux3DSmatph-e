@@ -1,5 +1,6 @@
 import type { BiomePalette, ZoneDef } from './zones';
 import { ZONES } from './zones';
+import type { Resources } from './store';
 
 /**
  * Les planètes.
@@ -113,4 +114,33 @@ export const PLANET_UNLOCK_TEXT: Record<PlanetId, string> = {
 export function planetUnlocked(id: PlanetId, unlockedZones: Record<string, true>): boolean {
   if (id === 'terre') return true;
   return ZONES.every((z) => unlockedZones[z.id]);
+}
+
+/**
+ * Ce que Cristalline rapporte (étape 6).
+ *
+ * 1. Ses ressources : chaque vague gagnée là-bas ajoute de la matière floue et
+ *    de l'énergie de rire — les deux ressources rares — au butin ordinaire.
+ * 2. Un effet sur la planète d'origine : avoir tenu `HOME_BONUS.wave` vagues
+ *    sur Cristalline majore les tours de la Terre, définitivement.
+ */
+export function planetLootExtra(planet: PlanetId, wave: number): Partial<Resources> {
+  if (planet !== 'cristalline') return {};
+  return { matiere_floue: wave * 2, energie_rire: Math.ceil(wave / 2) };
+}
+
+export const LOOT_EXTRA_TEXT: Record<PlanetId, string> = {
+  terre: '',
+  cristalline: 'Chaque vague gagnée y rapporte de la matière floue et de l’énergie de rire en plus.',
+};
+
+export const HOME_BONUS = {
+  wave: 5,
+  towerDamage: 0.15,
+  label: 'Tenir 5 vagues sur Cristalline : toutes les tours de la planète d’origine +15 % de dégâts',
+};
+
+/** Multiplicateur de dégâts des tours dû aux autres planètes, selon où l'on se trouve. */
+export function planetTowerMultiplier(current: PlanetId, cristallineBest: number): number {
+  return current === 'terre' && cristallineBest >= HOME_BONUS.wave ? 1 + HOME_BONUS.towerDamage : 1;
 }
