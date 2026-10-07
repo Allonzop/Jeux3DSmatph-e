@@ -17,7 +17,37 @@ Pour ajouter quelque chose depuis GitHub : ouvrir ce fichier, le crayon en haut
 
 Par ordre d'importance — l'agent prend celle du haut.
 
-### Décisions d'Allonzo du 28/09 — à prendre en premier, dans l'ordre
+### Retour d'Allonzo du 07/10 — à prendre en premier
+
+Ce qu'Allonzo en dit, mot pour mot (recueilli par Jarvis) : « Placer les
+bâtiments est relou, t'es obligé de tourner de rotation net genre et c'est
+chiant. »
+
+Lecture de Jarvis, à vérifier en jouant une pose sur un écran de téléphone en
+portrait avant de coder : pendant une pose, on ne vise que ce que la vue
+montre autour du héros, et le seul moyen de voir ailleurs est de tenir les
+deux flèches de `ui/CameraControls.tsx` (vitesse fixe, `ROTATE_SPEED`), loin
+du doigt qui vise. Poser devient donc : viser, lâcher, aller tourner la vue,
+revenir viser. Si en jouant tu trouves une autre cause, c'est elle qu'il faut
+traiter, et tu l'écris dans le journal.
+
+- [ ] **Poser un bâtiment sans avoir à tourner la vue.** Critère : depuis
+      « Construire », on pose un bâtiment à n'importe quel endroit valide de
+      la zone constructible sans toucher une seule fois aux flèches de vue, et
+      avec un seul doigt. À toi de choisir comment (par exemple la vue qui
+      suit le point visé quand le doigt approche d'un bord de l'écran, ou un
+      cadrage plus large et plus vertical le temps de la pose), en restant
+      dans les règles de `.agents/memory/r3f-game-perf.md`. Écris dans le
+      journal ce que tu as retenu et ce que tu as écarté. Hors pose, la vue
+      et les flèches ne changent pas. `wave.mjs --check` et `smoke.mjs`
+      doivent passer, avec une pose loin du héros ajoutée à `smoke.mjs`.
+- [ ] **Rendre la rotation de la vue moins pénible, pour les fois où on s'en
+      sert quand même.** Aujourd'hui : deux petits boutons à tenir, vitesse
+      constante. Regarde ce qui gêne sur un téléphone (trop lent, trop
+      brusque, boutons trop petits ou mal placés) et corrige-le. Une capture
+      avant/après dans le journal.
+
+### Décisions d'Allonzo du 28/09 — dans l'ordre
 
 Allonzo a tranché les trois cases sautées depuis le 15/08 (réponses
 recueillies par Jarvis). Une case par séance, de haut en bas. Si une case ne
