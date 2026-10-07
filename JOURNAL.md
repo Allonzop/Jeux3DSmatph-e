@@ -11,6 +11,22 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-07 — Clôture de « Deuxième planète »
+
+**Fait.** Les six étapes (donnée, affichage, voyage, construction, vagues,
+rapport) étant faites, la case « Deuxième planète » du backlog est cochée,
+comme l'étape 6 le demandait. Aucun code touché.
+
+**Vérifié.** typecheck 6 projets OK ; `wave.mjs --check` 2/2 ; `smoke.mjs`
+lancé ; `studio selftest` 5/5 ; capture `--village` ouverte : village de la
+Terre intact, aucune erreur.
+
+**Essayé sans succès / restes.** Toujours pas joué 5 vagues sur Cristalline pour
+voir le bonus +15 % s'activer, ni regardé le panneau Empire à l'œil sur
+Cristalline (voir l'entrée du 06/10). Il ne reste plus de case non cochée hors
+« En attente d'Allonzo » : à la prochaine séance, jouer au jeu et trouver
+ce qui cloche (en commençant par ces deux vérifications).
+
 ## 2026-10-06 — 2e planète, étape 6 : ce qu'elle rapporte
 
 **Fait.** `planets.ts` : `planetLootExtra` (sur Cristalline, chaque vague gagnée

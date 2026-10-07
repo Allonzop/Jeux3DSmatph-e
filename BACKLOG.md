@@ -268,7 +268,7 @@ traités, voir plus haut.
       À traiter comme un chantier à part entière, ou à laisser de côté au
       profit d'une deuxième planète.~~ *(28/09 : écarté par Allonzo, au profit
       de la deuxième planète.)*
-- [ ] **Deuxième planète.** L'empire spatial promis. Le panneau Empire est le
+- [x] **Deuxième planète.** *(2026-10-07 : cochée, les six étapes sont faites. Voir JOURNAL.md.)* L'empire spatial promis. Le panneau Empire est le
       point d'entrée tout trouvé ; `zones.ts` montre comment découper un monde.
       *(28/09 : décidée par Allonzo, découpée en six étapes en haut de la
       liste. À cocher avec la dernière.)*
