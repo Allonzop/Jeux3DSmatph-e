@@ -11,6 +11,7 @@
  *   --arsenal        le village complet : deux huttes, les quatre tours, tout au max
  *   --empty          partie neuve, tutoriel actif
  *   --wave <n>       lance la vague n et capture en plein combat
+ *   --placing        pose d'un bâtiment en cours, héros loin du village
  *   --upgrading      lance l'amelioration de la tourelle (compte a rebours visible)
  *   --planet <id>   affiche une autre planète (ex. cristalline) (voyage réel, arrivée avec la base de départ)
  *   --wide           cadre bureau (1280×900) au lieu du cadre téléphone
@@ -91,6 +92,16 @@ await page.waitForTimeout(Number(opt('wait', SETTLE_MS)));
  * seule voie depuis un navigateur, la sauvegarde ne portant pas le numéro de
  * vague.
  */
+if (flag('placing')) {
+  // Pose en cours, héros loin du village : le cadrage de pose doit montrer la zone entière.
+  await page.evaluate(() => {
+    const st = window.__villageStore;
+    st.setState({ heroPos: [9, 0, 7] });
+    st.getState().startPlacing('tourelle#2');
+  });
+  await page.waitForTimeout(1500);
+}
+
 if (flag('upgrading')) {
   // Lance l'amelioration (10 s) de la tourelle portee au niveau 2 : on voit le compte a rebours.
   await page.evaluate(() => {

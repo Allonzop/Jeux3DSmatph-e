@@ -148,6 +148,30 @@ await scenario('caméra tournée + pose', makeSave({ resources: { boulons: 9999,
   if (n === 0) throw new Error('rien posé alors que la caméra est tournée');
 });
 
+// 4b. Pose loin du héros, sans toucher aux flèches de vue : le cadrage de pose
+// montre la zone entière, on vise donc un point éloigné du héros d'un seul doigt.
+await scenario('pose loin du héros, sans flèches', makeSave({ resources: { boulons: 9999, matiere_floue: 200, energie_rire: 20 } }), async (page) => {
+  await page.evaluate(() => {
+    const st = window.__villageStore;
+    st.setState({ heroPos: [9, 0, 7] });
+    st.getState().startPlacing('tourelle');
+  });
+  await page.waitForTimeout(6000);
+  // Balaye l'écran entier : au moins une cible valide à plus de 12 unités du héros.
+  let found = false;
+  for (let ty = 250; ty <= 700 && !found; ty += 45) {
+    for (let tx = 40; tx <= 390 && !found; tx += 45) {
+      await page.mouse.move(tx, ty); await page.mouse.down(); await page.mouse.up();
+      await page.waitForTimeout(250);
+      found = await page.evaluate(() => {
+        const s = window.__villageStore.getState(); const p = s.pendingPlacement;
+        return !!p?.valid && Math.hypot(p.x - s.heroPos[0], p.z - s.heroPos[2]) > 12;
+      });
+    }
+  }
+  if (!found) throw new Error('aucune cible valide à plus de 12 unités du héros, sans tourner la vue');
+});
+
 // 5. Deux exemplaires d'un même bâtiment : la bonne puce du panneau Construire
 // sélectionne la bonne instance, et « Déplacer » agit sur celle-ci — pas
 // toujours la première. Régression du 26/08 (voir JOURNAL.md), jamais couverte

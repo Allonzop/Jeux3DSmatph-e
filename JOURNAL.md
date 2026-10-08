@@ -11,6 +11,27 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-08 — Poser un bâtiment sans tourner la vue
+
+**Fait.** `scene/Camera.tsx` : tant que `placingBuilding` est non nul, la caméra
+fond (amorti, ref `placeBlend`, rien dans React/Zustand) vers un cadrage de pose :
+centré sur le village plutôt que sur le héros, 7 unités plus loin et 13 plus haut.
+Toute la zone constructible tient à l'écran portrait, donc on vise partout d'un
+seul doigt. Hors pose, fondu à 0 = cadrage d'avant, flèches inchangées. Cause
+confirmée par la lecture du code : le héros étant le centre de la vue, une cible
+loin de lui sortait du cadre. `shot.mjs --placing` (héros loin, pose en cours) ;
+`smoke.mjs` gagne « pose loin du héros, sans flèches » (cible valide à >12 unités
+du héros sans toucher aux flèches).
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `smoke.mjs` tous OK ;
+capture `--village --placing` ouverte : planète et zone entières visibles.
+
+**Essayé sans succès / écarté.** Suivi du point visé au bord de l'écran : plus
+complexe, la vue bougerait sous le doigt pendant la visée. Le cadrage fixe large
+est plus prévisible. Pas joué sur un vrai téléphone ; les bâtiments sont plus
+petits à l'écran pendant la pose (à juger). Deuxième case (rotation moins
+pénible) non traitée.
+
 ## 2026-10-07 — Clôture de « Deuxième planète »
 
 **Fait.** Les six étapes (donnée, affichage, voyage, construction, vagues,

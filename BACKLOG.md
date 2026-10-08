@@ -31,7 +31,7 @@ du doigt qui vise. Poser devient donc : viser, lâcher, aller tourner la vue,
 revenir viser. Si en jouant tu trouves une autre cause, c'est elle qu'il faut
 traiter, et tu l'écris dans le journal.
 
-- [ ] **Poser un bâtiment sans avoir à tourner la vue.** Critère : depuis
+- [x] **Poser un bâtiment sans avoir à tourner la vue.** *(2026-10-08 : fait — cadrage large centré sur le village pendant la pose. Voir JOURNAL.md.)* Critère : depuis
       « Construire », on pose un bâtiment à n'importe quel endroit valide de
       la zone constructible sans toucher une seule fois aux flèches de vue, et
       avec un seul doigt. À toi de choisir comment (par exemple la vue qui

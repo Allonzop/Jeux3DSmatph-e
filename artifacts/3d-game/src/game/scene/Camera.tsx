@@ -4,6 +4,7 @@ import { surfaceY } from '../world';
 import { damp } from './utils';
 import { shake } from '../effects';
 import { cameraControl } from '../cameraControl';
+import { useRef } from 'react';
 import * as THREE from 'three';
 
 // Vecteur de travail — la version precedente allouait un Vector3 par image.
@@ -19,9 +20,10 @@ const _target = new THREE.Vector3();
 export function Camera() {
   const { camera } = useThree();
   const heroPos = useGameStore((state) => state.heroPos);
+  /** 0 hors pose, 1 en pleine pose : fondu du cadrage large. Ref, jamais état. */
+  const placeBlend = useRef(0);
 
   useFrame(({ clock }, delta) => {
-    const ground = surfaceY(heroPos[0], heroPos[2]);
     // Amortissement de l'orientation : une rotation instantanee donne le mal
     // de mer sur un telephone. `damp` la rend independante de la cadence.
     cameraControl.yaw += (cameraControl.target - cameraControl.yaw) * damp(0.12, delta);
@@ -35,8 +37,18 @@ export function Camera() {
     // retombe exactement sur (0, +13,5, +13), le cadrage d'origine.
     const sin = Math.sin(cameraControl.yaw);
     const cos = Math.cos(cameraControl.yaw);
-    let targetX = heroPos[0] + sin * 13;
-    let targetZ = heroPos[2] + cos * 13;
+    // Pose d'un bâtiment : cadrage plus large et plus haut, centré sur le
+    // village plutôt que sur le héros, pour que toute la zone constructible
+    // soit visée au doigt sans toucher aux flèches de vue. Fondu amorti.
+    const placing = useGameStore.getState().placingBuilding !== null;
+    placeBlend.current += ((placing ? 1 : 0) - placeBlend.current) * damp(0.1, delta);
+    const pb = placeBlend.current;
+    const focusX = heroPos[0] * (1 - pb);
+    const focusZ = heroPos[2] * (1 - pb);
+    const ground = surfaceY(focusX, focusZ);
+    const back = 13 + pb * 7;
+    let targetX = focusX + sin * back;
+    let targetZ = focusZ + cos * back;
 
     // `ground` est calcule sur le sol SOUS LE HEROS, pas sous la camera —
     // correct tant que les deux sont a peu pres au meme rayon du centre de la
@@ -47,12 +59,12 @@ export function Camera() {
     // la fait alors plonger sous le terrain proche du village. On l'empeche
     // de se rapprocher du centre plus que le heros, sans toucher a `yaw` ni a
     // sa direction (qui sert aussi a orienter le joystick dans Hero.tsx).
-    const heroR = Math.hypot(heroPos[0], heroPos[2]);
+    const heroR = Math.hypot(focusX, focusZ);
     const targetR = Math.hypot(targetX, targetZ);
     if (targetR < heroR) {
       if (targetR < 1e-6) {
-        targetX = heroPos[0];
-        targetZ = heroPos[2];
+        targetX = focusX;
+        targetZ = focusZ;
       } else {
         const scale = heroR / targetR;
         targetX *= scale;
@@ -60,7 +72,7 @@ export function Camera() {
       }
     }
 
-    _target.set(targetX, heroPos[1] + ground + 13.5, targetZ);
+    _target.set(targetX, heroPos[1] + ground + 13.5 + pb * 13, targetZ);
     camera.position.lerp(_target, damp(0.05, delta));
 
     // Secousse : un monstre qui atteint le noyau doit se sentir. L'amplitude
@@ -74,7 +86,7 @@ export function Camera() {
       shake.amount = Math.max(0, a - delta * 2.2);
     }
 
-    camera.lookAt(heroPos[0], heroPos[1] + ground + 1.6, heroPos[2]);
+    camera.lookAt(focusX, heroPos[1] + ground + 1.6, focusZ);
   });
 
   return null;
