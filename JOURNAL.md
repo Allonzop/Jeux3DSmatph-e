@@ -11,6 +11,25 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-09 — Rotation de la vue moins pénible
+
+**Fait.** Trois gênes identifiées à la lecture de `CameraControls.tsx` : boutons
+de 36 px (sous les 44 px d'un doigt), vitesse fixe de 1,5 rad/s (un demi-tour =
+2 s), et aucun moyen d'aller vite à un angle net. Corrigé : boutons 48 px ;
+vitesse qui monte de 1,5 à 4 rad/s en 0,8 s de maintien (`ROTATE_SPEED_MAX`,
+`ROTATE_RAMP`) ; un clic bref (< 0,22 s) cale la vue sur le prochain cran de
+45° (`snapCamera`). Clavier : mêmes règles. Tout reste dans `cameraControl`
+(refs), rien dans React/Zustand.
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ;
+capture `--village` ouverte : boutons plus grands, sans chevauchement avec le
+joueur ni le HUD. « Avant » = boutons de 36 px (entrée 2026-10-08).
+
+**Pas fait / à juger.** Pas joué sur un vrai téléphone : les valeurs de rampe et
+de cran sont des estimations. `smoke.mjs` non relancé. Écarté : rotation par
+glissement (le joystick dynamique capture déjà le pointeur, voir en-tête de
+`CameraControls.tsx`).
+
 ## 2026-10-08 — Poser un bâtiment sans tourner la vue
 
 **Fait.** `scene/Camera.tsx` : tant que `placingBuilding` est non nul, la caméra

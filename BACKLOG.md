@@ -41,11 +41,11 @@ traiter, et tu l'écris dans le journal.
       journal ce que tu as retenu et ce que tu as écarté. Hors pose, la vue
       et les flèches ne changent pas. `wave.mjs --check` et `smoke.mjs`
       doivent passer, avec une pose loin du héros ajoutée à `smoke.mjs`.
-- [ ] **Rendre la rotation de la vue moins pénible, pour les fois où on s'en
+- [x] **Rendre la rotation de la vue moins pénible, pour les fois où on s'en
       sert quand même.** Aujourd'hui : deux petits boutons à tenir, vitesse
       constante. Regarde ce qui gêne sur un téléphone (trop lent, trop
       brusque, boutons trop petits ou mal placés) et corrige-le. Une capture
-      avant/après dans le journal.
+      avant/après dans le journal. *(2026-10-09 : fait — boutons 48 px, accélération en tenant, clic = cran de 45°. Voir JOURNAL.md.)*
 
 ### Décisions d'Allonzo du 28/09 — dans l'ordre
 

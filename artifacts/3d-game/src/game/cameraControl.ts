@@ -25,8 +25,23 @@ export const cameraControl = {
   yaw: 0,
 };
 
-/** Vitesse de rotation quand une commande est tenue, en radians par seconde. */
+/** Vitesse de rotation au début d'une pression, en radians par seconde. */
 export const ROTATE_SPEED = 1.5;
+/** Vitesse atteinte en tenant : un demi-tour ne prend plus une éternité. */
+export const ROTATE_SPEED_MAX = 4;
+/** Secondes pour passer de la vitesse de départ à la vitesse max. */
+export const ROTATE_RAMP = 0.8;
+/** Une pression plus courte que ça (secondes) est un « clic » : cran de 45°. */
+export const TAP_MAX = 0.22;
+/** Un cran = 45°. */
+export const TAP_STEP = Math.PI / 4;
+
+/** Fait avancer la vue jusqu'au prochain cran de 45° dans le sens `dir`. */
+export function snapCamera(dir: number): void {
+  const k = cameraControl.target / TAP_STEP;
+  const next = dir > 0 ? Math.floor(k + 1e-6) + 1 : Math.ceil(k - 1e-6) - 1;
+  cameraControl.target = next * TAP_STEP;
+}
 
 /** Fait tourner la vue. `delta` en radians. */
 export function rotateCamera(delta: number): void {
