@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-10 — Boutons de vue déplacés hors du village
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village`, le bloc boussole + flèches de `ui/CameraControls.tsx`, posé à mi-hauteur à gauche, cachait le bâtiment du bord gauche. Il est maintenant en bas à gauche, juste au-dessus de « Construire » (`bottom: calc(5.5rem + var(--safe-bottom))`). Aucun changement de comportement.
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; capture `--village` avant/après ouvertes : le bâtiment est visible, pas de chevauchement avec « Construire » ni la bannière de vague. `smoke.mjs` non relancé.
+
+**Pas fait / à juger.** Pas joué sur un vrai téléphone : le bloc peut gêner le pouce du joystick dynamique en bas à gauche. Pas essayé d'autre emplacement (côté droit pris par « Lancer la vague »).
+
 ## 2026-10-09 — Rotation de la vue moins pénible
 
 **Fait.** Trois gênes identifiées à la lecture de `CameraControls.tsx` : boutons

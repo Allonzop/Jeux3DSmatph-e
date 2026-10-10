@@ -90,7 +90,7 @@ export function CameraControls() {
   return (
     <div
       className="absolute flex flex-col items-center gap-1.5 pointer-events-none"
-      style={{ left: 'calc(0.75rem + var(--safe-left))', top: 'calc(50% - 3rem)' }}
+      style={{ left: 'calc(0.75rem + var(--safe-left))', bottom: 'calc(5.5rem + var(--safe-bottom))' }}
     >
       {/* Boussole : le nord de la carte, qui tourne avec la vue. */}
       <button
