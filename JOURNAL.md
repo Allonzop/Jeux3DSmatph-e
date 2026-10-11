@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-11 — Étiquette « NOYAU » dégagée du cristal
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village` et `--empty`, l'étiquette « NOYAU 100/100 » (`scene/CrystalCore.tsx`) mordait sur le haut du cristal avec la vue en portrait. `Html` remonté de y=3,5 à y=4,8.
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; captures avant/après ouvertes : l'étiquette ne touche plus le cristal.
+
+**Pas fait / à juger.** Pas joué sur un vrai téléphone. Remarque non traitée : au tout début de partie, le bandeau « Nouveau : Grognard » et la pastille « 3× Grognard » du radar s'ajoutent au tutoriel ; à juger. `smoke.mjs` non relancé.
+
 ## 2026-10-10 — Boutons de vue déplacés hors du village
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village`, le bloc boussole + flèches de `ui/CameraControls.tsx`, posé à mi-hauteur à gauche, cachait le bâtiment du bord gauche. Il est maintenant en bas à gauche, juste au-dessus de « Construire » (`bottom: calc(5.5rem + var(--safe-bottom))`). Aucun changement de comportement.

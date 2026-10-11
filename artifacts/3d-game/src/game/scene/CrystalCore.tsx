@@ -163,7 +163,7 @@ export function CrystalCore() {
           Un seul noeud DOM pour toute la scene — c'est pour ca qu'on peut se
           permettre un `<Html>` ici alors qu'il a ete retire des barres de vie
           des monstres, ou il y en avait un par monstre blesse. */}
-      <Html position={[0, 3.5, 0]} center distanceFactor={undefined} zIndexRange={[40, 0]} style={{ pointerEvents: 'none' }}>
+      <Html position={[0, 4.8, 0]} center distanceFactor={undefined} zIndexRange={[40, 0]} style={{ pointerEvents: 'none' }}>
         <div
           className="px-2.5 py-1 rounded-xl border backdrop-blur-md text-center whitespace-nowrap"
           style={{

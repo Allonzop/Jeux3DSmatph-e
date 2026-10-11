@@ -42,6 +42,7 @@ traiter, et tu l'écris dans le journal.
       et les flèches ne changent pas. `wave.mjs --check` et `smoke.mjs`
       doivent passer, avec une pose loin du héros ajoutée à `smoke.mjs`.
 - [x] **Les boutons de vue masquaient un bâtiment.** *(trouvé en jouant le 2026-10-10 : le bloc boussole + flèches, à mi-hauteur à gauche, couvrait le bâtiment du bord gauche du village. Descendu au-dessus de « Construire ». Voir JOURNAL.md.)*
+- [x] **L'étiquette « NOYAU » recouvrait le cristal.** *(trouvé en jouant le 2026-10-11 : étiquette remontée de 3,5 à 4,8. Voir JOURNAL.md.)*
 - [x] **Rendre la rotation de la vue moins pénible, pour les fois où on s'en
       sert quand même.** Aujourd'hui : deux petits boutons à tenir, vitesse
       constante. Regarde ce qui gêne sur un téléphone (trop lent, trop
