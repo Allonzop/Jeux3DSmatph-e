@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-12 — Bandeau « Nouveau : Grognard » retiré de la vague 1
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). Remarque laissée par la séance du 11/10 : au début de partie, le bandeau « Nouveau : … » de `ui/WaveRadar.tsx` s'ajoutait à la pastille « 3× Grognard » et au tutoriel. À la vague 1 tout est nouveau, rien à adapter : le bandeau n'apparaît plus qu'à partir de la vague 2.
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; capture `--village` avant/après ouvertes : le bandeau a disparu, la pastille reste, rien d'autre ne bouge.
+
+**Pas fait / à juger.** Pas joué sur un vrai téléphone. `smoke.mjs` non relancé. Le bandeau des vagues suivantes n'a pas été revu à l'œil.
+
 ## 2026-10-11 — Étiquette « NOYAU » dégagée du cristal
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village` et `--empty`, l'étiquette « NOYAU 100/100 » (`scene/CrystalCore.tsx`) mordait sur le haut du cristal avec la vue en portrait. `Html` remonté de y=3,5 à y=4,8.

@@ -34,7 +34,9 @@ export function WaveRadar() {
   // sortira.
   const present = new Set(kinds);
   const previous = rosterForWave(next - 1, planet).map((t) => t.kind);
-  const newcomer = rosterForWave(next, planet).find(
+  // Vague 1 : tout est « nouveau », il n'y a rien a adapter — la pastille ci-dessus
+  // nomme deja l'ennemi, le bandeau ne ferait que s'empiler sur le tutoriel.
+  const newcomer = next <= 1 ? undefined : rosterForWave(next, planet).find(
     (t) => !previous.includes(t.kind) && present.has(t.kind),
   );
 
