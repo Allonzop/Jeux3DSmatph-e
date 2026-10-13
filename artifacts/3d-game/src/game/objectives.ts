@@ -57,19 +57,16 @@ export function defenseCount(state: GameState): number {
 
 export function nextObjective(state: GameState): Objective {
   if (state.waveActive) {
-    const killed = state.waveKills;
-    const total = state.waveEnemyCount || 1;
     // « Éliminez », surtout pas « Repoussez » : `tools/game-check/wave.mjs`
     // lit le texte de la page et conclut a une victoire des qu'il y trouve
     // « repouss ». Cette phrase-la s'affiche *pendant* la vague, et le test
     // annoncait donc une victoire a la seconde ou elle commencait. Le mot est
     // reserve a la carte de victoire (`ui/WaveOutcome.tsx`), nulle part
     // ailleurs dans l'interface.
-    return {
-      text: 'Éliminez les monstres',
-      progress: killed / total,
-      detail: `${killed}/${total}`,
-    };
+    //
+    // Pas de compteur ici : le panneau « Vague n » de `ui/HUD.tsx` affiche déjà
+    // abattus/total avec sa barre, et le doublon encombrait le haut de l'écran.
+    return { text: 'Éliminez les monstres' };
   }
 
   if (builtCount(state, 'hutte') === 0) {

@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-13 — Compteur de vague en double retiré du bandeau d'objectif
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village --wave 3`, « 1/7 » s'affichait deux fois : dans le bandeau d'objectif (« Éliminez les monstres », avec barre) et dans le panneau « Vague 3 » en bas à droite. `objectives.ts` ne renvoie plus ni `detail` ni `progress` pendant une vague ; le panneau reste l'indicateur. Le texte « Éliminez les monstres » est inchangé (lu par `wave.mjs`).
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; captures avant/après ouvertes : le bandeau n'a plus que la phrase, le panneau garde 1/7.
+
+**Pas pu juger.** Le héros n'est pas identifiable sur les captures (cadrage large, rendu logiciel) : à regarder sur un vrai téléphone. `smoke.mjs` non relancé.
+
 ## 2026-10-12 — Bandeau « Nouveau : Grognard » retiré de la vague 1
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). Remarque laissée par la séance du 11/10 : au début de partie, le bandeau « Nouveau : … » de `ui/WaveRadar.tsx` s'ajoutait à la pastille « 3× Grognard » et au tutoriel. À la vague 1 tout est nouveau, rien à adapter : le bandeau n'apparaît plus qu'à partir de la vague 2.
