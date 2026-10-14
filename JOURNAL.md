@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-14 — Bouton « Passer le tutoriel » lisible et à taille de doigt
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --empty`, « Passer le tutoriel » (`ui/Tutorial.tsx`) était à peine lisible (blanc à 45 %) et haut d'environ 24 px. Passé à blanc 75 %, texte 0,7 rem, hauteur mini 44 px.
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; captures avant/après ouvertes : le bouton se lit, rien ne chevauche le tutoriel ni la planète.
+
+**Pas fait / à juger.** Pas joué sur un vrai téléphone. `smoke.mjs` non relancé. Non traité : le bloc boussole/flèches recouvre un arbre en bas à gauche (anodin).
+
 ## 2026-10-13 — Compteur de vague en double retiré du bandeau d'objectif
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village --wave 3`, « 1/7 » s'affichait deux fois : dans le bandeau d'objectif (« Éliminez les monstres », avec barre) et dans le panneau « Vague 3 » en bas à droite. `objectives.ts` ne renvoie plus ni `detail` ni `progress` pendant une vague ; le panneau reste l'indicateur. Le texte « Éliminez les monstres » est inchangé (lu par `wave.mjs`).
