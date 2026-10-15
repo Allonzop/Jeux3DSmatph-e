@@ -606,6 +606,8 @@ traités, voir plus haut.
       que le 25/08 au 26/09 : les trois cases ci-dessus sont bloquées. Voir
       JOURNAL.md.)*
 
+- [x] **Stats ★/crâne de la barre d'XP illisibles.** *(trouvé en jouant le 2026-10-15 : contraste et taille relevés. Voir JOURNAL.md.)*
+
 - [x] **« Passer le tutoriel » illisible et trop petit.** *(trouvé en jouant le 2026-10-14 : contraste relevé, 44 px de haut. Voir JOURNAL.md.)*
 
 ### En attente d'Allonzo — ne pas prendre

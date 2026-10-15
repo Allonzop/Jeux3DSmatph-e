@@ -41,13 +41,13 @@ export function XpBar({ onOpenHero }: { onOpenHero: () => void }) {
           <span className="text-amber-200/90 text-[0.62rem] font-black uppercase tracking-[0.15em] truncate">
             {titleForLevel(level)}
           </span>
-          <span className="flex items-center gap-2 shrink-0 text-white/40 text-[0.58rem] font-mono">
+          <span className="flex items-center gap-2 shrink-0 text-white/75 text-[0.7rem] font-mono">
             <span className="inline-flex items-center gap-0.5">
-              <StarIcon className="w-2.5 h-2.5" />
+              <StarIcon className="w-3 h-3" />
               {bestWave}
             </span>
             <span className="inline-flex items-center gap-0.5">
-              <SkullIcon className="w-2.5 h-2.5" />
+              <SkullIcon className="w-3 h-3" />
               {totalKills}
             </span>
           </span>

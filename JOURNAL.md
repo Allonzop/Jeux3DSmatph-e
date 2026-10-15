@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-15 — Stats « ★ / crâne » de la barre d'XP lisibles
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village --wave 2`, les compteurs meilleure vague / ennemis tués à droite de « Bricoleur » (`ui/XpBar.tsx`) étaient en blanc 40 % à 0,58 rem, quasi illisibles. Passés à blanc 75 %, 0,7 rem, icônes 12 px.
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; captures avant/après ouvertes : les chiffres se lisent, la barre ne déborde pas.
+
+**Pas fait / à juger.** Pas joué sur un vrai téléphone. `smoke.mjs` non relancé. Rien d'essayé sans succès.
+
 ## 2026-10-14 — Bouton « Passer le tutoriel » lisible et à taille de doigt
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --empty`, « Passer le tutoriel » (`ui/Tutorial.tsx`) était à peine lisible (blanc à 45 %) et haut d'environ 24 px. Passé à blanc 75 %, texte 0,7 rem, hauteur mini 44 px.
