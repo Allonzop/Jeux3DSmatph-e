@@ -610,6 +610,8 @@ traités, voir plus haut.
 
 - [x] **« Passer le tutoriel » illisible et trop petit.** *(trouvé en jouant le 2026-10-14 : contraste relevé, 44 px de haut. Voir JOURNAL.md.)*
 
+- [x] **Légende de pose et bouton « Poser ici » illisibles.** *(trouvé en jouant le 2026-10-16 : contraste relevé. Voir JOURNAL.md.)*
+
 ### En attente d'Allonzo — ne pas prendre
 
 Demande de jouer sur un vrai iPhone : c'est Allonzo qui la fera. Ne la prends

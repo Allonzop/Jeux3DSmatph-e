@@ -92,7 +92,7 @@ export function HUD() {
             <div className="bg-black/75 backdrop-blur-md border border-white/15 rounded-xl px-4 py-2 text-white text-[clamp(0.75rem,3vw,0.875rem)] font-bold text-center whitespace-nowrap">
               {pendingPlacement ? buildingData(placingBuilding)?.name : `Glissez pour viser : ${buildingData(placingBuilding)?.name}`}
             </div>
-            <div className="text-white/50 text-[0.65rem] font-bold uppercase tracking-wider text-center">
+            <div className="text-white/80 text-[0.72rem] font-bold uppercase tracking-wider text-center [text-shadow:0_1px_3px_rgba(0,0,0,0.9)]">
               {pendingPlacement
                 ? pendingPlacement.valid
                   ? 'emplacement libre'
@@ -121,7 +121,7 @@ export function HUD() {
                 className={`pointer-events-auto font-black text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all ${
                   pendingPlacement?.valid
                     ? 'bg-emerald-400 text-black shadow-[0_3px_0_#047857] active:translate-y-0.5'
-                    : 'bg-white/8 text-white/30 border border-white/10'
+                    : 'bg-black/60 text-white/55 border border-white/15'
                 }`}
               >
                 Poser ici

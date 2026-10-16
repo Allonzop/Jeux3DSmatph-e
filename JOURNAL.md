@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-16 — Bandeau de pose : légende et bouton « Poser ici » lisibles
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village --placing`, la légende « vert = possible · rouge = occupé » (`ui/HUD.tsx`) était en blanc 50 % à 0,65 rem, et « Poser ici » inactif en blanc 30 % sur fond quasi transparent : presque invisibles sur le ciel. Légende passée à blanc 80 % / 0,72 rem avec ombre ; bouton inactif sur fond sombre, texte blanc 55 %.
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; captures avant/après ouvertes : légende et bouton se lisent, rien ne bouge.
+
+**Pas fait / à juger.** Pas joué sur un vrai téléphone. `smoke.mjs` non relancé. Rien d'essayé sans succès.
+
 ## 2026-10-15 — Stats « ★ / crâne » de la barre d'XP lisibles
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village --wave 2`, les compteurs meilleure vague / ennemis tués à droite de « Bricoleur » (`ui/XpBar.tsx`) étaient en blanc 40 % à 0,58 rem, quasi illisibles. Passés à blanc 75 %, 0,7 rem, icônes 12 px.
