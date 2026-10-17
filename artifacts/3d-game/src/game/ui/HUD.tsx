@@ -315,7 +315,7 @@ function MuteButton() {
     <button
       onClick={() => setMuted(toggleMute())}
       title={muted ? 'Réactiver le son' : 'Couper le son'}
-      className="pointer-events-auto flex items-center justify-center w-8 h-8 rounded-full backdrop-blur-md border border-white/10 bg-[#1a1f3599] text-white/70 hover:text-white active:scale-95 transition-all"
+      className="pointer-events-auto flex items-center justify-center w-11 h-11 rounded-full backdrop-blur-md border border-white/10 bg-[#1a1f3599] text-white/70 hover:text-white active:scale-95 transition-all"
     >
       <SpeakerIcon className="w-4 h-4" muted={muted} />
     </button>
@@ -343,7 +343,7 @@ function ResetButton() {
           setConfirming(true);
         }
       }}
-      className={`pointer-events-auto flex items-center gap-1.5 px-2.5 py-1.5 rounded-full backdrop-blur-md border transition-all active:scale-95 text-[clamp(0.65rem,2.8vw,0.75rem)] font-bold ${
+      className={`pointer-events-auto flex items-center justify-center gap-1.5 min-w-11 h-11 px-2.5 rounded-full backdrop-blur-md border transition-all active:scale-95 text-[clamp(0.65rem,2.8vw,0.75rem)] font-bold ${
         confirming
           ? 'bg-red-600/80 border-red-300/50 text-white animate-pulse'
           : 'bg-[#1a1f3599] border-white/10 text-white/70 hover:text-white'

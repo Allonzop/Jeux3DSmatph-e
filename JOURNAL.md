@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-17 — Boutons son et réinitialiser à taille de doigt
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village --wave 4`, les boutons son (32 px) et réinitialiser (~28 px, action destructive) en haut à droite (`ui/HUD.tsx`) étaient trop petits et collés l'un à l'autre. Passés à 44 px.
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; captures avant/après ouvertes : la rangée tient dans 430 px, sans chevaucher la barre d'XP.
+
+**Pas fait / à juger.** Pas joué sur un vrai téléphone. `smoke.mjs` non relancé. Rien d'essayé sans succès.
+
 ## 2026-10-16 — Bandeau de pose : légende et bouton « Poser ici » lisibles
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village --placing`, la légende « vert = possible · rouge = occupé » (`ui/HUD.tsx`) était en blanc 50 % à 0,65 rem, et « Poser ici » inactif en blanc 30 % sur fond quasi transparent : presque invisibles sur le ciel. Légende passée à blanc 80 % / 0,72 rem avec ombre ; bouton inactif sur fond sombre, texte blanc 55 %.

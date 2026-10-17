@@ -612,6 +612,8 @@ traités, voir plus haut.
 
 - [x] **Légende de pose et bouton « Poser ici » illisibles.** *(trouvé en jouant le 2026-10-16 : contraste relevé. Voir JOURNAL.md.)*
 
+- [x] **Boutons son / réinitialiser trop petits.** *(trouvé en jouant le 2026-10-17 : 44 px. Voir JOURNAL.md.)*
+
 ### En attente d'Allonzo — ne pas prendre
 
 Demande de jouer sur un vrai iPhone : c'est Allonzo qui la fera. Ne la prends
