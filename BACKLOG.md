@@ -614,6 +614,8 @@ traités, voir plus haut.
 
 - [x] **Boutons son / réinitialiser trop petits.** *(trouvé en jouant le 2026-10-17 : 44 px. Voir JOURNAL.md.)*
 
+- [x] **Bandeau d'objectif par-dessus la barre d'XP.** *(trouvé en jouant le 2026-10-18 : bandeau descendu. Voir JOURNAL.md.)*
+
 ### En attente d'Allonzo — ne pas prendre
 
 Demande de jouer sur un vrai iPhone : c'est Allonzo qui la fera. Ne la prends

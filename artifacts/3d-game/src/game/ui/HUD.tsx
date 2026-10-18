@@ -285,7 +285,7 @@ function ObjectiveChip() {
   return (
     <div
       className="absolute left-1/2 -translate-x-1/2 pointer-events-none w-[min(20rem,88vw)]"
-      style={{ top: 'calc(5.6rem + var(--safe-top))' }}
+      style={{ top: 'calc(6.5rem + var(--safe-top))' }}
     >
       <div className="bg-[#0f172ae0] backdrop-blur-md border border-white/12 rounded-xl px-3 py-2 flex items-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full bg-amber-300 shrink-0 shadow-[0_0_8px_#fbbf24]" />
