@@ -212,7 +212,7 @@ export function HUD() {
 
                   {/* Monstres restants : le vrai indicateur d'avancement. Le
                       joueur ne savait pas combien il en restait. */}
-                  <div className="w-full flex items-center justify-between text-[0.62rem] font-mono text-white/60">
+                  <div className="w-full flex items-center justify-between text-[0.7rem] font-mono text-white/75">
                     <span>abattus</span>
                     <span className="text-white">{waveKills}/{waveEnemyCount}</span>
                   </div>
@@ -224,7 +224,7 @@ export function HUD() {
                     />
                   </div>
 
-                  <div className="w-full flex items-center justify-between text-[0.62rem] font-mono text-white/60 mt-1">
+                  <div className="w-full flex items-center justify-between text-[0.7rem] font-mono text-white/75 mt-1">
                     <span>noyau</span>
                     <span className="text-white">{Math.ceil(coreHp)}/{coreMaxHp}</span>
                   </div>

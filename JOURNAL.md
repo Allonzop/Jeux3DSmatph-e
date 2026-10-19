@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-19 — Panneau de vague : libellés « abattus » / « noyau » lisibles
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village --wave 6`, les libellés « abattus » et « noyau » du panneau de vague (`ui/HUD.tsx`) étaient en blanc 60 % à 0,62 rem. Passés à blanc 75 %, 0,7 rem.
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; captures avant/après ouvertes : le panneau garde sa taille, les libellés se lisent.
+
+**Pas fait / à juger.** Pas joué sur un vrai téléphone. `smoke.mjs` non relancé. Rien d'essayé sans succès.
+
 ## 2026-10-18 — Bandeau d'objectif ne recouvre plus la barre d'XP
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village --wave 5`, le bandeau « Éliminez les monstres » (`ObjectiveChip`, `ui/HUD.tsx`) masquait la barre d'XP : les boutons du haut, passés à 44 px le 17/10, ont repoussé la barre sous le bandeau (positionné à 5,6 rem). Bandeau descendu à 6,5 rem, comme le bandeau de pose.
