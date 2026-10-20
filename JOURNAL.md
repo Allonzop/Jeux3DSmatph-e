@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-20 — Radar de vague : pastilles d'ennemis plus lisibles
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village`, la pastille « 3× Grognard » au-dessus de « Lancer la vague » (`ui/WaveRadar.tsx`) était à 0,68 rem. Passée à 0,78 rem, marges et fond un peu plus larges ; bandeau « Nouveau : … » à 0,72 rem.
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; captures avant/après ouvertes : la pastille se lit, rien ne chevauche le bouton.
+
+**Pas fait / à juger.** Bandeau « Nouveau : … » non vu en capture (vague 2+ avec nouvel ennemi). `smoke.mjs` non relancé. Rien d'essayé sans succès. Piège : `shot.mjs` écrase `game-shot.png`, qui est suivi par git — le restaurer avant de commiter.
+
 ## 2026-10-19 — Panneau de vague : libellés « abattus » / « noyau » lisibles
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village --wave 6`, les libellés « abattus » et « noyau » du panneau de vague (`ui/HUD.tsx`) étaient en blanc 60 % à 0,62 rem. Passés à blanc 75 %, 0,7 rem.

@@ -618,6 +618,8 @@ traités, voir plus haut.
 
 - [x] **Libellés du panneau de vague trop discrets.** *(trouvé en jouant le 2026-10-19 : contraste et taille relevés. Voir JOURNAL.md.)*
 
+- [x] **Pastille « 3× Grognard » (radar de vague) trop petite.** *(trouvé en jouant le 2026-10-20 : texte 0,78 rem, marges élargies. Voir JOURNAL.md.)*
+
 ### En attente d'Allonzo — ne pas prendre
 
 Demande de jouer sur un vrai iPhone : c'est Allonzo qui la fera. Ne la prends
