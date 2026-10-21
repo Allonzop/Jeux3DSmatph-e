@@ -107,7 +107,7 @@ export function HUD() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => { sfx.tap(); cancelPlacing(); }}
-                className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white/80 font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl border border-white/15"
+                className="pointer-events-auto bg-black/60 hover:bg-black/80 text-white/80 font-bold text-xs uppercase tracking-wider px-4 min-h-[44px] rounded-xl border border-white/15"
               >
                 Annuler
               </button>
@@ -118,7 +118,7 @@ export function HUD() {
                   placeBuilding(placingBuilding, [pendingPlacement.x, 0, pendingPlacement.z]);
                   sfx.build();
                 }}
-                className={`pointer-events-auto font-black text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all ${
+                className={`pointer-events-auto font-black text-xs uppercase tracking-wider px-5 min-h-[44px] rounded-xl transition-all ${
                   pendingPlacement?.valid
                     ? 'bg-emerald-400 text-black shadow-[0_3px_0_#047857] active:translate-y-0.5'
                     : 'bg-black/60 text-white/55 border border-white/15'
