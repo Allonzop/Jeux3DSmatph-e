@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-22 — Légende de l'étiquette « NOYAU » lisible
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --empty`, la légende « réparé avant chaque vague » sous « NOYAU » (`scene/CrystalCore.tsx`) était à 0,52 rem, blanc 45 % : illisible. Passée à 0,66 rem, blanc 75 %.
+
+**Vérifié.** typecheck, `wave.mjs --check`, `studio selftest`, capture avant/après : typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; captures avant/après ouvertes : la légende se lit, l'étiquette garde sa place.
+
+**Pas fait / à juger.** Pas joué sur un vrai téléphone. `smoke.mjs` non relancé. Rien d'essayé sans succès.
+
 ## 2026-10-21 — Boutons « Annuler » / « Poser ici » à taille de doigt
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village --placing`, les boutons de confirmation du bandeau de pose (`ui/HUD.tsx`) faisaient ~36 px de haut. Passés à 44 px minimum.

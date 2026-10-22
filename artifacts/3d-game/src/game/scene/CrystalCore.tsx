@@ -182,7 +182,7 @@ export function CrystalCore() {
             {Math.ceil(coreHp)} / {coreMaxHp}
           </div>
           {!waveActive && !justRepaired && (
-            <div className="text-white/45 text-[0.52rem] leading-tight mt-0.5">
+            <div className="text-white/75 text-[0.66rem] leading-tight mt-0.5">
               réparé avant chaque vague
             </div>
           )}
