@@ -29,7 +29,7 @@ export function XpBar({ onOpenHero }: { onOpenHero: () => void }) {
       <button
         onClick={onOpenHero}
         title="Fiche du commandant"
-        className="pointer-events-auto relative shrink-0 active:scale-90 transition-transform"
+        className="pointer-events-auto relative shrink-0 p-1 -m-1 active:scale-90 transition-transform"
       >
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-300 to-orange-500 flex items-center justify-center shadow-[0_0_14px_rgba(245,158,11,0.55)]">
           <span className="text-black font-black text-sm leading-none">{level}</span>

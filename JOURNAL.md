@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-23 — Écusson de niveau : zone de toucher à 44 px
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village --wave 3`, l'écusson de niveau (`ui/XpBar.tsx`), qui ouvre la fiche du commandant, ne faisait que 36 px. Ajout de `p-1 -m-1` sur le bouton : zone de 44 px, rendu inchangé.
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; captures avant/après ouvertes : mise en page identique.
+
+**Pas fait / à juger.** Pas joué sur un vrai téléphone. `smoke.mjs` non relancé. Rien d'essayé sans succès.
+
 ## 2026-10-22 — Légende de l'étiquette « NOYAU » lisible
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --empty`, la légende « réparé avant chaque vague » sous « NOYAU » (`scene/CrystalCore.tsx`) était à 0,52 rem, blanc 45 % : illisible. Passée à 0,66 rem, blanc 75 %.

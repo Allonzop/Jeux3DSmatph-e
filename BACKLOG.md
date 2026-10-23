@@ -623,6 +623,7 @@ traités, voir plus haut.
 - [x] **Boutons « Annuler » / « Poser ici » trop bas (~36 px).** *(trouvé en jouant le 2026-10-21 : min-height 44 px. Voir JOURNAL.md.)*
 
 - [x] **Légende « réparé avant chaque vague » sous « NOYAU » illisible.** *(trouvé en jouant le 2026-10-22 : 0,52 rem à blanc 45 %, passée à 0,66 rem / 75 %. Voir JOURNAL.md.)*
+- [x] **Écusson de niveau (accès à la fiche du commandant) trop petit à toucher (36 px).** *(trouvé en jouant le 2026-10-23 : zone de toucher portée à 44 px sans changer l'aspect. Voir JOURNAL.md.)*
 
 ### En attente d'Allonzo — ne pas prendre
 
