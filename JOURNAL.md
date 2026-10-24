@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-24 — Barre d'XP : titre et compteurs lisibles
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village --wave 7`, le titre (« BRICOLEUR », 0,62 rem) et les compteurs étoile / crâne (0,7 rem, icônes 12 px) de la barre d'XP (`ui/XpBar.tsx`) étaient minuscules. Passés à 0,7 rem / 0,78 rem, icônes 14 px.
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; captures avant/après ouvertes : la barre garde sa place, rien ne chevauche le bandeau d'objectif.
+
+**Pas fait / à juger.** Pas joué sur un vrai téléphone. `smoke.mjs` non relancé. Rien d'essayé sans succès.
+
 ## 2026-10-23 — Écusson de niveau : zone de toucher à 44 px
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village --wave 3`, l'écusson de niveau (`ui/XpBar.tsx`), qui ouvre la fiche du commandant, ne faisait que 36 px. Ajout de `p-1 -m-1` sur le bouton : zone de 44 px, rendu inchangé.

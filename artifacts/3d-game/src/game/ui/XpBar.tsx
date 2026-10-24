@@ -38,10 +38,10 @@ export function XpBar({ onOpenHero }: { onOpenHero: () => void }) {
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2 mb-0.5">
-          <span className="text-amber-200/90 text-[0.62rem] font-black uppercase tracking-[0.15em] truncate">
+          <span className="text-amber-200/90 text-[0.7rem] font-black uppercase tracking-[0.15em] truncate">
             {titleForLevel(level)}
           </span>
-          <span className="flex items-center gap-2 shrink-0 text-white/75 text-[0.7rem] font-mono">
+          <span className="flex items-center gap-2 shrink-0 text-white/75 text-[0.78rem] font-mono">
             <span className="inline-flex items-center gap-0.5">
               <StarIcon className="w-3 h-3" />
               {bestWave}
