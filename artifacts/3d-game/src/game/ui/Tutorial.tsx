@@ -179,7 +179,7 @@ export function Tutorial() {
       {!isLastStep && (
         <button
           onClick={() => { sfx.tap(); skipTutorial(); }}
-          className="pointer-events-auto text-white/75 hover:text-white text-[0.7rem] uppercase tracking-wider font-bold px-4 min-h-[44px] flex items-center rounded-lg bg-black/40 border border-white/10"
+          className="pointer-events-auto text-white/75 hover:text-white text-[0.78rem] uppercase tracking-wider font-bold px-4 min-h-[44px] flex items-center rounded-lg bg-black/40 border border-white/10"
         >
           Passer le tutoriel
         </button>

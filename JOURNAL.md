@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-25 — Bouton « Passer le tutoriel » lisible
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --empty`, le bouton « Passer le tutoriel » (`ui/Tutorial.tsx`) était à 0,7 rem. Passé à 0,78 rem ; zone de toucher déjà à 44 px.
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; captures avant/après ouvertes : le bouton se lit, rien ne chevauche la carte du tutoriel.
+
+**Pas fait / à juger.** Pas joué sur un vrai téléphone. `smoke.mjs` non relancé. Rien d'essayé sans succès.
+
 ## 2026-10-24 — Barre d'XP : titre et compteurs lisibles
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). En jouant `shot.mjs --village --wave 7`, le titre (« BRICOLEUR », 0,62 rem) et les compteurs étoile / crâne (0,7 rem, icônes 12 px) de la barre d'XP (`ui/XpBar.tsx`) étaient minuscules. Passés à 0,7 rem / 0,78 rem, icônes 14 px.
