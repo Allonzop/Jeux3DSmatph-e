@@ -206,13 +206,13 @@ export function HUD() {
                   transition={{ duration: 0.18 }}
                   className="pointer-events-auto bg-black/65 backdrop-blur-md rounded-2xl p-3 border border-red-500/30 flex flex-col items-end gap-1.5 w-[min(11rem,44vw)]"
                 >
-                  <span className="text-red-400 font-black uppercase tracking-wider text-[0.7rem]">
+                  <span className="text-red-400 font-black uppercase tracking-wider text-[0.78rem]">
                     Vague {waveNumber}
                   </span>
 
                   {/* Monstres restants : le vrai indicateur d'avancement. Le
                       joueur ne savait pas combien il en restait. */}
-                  <div className="w-full flex items-center justify-between text-[0.7rem] font-mono text-white/75">
+                  <div className="w-full flex items-center justify-between text-[0.78rem] font-mono text-white/75">
                     <span>abattus</span>
                     <span className="text-white">{waveKills}/{waveEnemyCount}</span>
                   </div>
@@ -224,7 +224,7 @@ export function HUD() {
                     />
                   </div>
 
-                  <div className="w-full flex items-center justify-between text-[0.7rem] font-mono text-white/75 mt-1">
+                  <div className="w-full flex items-center justify-between text-[0.78rem] font-mono text-white/75 mt-1">
                     <span>noyau</span>
                     <span className="text-white">{Math.ceil(coreHp)}/{coreMaxHp}</span>
                   </div>
@@ -293,7 +293,7 @@ function ObjectiveChip() {
           {objective.text}
         </span>
         {objective.detail && (
-          <span className="ml-auto shrink-0 text-white/45 text-[0.65rem] font-mono">{objective.detail}</span>
+          <span className="ml-auto shrink-0 text-white/70 text-[0.74rem] font-mono">{objective.detail}</span>
         )}
       </div>
       {objective.progress !== undefined && (
