@@ -57,7 +57,7 @@ export function ComboMeter() {
           >
             ×{count}
           </motion.span>
-          <span className="text-amber-200/80 text-[0.58rem] font-black uppercase tracking-[0.15em] whitespace-nowrap">
+          <span className="text-amber-200 text-[0.7rem] font-black uppercase tracking-[0.15em] whitespace-nowrap">
             enchaînement
           </span>
         </motion.div>
