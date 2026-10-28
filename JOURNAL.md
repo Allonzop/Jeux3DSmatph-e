@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-28 — Compte à rebours des pouvoirs lisible
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). En relisant les tailles de texte de `ui/`, le chiffre de recharge des boutons de pouvoir (`ui/PowerButtons.tsx`, affiché en plein combat) était à 0,6 rem, blanc 80 %. Passé à 0,75 rem, blanc plein.
+
+**Vérifié.** `pnpm install` d'abord (node_modules absent dans la session) ; typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; capture `--village --wave 3` ouverte : mise en page inchangée.
+
+**Pas fait / à juger.** Les boutons de pouvoir n'apparaissent pas sur cette capture : le chiffre n'a été vérifié que par lecture du code. Pas joué sur un vrai téléphone. Restent à 0,6–0,66 rem : `BuildingPopup`, `ZonePopup`, `HeroPanel`, `LevelUp`, `ThreatMarkers`. Rien d'essayé sans succès.
+
 ## 2026-10-27 — Libellé « enchaînement » du combo lisible
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). En relisant les captures `--village --wave 2` et `--empty`, puis les tailles de texte de `ui/`, le libellé « enchaînement » de `ui/ComboMeter.tsx` était à 0,58 rem, ambre 80 %. Passé à 0,7 rem, ambre plein.

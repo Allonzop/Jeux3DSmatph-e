@@ -68,7 +68,7 @@ export function PowerButtons() {
               <PowerGlyph id={id} color={power.color} />
             </div>
             {!ready && (
-              <span className="absolute bottom-0.5 right-1 text-[0.6rem] font-mono font-bold text-white/80">
+              <span className="absolute bottom-0.5 right-1 text-[0.75rem] font-mono font-bold text-white">
                 {Math.ceil((1 - ratio) * power.cooldown)}
               </span>
             )}
