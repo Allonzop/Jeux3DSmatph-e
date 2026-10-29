@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-29 — Écran de montée de niveau lisible
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). En relisant les tailles de texte de `ui/`, l'écran `LevelUp.tsx` avait des textes à 0,6–0,65 rem et blanc 35–45 % — dont « Touchez pour continuer », la seule instruction pour sortir de l'écran. Passés à 0,72–0,76 rem, blanc 70 % / cyan plein.
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5. La capture `shot.mjs --village` a dépassé 120 s dans cette séance et n'a pas été regardée ; l'écran de niveau n'apparaît de toute façon pas sur une capture de village — vérifié par lecture du code seulement.
+
+**Pas fait / à juger.** Pas joué sur un vrai téléphone. Restent à 0,6–0,66 rem : `BuildingPopup`, `ZonePopup`, `HeroPanel`, `ThreatMarkers`, `BuildSheet`. Rien d'essayé sans succès.
+
 ## 2026-10-28 — Compte à rebours des pouvoirs lisible
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). En relisant les tailles de texte de `ui/`, le chiffre de recharge des boutons de pouvoir (`ui/PowerButtons.tsx`, affiché en plein combat) était à 0,6 rem, blanc 80 %. Passé à 0,75 rem, blanc plein.

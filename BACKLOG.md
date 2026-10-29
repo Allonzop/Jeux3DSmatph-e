@@ -629,6 +629,7 @@ traités, voir plus haut.
 - [x] **Panneau « VAGUE N » et détail d'objectif trop petits.** *(trouvé en jouant le 2026-10-26 : 0,7→0,78 rem et 0,65→0,74 rem, détail à 70 % de blanc. Voir JOURNAL.md.)*
 - [x] **Libellé « enchaînement » du compteur de combo trop petit.** *(trouvé en jouant le 2026-10-27 : 0,58→0,7 rem, ambre 80 %→100 %. Voir JOURNAL.md.)*
 - [x] **Compte à rebours des boutons de pouvoir trop petit.** *(trouvé en jouant le 2026-10-28 : 0,6→0,75 rem, blanc 80 %→100 %. Voir JOURNAL.md.)*
+- [x] **Écran « Niveau supérieur » : textes trop petits et ternes.** *(trouvé en jouant le 2026-10-29 : titre, « Récompense », « Affichage débloqué » et « Touchez pour continuer » portés à 0,72–0,76 rem, contraste relevé. Voir JOURNAL.md.)*
 
 ### En attente d'Allonzo — ne pas prendre
 

@@ -59,7 +59,7 @@ export function LevelUp() {
                 {levelUp.level}
               </span>
               <div className="leading-tight">
-                <div className="text-amber-300 text-[0.62rem] font-black uppercase tracking-[0.2em]">
+                <div className="text-amber-300 text-[0.72rem] font-black uppercase tracking-[0.2em]">
                   Niveau supérieur
                 </div>
                 <div className="flex items-center gap-2 text-white font-bold text-[0.8rem]">
@@ -133,7 +133,7 @@ export function LevelUp() {
             </div>
 
             <div className="mt-4 rounded-2xl bg-black/35 border border-white/10 px-4 py-3">
-              <div className="text-white/45 text-[0.65rem] uppercase tracking-widest mb-2">
+              <div className="text-white/70 text-[0.74rem] uppercase tracking-widest mb-2">
                 Récompense
               </div>
               <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
@@ -157,7 +157,7 @@ export function LevelUp() {
                 pour qu'aucun deblocage ne passe inaperçu. */}
             {unlocked.length > 0 && (
               <div className="mt-3 rounded-xl border border-cyan-300/30 bg-cyan-400/10 px-3 py-2">
-                <div className="text-cyan-200/70 text-[0.6rem] font-black uppercase tracking-[0.18em]">
+                <div className="text-cyan-200 text-[0.72rem] font-black uppercase tracking-[0.18em]">
                   Affichage débloqué
                 </div>
                 {unlocked.map((feature) => (
@@ -168,7 +168,7 @@ export function LevelUp() {
               </div>
             )}
 
-            <div className="mt-3 text-white/35 text-[0.65rem]">Touchez pour continuer</div>
+            <div className="mt-3 text-white/70 text-[0.76rem]">Touchez pour continuer</div>
           </motion.div>
         </motion.div>
       )}
