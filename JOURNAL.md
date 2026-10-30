@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-30 — Fiches bâtiment et commandant : petits textes lisibles
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). Suite de la relève des tailles de texte de `ui/` : `BuildingPopup.tsx` (pastille de rôle 0,6→0,72 rem ; « Recrute/Occupant » 0,6→0,72 rem, blanc 40→70 %) et `HeroPanel.tsx` (compteurs de niveau et recharge 0,62–0,65→0,74 rem, « Pouvoirs » 0,62→0,72 rem, blanc 40→70 %).
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; capture `--village` ouverte : mise en page inchangée, aucune erreur.
+
+**Pas fait / à juger.** Les fiches ne s'ouvrent pas sur la capture : vérifié par lecture du code seulement. Pas joué sur un vrai téléphone. Restent à 0,6–0,68 rem : `ZonePopup`, `ThreatMarkers`, `BuildSheet`. Rien d'essayé sans succès.
+
 ## 2026-10-29 — Écran de montée de niveau lisible
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). En relisant les tailles de texte de `ui/`, l'écran `LevelUp.tsx` avait des textes à 0,6–0,65 rem et blanc 35–45 % — dont « Touchez pour continuer », la seule instruction pour sortir de l'écran. Passés à 0,72–0,76 rem, blanc 70 % / cyan plein.

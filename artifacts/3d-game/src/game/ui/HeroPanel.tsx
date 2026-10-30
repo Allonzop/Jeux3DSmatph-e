@@ -78,7 +78,7 @@ export function HeroPanel({ open, onClose }: { open: boolean; onClose: () => voi
                   <div key={track.id} className="rounded-2xl border border-white/10 bg-black/25 p-3">
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="font-bold text-white text-[0.92rem]">{track.name}</span>
-                      <span className="text-[0.65rem] font-mono text-white/40">
+                      <span className="text-[0.74rem] font-mono text-white/70">
                         {level}/{track.maxLevel}
                       </span>
                     </div>
@@ -141,7 +141,7 @@ export function HeroPanel({ open, onClose }: { open: boolean; onClose: () => voi
                 );
               })}
 
-              <div className="text-white/40 text-[0.62rem] font-black uppercase tracking-[0.2em] mt-2 px-1">
+              <div className="text-white/70 text-[0.72rem] font-black uppercase tracking-[0.2em] mt-2 px-1">
                 Pouvoirs
               </div>
 
@@ -165,7 +165,7 @@ export function HeroPanel({ open, onClose }: { open: boolean; onClose: () => voi
                         {unlocked ? power.blurb : `S’ouvre au niveau ${power.requiredLevel}.`}
                       </p>
                     </div>
-                    <span className="shrink-0 text-[0.62rem] font-mono text-white/40">
+                    <span className="shrink-0 text-[0.74rem] font-mono text-white/70">
                       {power.cooldown}s
                     </span>
                   </div>

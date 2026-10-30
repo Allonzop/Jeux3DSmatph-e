@@ -233,7 +233,7 @@ export function BuildingPopup() {
                     Niveau {level} <span className="text-white/30">/ {data.maxLevel}</span>
                   </span>
                   <span
-                    className="px-1.5 py-0.5 rounded text-[0.6rem] font-black uppercase tracking-wider"
+                    className="px-1.5 py-0.5 rounded text-[0.72rem] font-black uppercase tracking-wider"
                     style={{ backgroundColor: `${ROLE_TINT[data.role]}22`, color: ROLE_TINT[data.role] }}
                   >
                     {ROLE_LABEL[data.role]}
@@ -265,7 +265,7 @@ export function BuildingPopup() {
             {resident && <CharacterPortrait def={resident} size={84} />}
             <div className="min-w-0 flex-1">
               {resident && (
-                <div className="text-white/40 text-[0.6rem] font-black uppercase tracking-[0.16em] mb-1">
+                <div className="text-white/70 text-[0.72rem] font-black uppercase tracking-[0.16em] mb-1">
                   {data.id === 'bar' ? 'Recrute' : 'Occupant'}
                 </div>
               )}

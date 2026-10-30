@@ -630,6 +630,7 @@ traités, voir plus haut.
 - [x] **Libellé « enchaînement » du compteur de combo trop petit.** *(trouvé en jouant le 2026-10-27 : 0,58→0,7 rem, ambre 80 %→100 %. Voir JOURNAL.md.)*
 - [x] **Compte à rebours des boutons de pouvoir trop petit.** *(trouvé en jouant le 2026-10-28 : 0,6→0,75 rem, blanc 80 %→100 %. Voir JOURNAL.md.)*
 - [x] **Écran « Niveau supérieur » : textes trop petits et ternes.** *(trouvé en jouant le 2026-10-29 : titre, « Récompense », « Affichage débloqué » et « Touchez pour continuer » portés à 0,72–0,76 rem, contraste relevé. Voir JOURNAL.md.)*
+- [x] **Petits textes des fiches bâtiment et commandant trop petits/ternes.** *(trouvé en jouant le 2026-10-30 : 0,6–0,65→0,72–0,74 rem, blanc 40→70 %. Voir JOURNAL.md.)*
 
 ### En attente d'Allonzo — ne pas prendre
 
