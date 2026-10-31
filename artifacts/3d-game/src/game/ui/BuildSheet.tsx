@@ -119,7 +119,7 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
                 <h2 className="text-white font-black uppercase tracking-wider text-sm">Construire</h2>
                 <button
                   onClick={onClose}
-                  className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:text-white"
+                  className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/70 hover:text-white"
                 >
                   <CloseIcon className="w-4 h-4" />
                 </button>
@@ -131,10 +131,10 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
                   <button
                     key={g.role}
                     onClick={() => { sfx.tap(); setTab(g.role); }}
-                    className={`flex-1 py-2 rounded-xl text-[0.66rem] font-black uppercase tracking-wider border transition-colors ${
+                    className={`flex-1 py-2 rounded-xl text-[0.74rem] font-black uppercase tracking-wider border transition-colors ${
                       tab === g.role
                         ? 'text-black border-transparent'
-                        : 'text-white/50 bg-white/5 border-white/10'
+                        : 'text-white/70 bg-white/5 border-white/10'
                     }`}
                     style={tab === g.role ? { backgroundColor: ROLE_TINT[g.role] } : undefined}
                   >
@@ -143,8 +143,8 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
                 ))}
                 <button
                   onClick={() => { sfx.tap(); setTab('empire'); }}
-                  className={`flex-1 py-2 rounded-xl text-[0.66rem] font-black uppercase tracking-wider border transition-colors ${
-                    tab === 'empire' ? 'bg-violet-400 text-black border-transparent' : 'text-white/50 bg-white/5 border-white/10'
+                  className={`flex-1 py-2 rounded-xl text-[0.74rem] font-black uppercase tracking-wider border transition-colors ${
+                    tab === 'empire' ? 'bg-violet-400 text-black border-transparent' : 'text-white/70 bg-white/5 border-white/10'
                   }`}
                 >
                   Empire
@@ -189,7 +189,7 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
                       <div className="flex items-baseline gap-2">
                         <span className="font-bold text-white text-[0.92rem] truncate">{data.name}</span>
                         {data.maxInstances > 1 && (
-                          <span className="text-[0.65rem] font-mono text-white/40 shrink-0">
+                          <span className="text-[0.74rem] font-mono text-white/70 shrink-0">
                             {placed}/{data.maxInstances}
                           </span>
                         )}
@@ -276,7 +276,7 @@ function CoreCard() {
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
           <span className="font-bold text-white text-[0.92rem]">Noyau de cristal</span>
-          <span className="text-[0.65rem] font-mono text-cyan-200/60">
+          <span className="text-[0.74rem] font-mono text-cyan-200/90">
             rang {coreLevel}/{CORE_MAX_LEVEL}
           </span>
         </div>
@@ -287,7 +287,7 @@ function CoreCard() {
       </div>
       <div className="shrink-0 flex items-center">
         {maxed ? (
-          <span className="text-[0.65rem] text-cyan-200/50 uppercase font-bold">Max</span>
+          <span className="text-[0.74rem] text-cyan-200/90 uppercase font-bold">Max</span>
         ) : (
           <button
             disabled={!affordable}

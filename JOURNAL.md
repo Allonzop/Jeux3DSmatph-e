@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-10-31 — Fenêtre de zone et menu de construction : petits textes lisibles
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). Suite de la relève des tailles de texte : `ZonePopup.tsx` et `BuildSheet.tsx` (0,6–0,7→0,74 rem, blanc 35–50→70 %, cyan 50–60→90 %). `ThreatMarkers` (0,6 rem) laissé : c'est une pastille de chiffre dans la scène 3D.
+
+**Vérifié.** `pnpm install` d'abord (node_modules absent) ; typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; capture `--village` ouverte : mise en page inchangée, aucune erreur.
+
+**Pas fait / à juger.** Ces fenêtres ne s'ouvrent pas sur la capture : vérifié par lecture du code seulement. Pas joué sur un vrai téléphone. Les textes plus larges peuvent faire déborder des lignes étroites de `ZonePopup` ; à regarder au prochain passage. Rien d'essayé sans succès.
+
 ## 2026-10-30 — Fiches bâtiment et commandant : petits textes lisibles
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). Suite de la relève des tailles de texte de `ui/` : `BuildingPopup.tsx` (pastille de rôle 0,6→0,72 rem ; « Recrute/Occupant » 0,6→0,72 rem, blanc 40→70 %) et `HeroPanel.tsx` (compteurs de niveau et recharge 0,62–0,65→0,74 rem, « Pouvoirs » 0,62→0,72 rem, blanc 40→70 %).

@@ -57,7 +57,7 @@ export function ZonePopup() {
           >
             <div className="min-w-0">
               <div
-                className="text-[0.6rem] font-black uppercase tracking-[0.2em]"
+                className="text-[0.74rem] font-black uppercase tracking-[0.2em]"
                 style={{ color: zone.palette.glow }}
               >
                 Secteur à annexer
@@ -66,7 +66,7 @@ export function ZonePopup() {
             </div>
             <button
               onClick={() => selectZone(null)}
-              className="shrink-0 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:text-white"
+              className="shrink-0 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/70 hover:text-white"
             >
               <CloseIcon className="w-4 h-4" />
             </button>
@@ -89,25 +89,25 @@ export function ZonePopup() {
                 <span className="text-base leading-none" style={{ color: zone.palette.glow }}>◆</span>
                 <span className="text-white/75 text-[0.78rem] leading-snug">
                   Un gisement de {RESOURCE_NAME[zone.node.resource]} à récolter sur place
-                  <span className="text-white/40"> (+{zone.node.amount} toutes les {zone.node.cooldown} s)</span>
+                  <span className="text-white/70"> (+{zone.node.amount} toutes les {zone.node.cooldown} s)</span>
                 </span>
               </div>
             </div>
 
             <div className="rounded-xl bg-black/25 border border-white/5 p-3 flex flex-col gap-1.5 text-[0.75rem]">
               <div className="flex justify-between">
-                <span className="text-white/45">Terrain gagné</span>
+                <span className="text-white/70">Terrain gagné</span>
                 <span className="text-white font-mono">un quart de la couronne</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-white/45">Niveau requis</span>
+                <span className="text-white/70">Niveau requis</span>
                 <span className={`font-mono ${levelOk ? 'text-emerald-300' : 'text-rose-300'}`}>
                   {zone.requiredLevel} {levelOk ? '✓' : `(vous : ${playerLevel})`}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-white/45">Cœur du secteur</span>
-                <span className="text-white/40 font-mono">à défendre plus tard</span>
+                <span className="text-white/70">Cœur du secteur</span>
+                <span className="text-white/70 font-mono">à défendre plus tard</span>
               </div>
             </div>
 
@@ -188,12 +188,12 @@ export function EmpirePanel({ onClose }: { onClose: () => void }) {
             {onHome ? 'Planète Racine' : planetById(currentPlanet).name}
           </span>
           {onHome && (
-            <span className="text-[0.65rem] font-mono text-white/45">
+            <span className="text-[0.74rem] font-mono text-white/70">
               {owned + 1}/{ZONES.length + 1} secteurs
             </span>
           )}
         </div>
-        <p className="text-white/50 text-[0.72rem] leading-snug mt-0.5">
+        <p className="text-white/70 text-[0.74rem] leading-snug mt-0.5">
           {onHome
             ? 'Votre monde de départ. Le plateau central est à vous ; le reste s’annexe.'
             : `${planetById(currentPlanet).blurb} Ses secteurs ne sont pas encore annexables.`}
@@ -221,7 +221,7 @@ export function EmpirePanel({ onClose }: { onClose: () => void }) {
             />
             <div className="min-w-0 flex-1">
               <div className="font-bold text-white text-[0.88rem] truncate">{zone.name}</div>
-              <p className="text-white/50 text-[0.7rem] leading-snug">
+              <p className="text-white/70 text-[0.74rem] leading-snug">
                 {isOwned
                   ? zone.bonus.label
                   : levelOk
@@ -229,17 +229,17 @@ export function EmpirePanel({ onClose }: { onClose: () => void }) {
                     : `S’ouvre au niveau ${zone.requiredLevel}.`}
               </p>
               {isOwned && (
-                <p className="text-white/35 text-[0.66rem] leading-snug">
+                <p className="text-white/70 text-[0.74rem] leading-snug">
                   Gisement de {RESOURCE_NAME[zone.node.resource]} sur place.
                 </p>
               )}
             </div>
             {isOwned ? (
-              <span className="shrink-0 text-[0.65rem] font-black uppercase text-emerald-300">À vous</span>
+              <span className="shrink-0 text-[0.74rem] font-black uppercase text-emerald-300">À vous</span>
             ) : (
               <button
                 onClick={() => { sfx.tap(); selectZone(zone.id); onClose(); }}
-                className={`shrink-0 px-3 py-1.5 rounded-xl text-[0.7rem] font-black uppercase tracking-wider ${
+                className={`shrink-0 px-3 py-1.5 rounded-xl text-[0.74rem] font-black uppercase tracking-wider ${
                   levelOk && canPay ? 'text-black' : 'bg-white/8 border border-white/10 text-white/60'
                 }`}
                 style={levelOk && canPay ? { backgroundColor: zone.palette.glow } : undefined}
@@ -266,13 +266,13 @@ export function EmpirePanel({ onClose }: { onClose: () => void }) {
             />
             <div className="min-w-0 flex-1">
               <div className="font-bold text-white text-[0.88rem] truncate">{target.name}</div>
-              <p className="text-white/50 text-[0.7rem] leading-snug">
+              <p className="text-white/70 text-[0.74rem] leading-snug">
                 {planetUnlocked(id, homeZones)
                   ? waveActive ? 'Impossible de partir pendant une vague.' : target.blurb
                   : PLANET_UNLOCK_TEXT[id]}
               </p>
               {LOOT_EXTRA_TEXT[id] && (
-                <p className="text-[0.68rem] leading-snug mt-1" style={{ color: target.palette.accent }}>
+                <p className="text-[0.74rem] leading-snug mt-1" style={{ color: target.palette.accent }}>
                   {LOOT_EXTRA_TEXT[id]} {HOME_BONUS.label}.
                   {cristallineBest >= HOME_BONUS.wave ? ' ✓ Acquis.' : ` (meilleure vague : ${cristallineBest}/${HOME_BONUS.wave})`}
                 </p>
@@ -281,7 +281,7 @@ export function EmpirePanel({ onClose }: { onClose: () => void }) {
             <button
               disabled={!ok}
               onClick={() => { sfx.tap(); if (travelTo(id)) onClose(); }}
-              className={`shrink-0 px-3 py-1.5 rounded-xl text-[0.7rem] font-black uppercase tracking-wider ${
+              className={`shrink-0 px-3 py-1.5 rounded-xl text-[0.74rem] font-black uppercase tracking-wider ${
                 ok ? 'text-black' : 'bg-white/8 border border-white/10 text-white/40'
               }`}
               style={ok ? { backgroundColor: target.palette.glow } : undefined}
