@@ -51,13 +51,13 @@ export function DecorPopup() {
           <div className="rounded-2xl border border-amber-300/40 bg-[#161a2bf2] backdrop-blur-md px-4 py-3 shadow-[0_0_26px_rgba(251,191,36,0.25)]">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-amber-300 text-[0.62rem] font-black uppercase tracking-[0.18em]">
+                <div className="text-amber-300 text-[0.72rem] font-black uppercase tracking-[0.18em]">
                   Décor
                 </div>
                 <div className="text-white font-bold text-[0.95rem] leading-tight">
                   {DECOR_LABEL[kind]}
                 </div>
-                <p className="text-white/50 text-[0.7rem] leading-snug mt-0.5">
+                <p className="text-white/70 text-[0.74rem] leading-snug mt-0.5">
                   Le déblayer libère la place pour un bâtiment.
                 </p>
               </div>

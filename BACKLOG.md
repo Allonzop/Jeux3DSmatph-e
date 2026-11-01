@@ -632,6 +632,7 @@ traités, voir plus haut.
 - [x] **Écran « Niveau supérieur » : textes trop petits et ternes.** *(trouvé en jouant le 2026-10-29 : titre, « Récompense », « Affichage débloqué » et « Touchez pour continuer » portés à 0,72–0,76 rem, contraste relevé. Voir JOURNAL.md.)*
 - [x] **Petits textes des fiches bâtiment et commandant trop petits/ternes.** *(trouvé en jouant le 2026-10-30 : 0,6–0,65→0,72–0,74 rem, blanc 40→70 %. Voir JOURNAL.md.)*
 - [x] **Petits textes de `ZonePopup` et `BuildSheet` trop petits/ternes.** *(trouvé en jouant le 2026-10-31 : 0,6–0,7→0,74 rem, blanc 35–50→70 %. Voir JOURNAL.md.)*
+- [x] **Textes de `WaveOutcome` et `DecorPopup` trop petits/ternes.** *(trouvé en jouant le 2026-11-01 : 0,62–0,7→0,72–0,74 rem, blanc 40–50→70 %. Voir JOURNAL.md.)*
 
 ### En attente d'Allonzo — ne pas prendre
 

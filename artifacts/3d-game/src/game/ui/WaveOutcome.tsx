@@ -84,7 +84,7 @@ export function WaveOutcome() {
               amounts={(outcome.type === 'victory' ? outcome.gains : outcome.losses) || {}}
               sign={outcome.type === 'victory' ? '+' : '-'}
             />
-            <p className="text-white/40 text-[0.65rem] mt-2.5 leading-snug">
+            <p className="text-white/70 text-[0.74rem] mt-2.5 leading-snug">
               Le noyau est réparé à 100 % avant chaque vague.
               <br />
               (Touchez pour fermer)
