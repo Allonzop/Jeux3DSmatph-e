@@ -163,7 +163,7 @@ export function Tutorial() {
           )}
           {def.waits && (
             <div
-              className="mt-2 flex items-center gap-1.5 text-[0.68rem] font-bold uppercase tracking-wider"
+              className="mt-2 flex items-center gap-1.5 text-[0.74rem] font-bold uppercase tracking-wider"
               style={{ color: TUTORIAL_COLOR }}
             >
               <span

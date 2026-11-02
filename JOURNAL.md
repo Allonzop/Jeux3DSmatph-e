@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-11-02 — Coûts d'amélioration et mention d'attente du tutoriel lisibles
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). Dernier reliquat de la relève des petits textes de `ui/` : coûts des améliorations et « Max » dans `HeroPanel.tsx` (0,65–0,68→0,72–0,74 rem, « Max » ambre plein), ligne « en attente » de `Tutorial.tsx` (0,68→0,74 rem). `ThreatMarkers` (0,6 rem) laissé : pastille 3D.
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; captures `--village --wave 4` et `--village` ouvertes : mise en page inchangée, aucune erreur.
+
+**Pas fait / à juger.** Ces éléments n'apparaissent pas sur les captures : vérifié par lecture du code. Rien d'essayé sans succès.
+
 ## 2026-11-01 — Écran de fin de vague et fiche de décor : petits textes lisibles
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). Suite de la relève des tailles de texte : `WaveOutcome.tsx` (« Le noyau est réparé… / Touchez pour fermer », 0,65→0,74 rem, blanc 40→70 %) et `DecorPopup.tsx` (étiquette « Décor » 0,62→0,72 rem, description 0,7→0,74 rem, blanc 50→70 %). `ThreatMarkers` laissé (pastille 3D).

@@ -105,7 +105,7 @@ export function HeroPanel({ open, onClose }: { open: boolean; onClose: () => voi
                       </div>
 
                       {maxed ? (
-                        <span className="text-[0.65rem] text-amber-300/70 uppercase font-black">Max</span>
+                        <span className="text-[0.72rem] text-amber-300 uppercase font-black">Max</span>
                       ) : (
                         <div className="flex items-center gap-2 shrink-0">
                           <div className="flex gap-1.5">
@@ -114,7 +114,7 @@ export function HeroPanel({ open, onClose }: { open: boolean; onClose: () => voi
                               .map(([key, val]) => (
                                 <span
                                   key={key}
-                                  className={`inline-flex items-center gap-1 text-[0.68rem] font-mono font-bold ${
+                                  className={`inline-flex items-center gap-1 text-[0.74rem] font-mono font-bold ${
                                     resources[key] >= val ? 'text-white' : 'text-red-400'
                                   }`}
                                 >
