@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-11-03 — Séance de contrôle : rien à corriger
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). Joué via `shot.mjs --empty` et `--village --wave 2`, captures ouvertes : tutoriel, HUD, compteurs (même à 5 chiffres), panneau de vague, bâtiments — rien de cassé ni de coupé. Aucun changement de code.
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; aucune erreur console sur les deux captures.
+
+**Pas fait / à juger.** Je n'ai pas inventé de tâche : la relève des petits textes de `ui/` est close. Pas de défaut visible sans jouer sur un vrai appareil. Rien d'essayé sans succès.
+
 ## 2026-11-02 — Coûts d'amélioration et mention d'attente du tutoriel lisibles
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). Dernier reliquat de la relève des petits textes de `ui/` : coûts des améliorations et « Max » dans `HeroPanel.tsx` (0,65–0,68→0,72–0,74 rem, « Max » ambre plein), ligne « en attente » de `Tutorial.tsx` (0,68→0,74 rem). `ThreatMarkers` (0,6 rem) laissé : pastille 3D.
