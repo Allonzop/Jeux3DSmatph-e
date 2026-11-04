@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-11-04 — Séance de contrôle : rien à corriger
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). Joué via `shot.mjs --empty` et `--village --wave 5`, captures ouvertes : tutoriel, HUD, panneau de vague, bâtiments, noyau — rien de cassé ni de coupé. Aucun changement de code.
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; aucune erreur console.
+
+**Pas fait / à juger.** Pas de tâche inventée. Rien d'essayé sans succès.
+
 ## 2026-11-03 — Séance de contrôle : rien à corriger
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). Joué via `shot.mjs --empty` et `--village --wave 2`, captures ouvertes : tutoriel, HUD, compteurs (même à 5 chiffres), panneau de vague, bâtiments — rien de cassé ni de coupé. Aucun changement de code.
