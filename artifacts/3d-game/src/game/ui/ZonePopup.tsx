@@ -6,10 +6,15 @@ import { PLANETS, PLANET_UNLOCK_TEXT, LOOT_EXTRA_TEXT, HOME_BONUS, planetUnlocke
 import { ResourceIcon, CloseIcon } from './icons';
 import { sfx } from '../sfx';
 
-const RESOURCE_NAME: Record<string, string> = {
-  boulons: 'boulons',
-  matiere_floue: 'matière floue',
-  energie_rire: 'énergie de rire',
+/**
+ * « de boulons », « d’énergie de rire » : le nom porte sa préposition, parce
+ * que l'élision dépend de la première lettre. Composer « de » + nom donnait
+ * « Gisement de énergie de rire », vu en jeu le 2026-11-11.
+ */
+const RESOURCE_OF: Record<string, string> = {
+  boulons: 'de boulons',
+  matiere_floue: 'de matière floue',
+  energie_rire: 'd’énergie de rire',
 };
 
 /**
@@ -88,7 +93,7 @@ export function ZonePopup() {
               <div className="flex items-start gap-2">
                 <span className="text-base leading-none" style={{ color: zone.palette.glow }}>◆</span>
                 <span className="text-white/75 text-[0.78rem] leading-snug">
-                  Un gisement de {RESOURCE_NAME[zone.node.resource]} à récolter sur place
+                  Un gisement {RESOURCE_OF[zone.node.resource]} à récolter sur place
                   <span className="text-white/70"> (+{zone.node.amount} toutes les {zone.node.cooldown} s)</span>
                 </span>
               </div>
@@ -230,7 +235,7 @@ export function EmpirePanel({ onClose }: { onClose: () => void }) {
               </p>
               {isOwned && (
                 <p className="text-white/70 text-[0.74rem] leading-snug">
-                  Gisement de {RESOURCE_NAME[zone.node.resource]} sur place.
+                  Gisement {RESOURCE_OF[zone.node.resource]} sur place.
                 </p>
               )}
             </div>

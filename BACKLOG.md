@@ -634,6 +634,7 @@ traités, voir plus haut.
 - [x] **Petits textes de `ZonePopup` et `BuildSheet` trop petits/ternes.** *(trouvé en jouant le 2026-10-31 : 0,6–0,7→0,74 rem, blanc 35–50→70 %. Voir JOURNAL.md.)*
 - [x] **Textes de `WaveOutcome` et `DecorPopup` trop petits/ternes.** *(trouvé en jouant le 2026-11-01 : 0,62–0,7→0,72–0,74 rem, blanc 40–50→70 %. Voir JOURNAL.md.)*
 - [x] **Coûts d'amélioration (`HeroPanel`) et mention « en attente » du tutoriel trop petits.** *(trouvé en jouant le 2026-11-02 : 0,65–0,68→0,72–0,74 rem. Voir JOURNAL.md.)*
+- [x] **« Gisement de énergie de rire » : élision manquante dans la fiche des Dunes Dorées et le panneau Empire.** *(trouvé en jouant le 2026-11-11 : `ZonePopup.tsx`, le nom de ressource porte maintenant sa préposition — « d’énergie de rire ». Voir JOURNAL.md.)*
 
 ### En attente d'Allonzo — ne pas prendre
 

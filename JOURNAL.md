@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-11-11 — « Gisement d’énergie de rire » : élision corrigée
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). Joué les scénarios jamais regardés d'après le journal : `shot.mjs --arsenal`, `--placing`, `--upgrading`, `--planet cristalline`, `--wave 12`, puis un script maison (`window.__villageStore`) qui gagne la vague 5 sur Cristalline avec tourelle 4 + mortier 3 + tesla 3, rentre sur Terre et ouvre l'onglet Empire et la fiche de tourelle. Le bonus +15 % fonctionne de bout en bout (record 5, « ✓ Acquis », 97/sec = 70 × 1,2 × 1,15). Le défaut trouvé : « Gisement de énergie de rire sur place » dans le panneau Empire et la fiche des Dunes Dorées (`ui/ZonePopup.tsx`). Le tableau des noms de ressources porte maintenant sa préposition (`RESOURCE_OF` : « de boulons », « d’énergie de rire »).
+
+**Vérifié.** typecheck OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; captures ouvertes : panneau Empire avant/après (le texte lit « Gisement d’énergie de rire sur place. »), `--village` inchangée, aucune erreur console sur aucune capture.
+
+**Pas fait / à juger.** `shot.mjs --upgrading` sans `--village` montre un village sans tourelle : la sauvegarde par défaut n'a pas de position pour elle, c'est l'usage de l'outil (passer `--village --upgrading`), pas un bug du jeu. Observé sans y toucher : `travelTo` remet `waveNumber` à 0 à chaque voyage, mais il n'est de toute façon pas persisté (un rechargement repart aussi à la vague 1) — cohérent, à juger par Allonzo si les vagues doivent reprendre où on en était. Le décor du ciel (planète violette, lune) est le même sur Cristalline que sur la Terre. Rien d'essayé sans succès.
+
 ## 2026-11-10 — Séance de contrôle : rien à corriger
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). Joué via `shot.mjs --village --wave 9`, capture ouverte : HUD, compteurs, panneau de vague, noyau, bâtiments, boutons — rien de cassé ni de coupé. Aucun changement de code.
