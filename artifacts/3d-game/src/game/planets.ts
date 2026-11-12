@@ -28,11 +28,35 @@ export type PlanetDef = {
   zones: ZoneDef[];
   /** Couleur du cœur de cristal à protéger. */
   coreColor: string;
+  /** Ce qu'on voit dans le ciel depuis cette planète (voir `SkyDecor`). */
+  sky: SkyDecor;
   /**
    * Bâtiments déjà là à la première arrivée (niveau 1, déjà construits).
    * Vide sur la Terre : une partie neuve y commence sans rien.
    */
   startBase: { id: string; pos: [number, number, number] }[];
+};
+
+/**
+ * Le ciel d'une planète : la géante gazeuse à l'horizon et les trois lunes.
+ *
+ * Les formes et les positions sont les mêmes partout (`PlanetRing` et `Moons`
+ * dans `scene/Ground.tsx`, dont les contraintes de cadrage ne dépendent pas
+ * de la planète) ; seules les couleurs changent. Sans ça, Cristalline avait
+ * exactement le ciel de la Terre, géante violette comprise — on ne voyait
+ * pas qu'on avait voyagé en levant les yeux.
+ */
+export type SkyDecor = {
+  giant: {
+    /** Le globe. */
+    body: string;
+    /** Les quatre bandes, du haut vers le bas. */
+    bands: [string, string, string, string];
+    /** Les deux anneaux, intérieur puis extérieur. */
+    rings: [string, string];
+  };
+  /** Les trois lunes : la grosse cratérisée, la moyenne, la petite. */
+  moons: [string, string, string];
 };
 
 const Q = Math.PI / 2;
@@ -81,6 +105,11 @@ export const PLANETS: Record<PlanetId, PlanetDef> = {
     decor: 'meadow',
     zones: ZONES,
     coreColor: '#7df9ff',
+    // Une géante violette cerclée d'anneaux, une lune grise, une orange, une bleue.
+    sky: {
+      giant: { body: '#4c1d95', bands: ['#6d28d9', '#7c3aed', '#5b21b6', '#4c1d95'], rings: ['#a78bfa', '#67e8f9'] },
+      moons: ['#d9d3e0', '#f4a261', '#8ecae6'],
+    },
     startBase: [],
   },
   cristalline: {
@@ -91,6 +120,13 @@ export const PLANETS: Record<PlanetId, PlanetDef> = {
     decor: 'crystal',
     zones: CRISTALLINE_ZONES,
     coreColor: '#f0abfc',
+    // Depuis Cristalline, la géante à l'horizon est un monde vert et bleu :
+    // la planète d'origine, vue de loin. Ses anneaux tirent sur l'or et le
+    // rose, les lunes sur le verre rose, l'améthyste et la menthe.
+    sky: {
+      giant: { body: '#1e3a8a', bands: ['#4ade80', '#22c55e', '#2563eb', '#15803d'], rings: ['#fcd34d', '#f0abfc'] },
+      moons: ['#fbcfe8', '#8b5cf6', '#99f6e4'],
+    },
     // Un camp de base : de quoi produire et tenir la première vague. Positions
     // libres de décor, vérifiées par `smoke.mjs` (« voyage planète 2 »).
     startBase: [

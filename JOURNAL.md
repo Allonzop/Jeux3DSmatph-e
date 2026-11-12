@@ -11,6 +11,16 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-11-12 — Cristalline a enfin son propre ciel
+
+**Fait.** Backlog vide (hors « En attente d'Allonzo »). Joué via `shot.mjs --village` puis `--village --planet cristalline`, captures ouvertes : la deuxième planète avait exactement le ciel de la Terre — même géante violette (qui se fondait dans le ciel violet), même lune grise. C'était noté comme reste depuis l'étape 2 (06/10) et revu le 11/11. `planets.ts` : `PlanetDef` gagne `sky: SkyDecor` (couleurs de la géante — globe, quatre bandes, deux anneaux — et des trois lunes) ; la Terre garde ses valeurs d'avant, Cristalline voit un monde vert et bleu à anneaux d'or et rose (la planète d'origine, de loin) avec des lunes verre rose / améthyste / menthe. `scene/Ground.tsx` : `PlanetRing` et `Moons` lisent ces couleurs ; les cratères prennent la teinte de la lune, assombrie. Au passage : les quatre bandes de la géante avaient toutes un rayon inférieur à celui du globe à leur hauteur (7,9 < 8,16, 8,9 < 8,94…) — elles étaient cachées dedans depuis toujours, la géante était unie. Rayons relevés de 0,25 à 0,3 : les bandes se voient, sur les deux planètes (sur la Terre, nuances de violet ; la capture de référence `--village` change d'autant, rien d'autre).
+
+**Vérifié.** typecheck 6 projets OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; captures ouvertes avant/après sur Cristalline (géante bleue à bandes vertes, anneaux dorés, lune rose) et sur la Terre (géante violette, maintenant bandée ; le reste inchangé) ; aucune erreur console.
+
+**Pas fait / à juger.** Les couleurs du ciel de Cristalline sont un choix de l'agent, à ajuster au goût. Le fond lointain (bande turquoise de l'horizon, `FarSide`/`Atmosphere`) et les étoiles restent communs aux deux planètes. Pas d'aurore animée, malgré le descriptif de la planète. Rien d'essayé sans succès.
+
+---
+
 ## 2026-11-11 — « Gisement d’énergie de rire » : élision corrigée
 
 **Fait.** Backlog vide (hors « En attente d'Allonzo »). Joué les scénarios jamais regardés d'après le journal : `shot.mjs --arsenal`, `--placing`, `--upgrading`, `--planet cristalline`, `--wave 12`, puis un script maison (`window.__villageStore`) qui gagne la vague 5 sur Cristalline avec tourelle 4 + mortier 3 + tesla 3, rentre sur Terre et ouvre l'onglet Empire et la fiche de tourelle. Le bonus +15 % fonctionne de bout en bout (record 5, « ✓ Acquis », 97/sec = 70 × 1,2 × 1,15). Le défaut trouvé : « Gisement de énergie de rire sur place » dans le panneau Empire et la fiche des Dunes Dorées (`ui/ZonePopup.tsx`). Le tableau des noms de ressources porte maintenant sa préposition (`RESOURCE_OF` : « de boulons », « d’énergie de rire »).

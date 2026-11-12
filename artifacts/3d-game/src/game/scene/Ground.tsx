@@ -15,7 +15,7 @@ import * as THREE from 'three';
 import { useGameStore } from '../store';
 import type { ScatterItem } from '../world';
 import { sfx } from '../sfx';
-import { planetById } from '../planets';
+import { planetById, type SkyDecor } from '../planets';
 import { ZONE_THETA_INNER, ZONE_THETA_OUTER, ZONE_OUTER_RADIUS, type ZoneDef } from '../zones';
 
 /**
@@ -78,8 +78,8 @@ export function Ground() {
       <FarSide gradientMap={gradientMap} />
       <Zones gradientMap={gradientMap} zones={planet.zones} />
       <Atmosphere />
-      <PlanetRing />
-      <Moons gradientMap={gradientMap} />
+      <PlanetRing sky={planet.sky} />
+      <Moons gradientMap={gradientMap} sky={planet.sky} />
 
       {/* Étang */}
       <OnSurface x={pond.pos[0]} z={pond.pos[2]} lift={0.02}>
@@ -855,8 +855,9 @@ function Atmosphere() {
  * que la caméra sort du champ — c'est pour ça que ces corps sont très loin
  * **et très bas** : de là, ils apparaissent posés juste au-dessus de l'horizon.
  */
-function PlanetRing() {
+function PlanetRing({ sky }: { sky: SkyDecor }) {
   const ref = useRef<THREE.Group>(null);
+  const { body, bands, rings } = sky.giant;
   useFrame((_, delta) => {
     if (ref.current) ref.current.rotation.y += delta * 0.01;
   });
@@ -864,20 +865,23 @@ function PlanetRing() {
   return (
     <group position={[-14, -34, -84]} rotation={[0, 0, 0.34]}>
       <group ref={ref}>
-        {/* Le globe : bandes empilées, à la manière d'une géante gazeuse. */}
+        {/* Le globe : bandes empilées, à la manière d'une géante gazeuse.
+            Chaque bande doit dépasser le rayon du globe à sa hauteur
+            (√(81 − y²) : 8,16 / 8,94 / 8,75 / 7,35), sinon elle est cachée
+            dedans — c'était le cas, la géante était unie. */}
         <mesh>
           <sphereGeometry args={[9, 40, 28]} />
-          <meshBasicMaterial color="#4c1d95" />
+          <meshBasicMaterial color={body} />
         </mesh>
         {[
-          { y: 3.8, r: 7.9, c: '#6d28d9' },
-          { y: 1.0, r: 8.9, c: '#7c3aed' },
-          { y: -2.1, r: 8.5, c: '#5b21b6' },
-          { y: -5.2, r: 7.0, c: '#4c1d95' },
+          { y: 3.8, r: 8.45 },
+          { y: 1.0, r: 9.2 },
+          { y: -2.1, r: 9.0 },
+          { y: -5.2, r: 7.65 },
         ].map((band, i) => (
           <mesh key={i} position={[0, band.y, 0]} scale={[1, 0.28, 1]}>
             <sphereGeometry args={[band.r, 32, 18]} />
-            <meshBasicMaterial color={band.c} />
+            <meshBasicMaterial color={bands[i]} />
           </mesh>
         ))}
       </group>
@@ -886,11 +890,11 @@ function PlanetRing() {
       <group rotation={[1.15, 0, 0]}>
         <mesh>
           <ringGeometry args={[11.5, 16.5, 96]} />
-          <meshBasicMaterial color="#a78bfa" transparent opacity={0.5} side={THREE.DoubleSide} depthWrite={false} />
+          <meshBasicMaterial color={rings[0]} transparent opacity={0.5} side={THREE.DoubleSide} depthWrite={false} />
         </mesh>
         <mesh>
           <ringGeometry args={[17.5, 19.5, 96]} />
-          <meshBasicMaterial color="#67e8f9" transparent opacity={0.34} side={THREE.DoubleSide} depthWrite={false} />
+          <meshBasicMaterial color={rings[1]} transparent opacity={0.34} side={THREE.DoubleSide} depthWrite={false} />
         </mesh>
       </group>
     </group>
@@ -906,7 +910,10 @@ function PlanetRing() {
  * sur deux. Elles sont assez loin pour que le déplacement du héros ne change
  * rien à leur position apparente.
  */
-function Moons({ gradientMap }: { gradientMap: THREE.Texture }) {
+function Moons({ gradientMap, sky }: { gradientMap: THREE.Texture; sky: SkyDecor }) {
+  const [big, mid, small] = sky.moons;
+  // Les cratères : la même teinte, assombrie, pour suivre la couleur de la lune.
+  const crater = useMemo(() => '#' + new THREE.Color(big).multiplyScalar(0.78).getHexString(), [big]);
   const a = useRef<THREE.Mesh>(null);
   const b = useRef<THREE.Mesh>(null);
   const c = useRef<THREE.Mesh>(null);
@@ -923,30 +930,30 @@ function Moons({ gradientMap }: { gradientMap: THREE.Texture }) {
       <Float speed={0.6} rotationIntensity={0.2} floatIntensity={0.8} position={[16, -30, -70]}>
         <mesh ref={a}>
           <icosahedronGeometry args={[3.4, 1]} />
-          <meshToonMaterial color="#d9d3e0" gradientMap={gradientMap} />
+          <meshToonMaterial color={big} gradientMap={gradientMap} />
         </mesh>
         {/* Cratères : trois creux plus sombres, sinon la lune est une bille. */}
         <mesh position={[1.4, 1.2, 2.6]} scale={[1, 0.4, 1]}>
           <sphereGeometry args={[0.8, 12, 10]} />
-          <meshToonMaterial color="#a9a2b5" gradientMap={gradientMap} />
+          <meshToonMaterial color={crater} gradientMap={gradientMap} />
         </mesh>
         <mesh position={[-1.8, -0.6, 2.4]} scale={[1, 0.4, 1]}>
           <sphereGeometry args={[0.55, 12, 10]} />
-          <meshToonMaterial color="#a9a2b5" gradientMap={gradientMap} />
+          <meshToonMaterial color={crater} gradientMap={gradientMap} />
         </mesh>
       </Float>
 
       <Float speed={0.5} rotationIntensity={0.3} floatIntensity={1} position={[30, -22, -56]}>
         <mesh ref={b}>
           <icosahedronGeometry args={[2.1, 1]} />
-          <meshToonMaterial color="#f4a261" gradientMap={gradientMap} />
+          <meshToonMaterial color={mid} gradientMap={gradientMap} />
         </mesh>
       </Float>
 
       <Float speed={0.7} rotationIntensity={0.4} floatIntensity={1.2} position={[-30, -20, -52]}>
         <mesh ref={c}>
           <icosahedronGeometry args={[1.3, 0]} />
-          <meshToonMaterial color="#8ecae6" gradientMap={gradientMap} />
+          <meshToonMaterial color={small} gradientMap={gradientMap} />
         </mesh>
       </Float>
     </group>
