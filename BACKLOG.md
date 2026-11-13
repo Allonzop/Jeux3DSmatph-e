@@ -637,6 +637,9 @@ traités, voir plus haut.
 - [x] **« Gisement de énergie de rire » : élision manquante dans la fiche des Dunes Dorées et le panneau Empire.** *(trouvé en jouant le 2026-11-11 : `ZonePopup.tsx`, le nom de ressource porte maintenant sa préposition — « d’énergie de rire ». Voir JOURNAL.md.)*
 - [x] **Le ciel de Cristalline est celui de la Terre : même géante violette (invisible sur fond violet), mêmes lunes.** *(trouvé en jouant le 2026-11-12 : `planets.ts` porte un `sky` par planète (géante, anneaux, lunes), lu par `Ground.tsx` ; depuis Cristalline on voit un monde vert et bleu à l'horizon. Voir JOURNAL.md.)*
 
+- [x] **Portrait des fiches : le personnage est cadré trop bas, le haut du cadre est vide et le corps est coupé sous le menton ; celui de la tourelle (capuche) n'est qu'une bosse brune. Et le canevas ne remplit pas sa case (74 px sur 82).** *(trouvé en jouant le 2026-11-13 : `ui/CharacterPortrait.tsx` cadre la figurine entière par sa boîte englobante, et ne monte le canevas qu'une fois l'animation d'ouverture finie. Voir JOURNAL.md.)*
+- [ ] **Boutons « fermer » et « déplacer » des fiches trop petits pour le doigt.** Les croix de `BuildingPopup` (et son bouton déplacer), `BuildSheet`, `HeroPanel`, `ZonePopup` font 32 px, celle de `DecorPopup` 28 px — les boutons du HUD ont été portés à 44 px le 17/10. *(trouvé en jouant le 2026-11-13, non traité : une tâche par séance.)*
+
 ### En attente d'Allonzo — ne pas prendre
 
 Demande de jouer sur un vrai iPhone : c'est Allonzo qui la fera. Ne la prends
