@@ -63,9 +63,10 @@ export function DecorPopup() {
               </div>
               <button
                 onClick={() => selectDecor(null)}
-                className="shrink-0 w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:text-white"
+                aria-label="Fermer"
+                className="shrink-0 w-11 h-11 -mr-1.5 -mt-1 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:text-white"
               >
-                <CloseIcon className="w-3.5 h-3.5" />
+                <CloseIcon className="w-4 h-4" />
               </button>
             </div>
 

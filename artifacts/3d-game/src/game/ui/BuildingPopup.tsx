@@ -241,17 +241,19 @@ export function BuildingPopup() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 -mr-1">
               <button
                 onClick={() => { sfx.tap(); startPlacing(selectedBuilding); }}
                 title="Déplacer ce bâtiment"
-                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-colors"
+                aria-label="Déplacer ce bâtiment"
+                className="w-11 h-11 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-colors"
               >
                 <MoveIcon className="w-4 h-4" />
               </button>
               <button
                 onClick={() => selectBuilding(null)}
-                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-colors"
+                aria-label="Fermer"
+                className="w-11 h-11 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-colors"
               >
                 <CloseIcon className="w-4 h-4" />
               </button>

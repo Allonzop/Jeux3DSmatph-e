@@ -59,7 +59,8 @@ export function HeroPanel({ open, onClose }: { open: boolean; onClose: () => voi
                 </div>
                 <button
                   onClick={onClose}
-                  className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:text-white"
+                  aria-label="Fermer"
+                  className="shrink-0 w-11 h-11 -mr-1 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:text-white"
                 >
                   <CloseIcon className="w-4 h-4" />
                 </button>

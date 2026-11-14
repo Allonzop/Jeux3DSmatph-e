@@ -638,7 +638,9 @@ traités, voir plus haut.
 - [x] **Le ciel de Cristalline est celui de la Terre : même géante violette (invisible sur fond violet), mêmes lunes.** *(trouvé en jouant le 2026-11-12 : `planets.ts` porte un `sky` par planète (géante, anneaux, lunes), lu par `Ground.tsx` ; depuis Cristalline on voit un monde vert et bleu à l'horizon. Voir JOURNAL.md.)*
 
 - [x] **Portrait des fiches : le personnage est cadré trop bas, le haut du cadre est vide et le corps est coupé sous le menton ; celui de la tourelle (capuche) n'est qu'une bosse brune. Et le canevas ne remplit pas sa case (74 px sur 82).** *(trouvé en jouant le 2026-11-13 : `ui/CharacterPortrait.tsx` cadre la figurine entière par sa boîte englobante, et ne monte le canevas qu'une fois l'animation d'ouverture finie. Voir JOURNAL.md.)*
-- [ ] **Boutons « fermer » et « déplacer » des fiches trop petits pour le doigt.** Les croix de `BuildingPopup` (et son bouton déplacer), `BuildSheet`, `HeroPanel`, `ZonePopup` font 32 px, celle de `DecorPopup` 28 px — les boutons du HUD ont été portés à 44 px le 17/10. *(trouvé en jouant le 2026-11-13, non traité : une tâche par séance.)*
+- [x] **Boutons « fermer » et « déplacer » des fiches trop petits pour le doigt.** *(trouvé en jouant le 2026-11-13, traité le 2026-11-14 : 44 px dans `BuildingPopup`, `BuildSheet`, `HeroPanel`, `ZonePopup`, `DecorPopup`. Voir JOURNAL.md.)*
+
+- [ ] **Puces numérotées des exemplaires dans le menu Construire trop petites pour le doigt.** Dans `BuildSheet`, les puces « 1 », « 2 »… qui ouvrent la fiche d'un exemplaire posé font 28 px (`w-7 h-7`), dans une colonne limitée à 4,5 rem. *(trouvé le 2026-11-14 en traitant les croix des fiches, non traité : une tâche par séance.)*
 
 ### En attente d'Allonzo — ne pas prendre
 

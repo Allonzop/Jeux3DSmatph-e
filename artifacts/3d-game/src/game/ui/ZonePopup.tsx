@@ -71,7 +71,8 @@ export function ZonePopup() {
             </div>
             <button
               onClick={() => selectZone(null)}
-              className="shrink-0 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/70 hover:text-white"
+              aria-label="Fermer"
+              className="shrink-0 w-11 h-11 -mr-1.5 -mt-1 rounded-full bg-white/5 flex items-center justify-center text-white/70 hover:text-white"
             >
               <CloseIcon className="w-4 h-4" />
             </button>
