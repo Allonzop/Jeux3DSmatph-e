@@ -169,7 +169,7 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
                 return (
                   <div
                     key={data.id}
-                    className={`rounded-2xl border bg-black/25 p-3 flex gap-3 ${
+                    className={`rounded-2xl border bg-black/25 p-3 flex flex-col gap-2.5 ${
                       tutorialStep === 2 && data.id === 'hutte'
                         ? 'animate-pulse'
                         : 'border-white/10'
@@ -180,6 +180,7 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
                         : { boxShadow: `inset 3px 0 0 ${data.color}` }
                     }
                   >
+                    <div className="flex gap-3">
                     <div
                       className="w-11 h-11 shrink-0 rounded-xl bg-black/40 border border-white/5 flex items-center justify-center"
                     >
@@ -219,26 +220,36 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
                           {(buildingLevels[placedIds[0]] || 0) > 0 ? 'Améliorer' : 'Construire'}
                         </button>
                       )}
-                      {placedIds.length > 1 && (
-                        // Un bouton "Ameliorer" unique ne pouvait viser que le
-                        // premier exemplaire : avec plusieurs tourelles posees,
-                        // les suivantes n'etaient plus accessibles que via un
-                        // tap direct dans la scene 3D, invisible depuis cette
-                        // feuille. Une puce par exemplaire pose.
-                        <div className="flex gap-1 flex-wrap justify-end max-w-[4.5rem]">
-                          {placedIds.map((id) => (
-                            <button
-                              key={id}
-                              onClick={() => { sfx.tap(); selectBuilding(id); onClose(); }}
-                              title={`${data.name} n°${instanceNumber(id)} — ${(buildingLevels[id] || 0) > 0 ? 'améliorer' : 'construire'}`}
-                              className="w-7 h-7 shrink-0 rounded-lg text-[0.7rem] font-black bg-white/8 border border-white/10 text-white/70 active:scale-95 transition-transform"
-                            >
-                              {instanceNumber(id)}
-                            </button>
-                          ))}
-                        </div>
-                      )}
                     </div>
+                    </div>
+
+                    {placedIds.length > 1 && (
+                      // Un bouton "Ameliorer" unique ne pouvait viser que le
+                      // premier exemplaire : avec plusieurs tourelles posees,
+                      // les suivantes n'etaient plus accessibles que via un
+                      // tap direct dans la scene 3D, invisible depuis cette
+                      // feuille. Un bouton par exemplaire pose.
+                      //
+                      // Sur une rangee a part, sous la carte : dans la colonne
+                      // de droite ils ne tenaient qu'en puces de 28 px, trop
+                      // petites pour le doigt. Ici chacun fait 44 px de haut
+                      // et dit ce qu'il fait au lieu d'un simple numero.
+                      <div className="flex gap-2">
+                        {placedIds.map((id) => (
+                          <button
+                            key={id}
+                            onClick={() => { sfx.tap(); selectBuilding(id); onClose(); }}
+                            aria-label={`${data.name} n°${instanceNumber(id)} — ${(buildingLevels[id] || 0) > 0 ? 'améliorer' : 'construire'}`}
+                            className="h-11 min-w-0 flex-1 rounded-xl px-1.5 flex items-center justify-center gap-1 text-[0.7rem] font-bold uppercase tracking-wide bg-white/8 border border-white/10 text-white/70 active:scale-95 transition-transform"
+                          >
+                            <span className="font-black text-white/90">n°{instanceNumber(id)}</span>
+                            <span className="truncate">
+                              {(buildingLevels[id] || 0) > 0 ? 'Améliorer' : 'Construire'}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}

@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-11-15 — Menu Construire : les exemplaires posés s'ouvrent par des boutons de 44 px
+
+**Fait.** Première tâche non cochée du backlog. Dans `BuildSheet`, les puces « 1 », « 2 », « 3 » (28 px, serrées dans une colonne de 4,5 rem à droite de la carte) deviennent une rangée pleine largeur sous la carte : un bouton par exemplaire posé, 44 px de haut, qui dit ce qu'il fait — « n°1 Améliorer », « n°3 Construire » — au lieu d'un numéro nu dont le sens n'était porté que par un `title` (invisible au doigt). La carte passe de `flex` à `flex-col` avec la ligne d'origine dans un `div` interne ; la colonne de droite ne garde que « Placer » et le bouton unique. `title` remplacé par `aria-label`.
+
+**Vérifié.** typecheck 6 projets OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; `shot.mjs --village` ouverte, inchangée, aucune erreur. Script maison (sauvegarde à trois tourelles dont une non bâtie et deux huttes, clic sur « Construire », 430 px de large) : boutons mesurés à 119×44 (trois de front) et 182×44 (deux), bord droit à 401 px, `elementFromPoint` au centre retombe sur chacun, aucun libellé tronqué (`scrollWidth` des `span`), et un clic sur « n°3 » sélectionne bien `tourelle#3`. Captures des onglets Défense et Production ouvertes.
+
+**Pas fait / à juger.** « Placer » et « Améliorer / Construire » de la même feuille mesurent 29 et 31 px de haut : ajouté au backlog, non traité. La carte d'un type à plusieurs exemplaires gagne ~54 px de haut ; c'est le prix de la rangée. Essayé sans succès : avec `px-2 gap-1.5 tracking-wider`, « n°3 Construire » était tronqué en « CONSTRU… » à trois boutons de front — il faut `px-1.5 gap-1 tracking-wide` (il reste peu de marge : un quatrième exemplaire ou un verbe plus long demanderait autre chose). Piège d'outil : le `clip` mesuré sur le bouton lui-même ne voit pas la troncature, il faut mesurer le `span` qui porte `truncate`.
+
 ## 2026-11-14 — Croix « fermer » et bouton « déplacer » des fiches à 44 px
 
 **Fait.** Première tâche non cochée du backlog. Les croix de `BuildingPopup` (et son bouton déplacer), `BuildSheet`, `HeroPanel`, `ZonePopup` passent de 32 à 44 px, celle de `DecorPopup` de 28 à 44 px (icône 14 → 16 px, comme les autres). Une marge négative (`-mr-1`, `-mt-1`, `-my-1.5` selon la fiche) garde le rond aligné sur le bord du texte et empêche l'en-tête de `BuildSheet` de grandir. Les six boutons reçoivent un `aria-label` (« Fermer », « Déplacer ce bâtiment ») — ils n'en avaient pas, ce qui les rendait aussi introuvables pour un script.

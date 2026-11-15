@@ -640,7 +640,8 @@ traités, voir plus haut.
 - [x] **Portrait des fiches : le personnage est cadré trop bas, le haut du cadre est vide et le corps est coupé sous le menton ; celui de la tourelle (capuche) n'est qu'une bosse brune. Et le canevas ne remplit pas sa case (74 px sur 82).** *(trouvé en jouant le 2026-11-13 : `ui/CharacterPortrait.tsx` cadre la figurine entière par sa boîte englobante, et ne monte le canevas qu'une fois l'animation d'ouverture finie. Voir JOURNAL.md.)*
 - [x] **Boutons « fermer » et « déplacer » des fiches trop petits pour le doigt.** *(trouvé en jouant le 2026-11-13, traité le 2026-11-14 : 44 px dans `BuildingPopup`, `BuildSheet`, `HeroPanel`, `ZonePopup`, `DecorPopup`. Voir JOURNAL.md.)*
 
-- [ ] **Puces numérotées des exemplaires dans le menu Construire trop petites pour le doigt.** Dans `BuildSheet`, les puces « 1 », « 2 »… qui ouvrent la fiche d'un exemplaire posé font 28 px (`w-7 h-7`), dans une colonne limitée à 4,5 rem. *(trouvé le 2026-11-14 en traitant les croix des fiches, non traité : une tâche par séance.)*
+- [x] **Puces numérotées des exemplaires dans le menu Construire trop petites pour le doigt.** Dans `BuildSheet`, les puces « 1 », « 2 »… qui ouvrent la fiche d'un exemplaire posé font 28 px (`w-7 h-7`), dans une colonne limitée à 4,5 rem. *(trouvé le 2026-11-14 en traitant les croix des fiches, non traité : une tâche par séance.)* *(traité le 2026-11-15 : rangée pleine largeur de boutons de 44 px « n°1 Améliorer ». Voir JOURNAL.md.)*
+- [ ] **Boutons « Placer » et « Améliorer / Construire » du menu Construire trop bas pour le doigt.** Dans `BuildSheet`, ils mesurent 29 et 31 px de haut (`py-1.5`), empilés à 6 px l'un de l'autre dans la colonne de droite ; le HUD et les fiches sont à 44 px. Les porter à 44 px allonge chaque carte (deux boutons empilés = 94 px) : revoir la disposition. *(mesuré le 2026-11-15 en traitant les puces, non traité : une tâche par séance.)*
 
 ### En attente d'Allonzo — ne pas prendre
 
