@@ -202,20 +202,25 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
                       </div>
                     </div>
 
-                    <div className="shrink-0 flex flex-col justify-center gap-1.5">
-                      {free && (
+                    {/* Un seul bouton dans cette colonne, a 44 px comme le
+                        reste du HUD. Empiles a deux ("Placer" + "Ameliorer")
+                        ils faisaient 29 et 31 px a 6 px l'un de l'autre : le
+                        doigt prenait l'un pour l'autre. Quand les deux
+                        existent, "Placer" reste ici et l'exemplaire pose
+                        descend dans la rangee du dessous. */}
+                    <div className="shrink-0 flex items-center">
+                      {free ? (
                         <button
                           onClick={() => { sfx.tap(); startPlacing(free); onClose(); }}
-                          className="px-3 py-1.5 rounded-xl text-[0.7rem] font-black uppercase tracking-wider text-black active:scale-95 transition-transform"
+                          className="h-11 px-3.5 rounded-xl text-[0.7rem] font-black uppercase tracking-wider text-black active:scale-95 transition-transform"
                           style={{ backgroundColor: data.color }}
                         >
                           Placer
                         </button>
-                      )}
-                      {placedIds.length === 1 && (
+                      ) : placedIds.length === 1 && (
                         <button
                           onClick={() => { sfx.tap(); selectBuilding(placedIds[0]); onClose(); }}
-                          className="px-3 py-1.5 rounded-xl text-[0.7rem] font-bold uppercase tracking-wider bg-white/8 border border-white/10 text-white/70"
+                          className="h-11 px-3.5 rounded-xl text-[0.7rem] font-bold uppercase tracking-wider bg-white/8 border border-white/10 text-white/70 active:scale-95 transition-transform"
                         >
                           {(buildingLevels[placedIds[0]] || 0) > 0 ? 'Améliorer' : 'Construire'}
                         </button>
@@ -223,7 +228,7 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
                     </div>
                     </div>
 
-                    {placedIds.length > 1 && (
+                    {(placedIds.length > 1 || (placedIds.length === 1 && free)) && (
                       // Un bouton "Ameliorer" unique ne pouvait viser que le
                       // premier exemplaire : avec plusieurs tourelles posees,
                       // les suivantes n'etaient plus accessibles que via un
@@ -304,7 +309,7 @@ function CoreCard() {
           <button
             disabled={!affordable}
             onClick={() => { if (upgradeCore()) sfx.build(); }}
-            className={`px-3 py-1.5 rounded-xl text-[0.7rem] font-black uppercase tracking-wider transition-transform ${
+            className={`h-11 px-3.5 rounded-xl text-[0.7rem] font-black uppercase tracking-wider transition-transform ${
               affordable
                 ? 'bg-cyan-300 text-black active:scale-95'
                 : 'bg-white/5 text-white/25 border border-white/10'

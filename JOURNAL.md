@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-11-16 — Menu Construire : « Placer », « Améliorer / Construire » et « Renforcer » à 44 px
+
+**Fait.** Première tâche non cochée du backlog. Dans `BuildSheet`, la colonne de droite d'une carte ne porte plus qu'**un** bouton, haut de 44 px (`h-11`) : « Placer » tant qu'il reste un exemplaire à poser, sinon le bouton « Améliorer / Construire » de l'exemplaire unique. Quand les deux existaient (un exemplaire posé, d'autres encore libres — tourelle 1/3, hutte 1/2), ils étaient empilés à 29 et 31 px, à 6 px l'un de l'autre ; l'exemplaire posé descend maintenant dans la rangée du dessous, celle créée hier pour les exemplaires multiples (« n°1 Améliorer », pleine largeur). Empiler deux boutons de 44 px aurait donné une colonne de 94 px : écarté. Le bouton « Renforcer » du noyau (même feuille, 31 px) passe aussi à 44 px.
+
+**Vérifié.** typecheck 6 projets OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; `shot.mjs --village` ouverte, inchangée, aucune erreur. Script maison à 430 px de large (sauvegarde : hutte et ferme bâties, tourelle et bar posés non bâtis, antenne bâtie), les trois onglets : chaque bouton mesuré à 44 px de haut (« Placer » 76×44, « Construire » 109×44, « Améliorer » 100×44, « Renforcer » 103×44, rangée « n°1 … » 372×44), bord droit à 401 px, `elementFromPoint` au centre retombe sur chacun, aucun libellé tronqué, et un clic sur « Construire » du bar sélectionne bien `bar`. Captures Défense et Soutien ouvertes.
+
+**Pas fait / à juger.** Une carte « 1 exemplaire posé + place libre » gagne ~54 px (la rangée du dessous) ; les autres ne changent pas de hauteur. Vu sur les captures, non traité, ajouté au backlog : les étiquettes de scène des bâtiments posés mais non bâtis (« TOURELLE LASER », « BAR SPATIAL ») se dessinent par-dessus la feuille, en miroir — avec ma sauvegarde de test, à reproduire en partie normale. Piège de script : la ferme et la hutte ont plusieurs exemplaires, donc jamais de bouton « Améliorer » seul ; pour le cas « bouton unique », viser l'onglet Soutien (bar, antenne) ou le marché. Rien d'essayé sans succès.
+
 ## 2026-11-15 — Menu Construire : les exemplaires posés s'ouvrent par des boutons de 44 px
 
 **Fait.** Première tâche non cochée du backlog. Dans `BuildSheet`, les puces « 1 », « 2 », « 3 » (28 px, serrées dans une colonne de 4,5 rem à droite de la carte) deviennent une rangée pleine largeur sous la carte : un bouton par exemplaire posé, 44 px de haut, qui dit ce qu'il fait — « n°1 Améliorer », « n°3 Construire » — au lieu d'un numéro nu dont le sens n'était porté que par un `title` (invisible au doigt). La carte passe de `flex` à `flex-col` avec la ligne d'origine dans un `div` interne ; la colonne de droite ne garde que « Placer » et le bouton unique. `title` remplacé par `aria-label`.
