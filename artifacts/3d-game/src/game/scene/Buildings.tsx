@@ -227,6 +227,13 @@ function PlacementController() {
 // ---------------------------------------------------------------------------
 
 /**
+ * Tranche de z-index des etiquettes de scene. Le defaut de drei monte a
+ * 16 777 271 : elles passaient par-dessus le HUD (z 100) et toutes les
+ * feuilles. Meme tranche que l'etiquette du noyau (`CrystalCore.tsx`).
+ */
+const LABEL_Z: [number, number] = [40, 0];
+
+/**
  * Socle, animation d'apparition, et **evolution visuelle par niveau**.
  *
  * Ameliorer un batiment ne changeait rien a son apparence : « le joueur ne
@@ -252,7 +259,7 @@ function UpgradeCountdown({ id }: { id: string }) {
   }, [endsAt]);
   if (!endsAt) return null;
   return (
-    <Html position={[0, 2.6, 0]} center style={{ pointerEvents: 'none' }}>
+    <Html position={[0, 2.6, 0]} center zIndexRange={LABEL_Z} style={{ pointerEvents: 'none' }}>
       <div className="px-2 py-1 rounded-lg text-xs font-bold whitespace-nowrap border bg-black/70 text-amber-300 border-amber-400/60">
         ⚒ {formatCountdown(endsAt - now)}
       </div>
@@ -358,7 +365,10 @@ function BuildingWrapper({ id, pos, color, children }: BuildingProps & { childre
               <meshToonMaterial color="#c29d72" gradientMap={gradientMap} />
             </RoundedBox>
           </group>
-          <Html position={[0, 0.9, 0.1]} center transform style={{ pointerEvents: 'none' }}>
+          {/* Etiquette a plat sur l'ecran, pas `transform` : collee au panneau,
+              elle tournait avec le batiment et la camera, et se lisait en
+              miroir ou par la tranche des qu'on la voyait de dos. */}
+          <Html position={[0, 1.15, 0]} center zIndexRange={LABEL_Z} style={{ pointerEvents: 'none' }}>
             <div
               className="px-2 py-1 rounded-lg backdrop-blur text-xs font-bold uppercase tracking-wider whitespace-nowrap border text-center"
               style={{ color, backgroundColor: 'rgba(0,0,0,0.7)', borderColor: `${color}88`, boxShadow: `0 0 10px ${color}55` }}

@@ -194,7 +194,7 @@ function ResourceNode({ def }: { def: NodeDef }) {
       <pointLight color={def.color} intensity={active ? 1.5 : 0.2} distance={5} />
       
       {!active && (
-        <Html position={[0, 1, 0]} center transform style={{ pointerEvents: 'none' }}>
+        <Html position={[0, 1, 0]} center transform zIndexRange={[40, 0]} style={{ pointerEvents: 'none' }}>
           <div className="w-8 h-2 bg-black/50 rounded overflow-hidden border border-black/50">
             <div 
               className="h-full bg-white/80 transition-all duration-100 ease-linear"
