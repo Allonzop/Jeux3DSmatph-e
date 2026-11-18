@@ -69,7 +69,13 @@ export function HUD() {
           paddingRight: 'calc(0.75rem + var(--safe-right))',
         }}
       >
-        <div className="flex items-start justify-center flex-wrap gap-[clamp(0.375rem,1.5vw,1rem)]">
+        {/* Une seule ligne, toujours. Avec `flex-wrap`, trois compteurs à cinq
+            chiffres sur un écran de 360 px renvoyaient le bouton
+            « réinitialiser » à la ligne : il tombait sur l'écusson de niveau,
+            et la barre d'XP, repoussée, passait sous le bandeau d'objectif.
+            La largeur est tenue par `formatAmount` (quatre signes au plus) et
+            par le bouton de confirmation, qui ne s'élargit plus. */}
+        <div className="flex items-start justify-center gap-[clamp(0.375rem,1.5vw,1rem)]">
           <ResourcePill type="boulons" color="#c9c9c9" />
           <ResourcePill type="matiere_floue" color="#8e5ce8" />
           <ResourcePill type="energie_rire" color="#ffd24c" />
@@ -315,7 +321,7 @@ function MuteButton() {
     <button
       onClick={() => setMuted(toggleMute())}
       title={muted ? 'Réactiver le son' : 'Couper le son'}
-      className="pointer-events-auto flex items-center justify-center w-11 h-11 rounded-full backdrop-blur-md border border-white/10 bg-[#1a1f3599] text-white/70 hover:text-white active:scale-95 transition-all"
+      className="pointer-events-auto flex items-center justify-center shrink-0 w-11 h-11 rounded-full backdrop-blur-md border border-white/10 bg-[#1a1f3599] text-white/70 hover:text-white active:scale-95 transition-all"
     >
       <SpeakerIcon className="w-4 h-4" muted={muted} />
     </button>
@@ -343,20 +349,38 @@ function ResetButton() {
           setConfirming(true);
         }
       }}
-      className={`pointer-events-auto flex items-center justify-center gap-1.5 min-w-11 h-11 px-2.5 rounded-full backdrop-blur-md border transition-all active:scale-95 text-[clamp(0.65rem,2.8vw,0.75rem)] font-bold ${
+      className={`pointer-events-auto flex items-center justify-center gap-1.5 shrink-0 w-11 h-11 rounded-full backdrop-blur-md border transition-all active:scale-95 text-[0.72rem] font-bold whitespace-nowrap ${
         confirming
           ? 'bg-red-600/80 border-red-300/50 text-white animate-pulse'
           : 'bg-[#1a1f3599] border-white/10 text-white/70 hover:text-white'
       }`}
       title="Réinitialiser la partie"
+      aria-label={confirming ? 'Confirmer la réinitialisation' : 'Réinitialiser la partie'}
     >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
-        <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
-        <path d="M3 3v5h5" />
-      </svg>
-      {confirming ? 'Sûr ?' : ''}
+      {/* « Sûr ? » prend la place de l'icône au lieu de s'y ajouter : le
+          bouton garde ses 44 px et la rangée ne déborde pas. */}
+      {confirming ? 'Sûr ?' : (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
+          <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+          <path d="M3 3v5h5" />
+        </svg>
+      )}
     </button>
   );
+}
+
+/**
+ * Quatre signes au plus, pour que les trois compteurs tiennent sur une ligne
+ * à 360 px : exact jusqu'à 9999, puis « 12k », « 1,2M ». Arrondi vers le bas —
+ * le compteur ne doit jamais annoncer plus que ce qu'on peut dépenser. Aucun
+ * coût du jeu ne dépasse 9000 : au-delà de 10 000, le millier suffit.
+ */
+export function formatAmount(amount: number): string {
+  const n = Math.floor(amount);
+  if (n < 10_000) return String(n);
+  if (n < 1_000_000) return `${Math.floor(n / 1000)}k`;
+  if (n < 10_000_000) return `${(Math.floor(n / 100_000) / 10).toString().replace('.', ',')}M`;
+  return `${Math.floor(n / 1_000_000)}M`;
 }
 
 function ResourcePill({ type, color }: { type: ResourceType; color: string }) {
@@ -377,7 +401,8 @@ function ResourcePill({ type, color }: { type: ResourceType; color: string }) {
 
   return (
     <div
-      className="pointer-events-auto flex items-center gap-1.5 px-[clamp(0.5rem,2.2vw,0.9rem)] py-1.5 rounded-full bg-[#1a1f3599] backdrop-blur-md border border-white/10"
+      title={String(Math.floor(amount))}
+      className="pointer-events-auto shrink-0 flex items-center gap-1.5 px-[clamp(0.5rem,2.2vw,0.9rem)] py-1.5 rounded-full bg-[#1a1f3599] backdrop-blur-md border border-white/10"
       style={{ boxShadow: `0 0 10px ${color}33, inset 0 0 5px ${color}33`, borderColor: `${color}66` }}
     >
       <ResourceIcon type={type} className="w-[clamp(0.95rem,3.6vw,1.25rem)] h-[clamp(0.95rem,3.6vw,1.25rem)] drop-shadow-md shrink-0" />
@@ -386,7 +411,7 @@ function ResourcePill({ type, color }: { type: ResourceType; color: string }) {
         transition={{ type: 'spring', stiffness: 400, damping: 10 }}
         className="font-mono font-bold text-[clamp(0.8rem,3.2vw,1.05rem)] min-w-[3ch]"
       >
-        {Math.floor(amount)}
+        {formatAmount(amount)}
       </motion.span>
     </div>
   );
