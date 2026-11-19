@@ -112,7 +112,7 @@ export function Tutorial() {
 
   return (
     <div
-      className="absolute left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center gap-2 w-[min(21rem,88vw)]"
+      className="absolute left-1/2 -translate-x-1/2 pointer-events-none w-[min(21rem,88vw)]"
       style={{ top: 'calc(6.4rem + var(--safe-top))' }}
     >
       <AnimatePresence mode="wait">
@@ -128,18 +128,35 @@ export function Tutorial() {
           {/* Fil d'avancement : une barre par etape, remplie jusqu'a la courante.
               Le joueur voit combien il en reste — c'est ce qui evite le
               sentiment de tunnel sans fin qui pousse a tout passer. */}
-          <div className="flex gap-1 mb-2">
-            {CARDS.map((group, i) => (
-              <div key={i} className="flex-1 h-[3px] rounded-full bg-white/10 overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-300"
-                  style={{
-                    backgroundColor: TUTORIAL_COLOR,
-                    width: i < step ? '100%' : i === step ? `${((card + 1) / group.length) * 100}%` : '0%',
-                  }}
-                />
-              </div>
-            ))}
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex-1 flex gap-1">
+              {CARDS.map((group, i) => (
+                <div key={i} className="flex-1 h-[3px] rounded-full bg-white/10 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{
+                      backgroundColor: TUTORIAL_COLOR,
+                      width: i < step ? '100%' : i === step ? `${((card + 1) / group.length) * 100}%` : '0%',
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+            {/* « Passer » vit dans la carte, au bout du fil d'avancement.
+                C'etait un bouton translucide pose *sous* la carte : sur un
+                petit telephone (360×640) il tombait pile sur l'etiquette
+                « NOYAU 100 / 100 » de la scene et les deux textes se
+                melangeaient. La carte est opaque et ne grandit pas ; les
+                marges negatives donnent 44 px au doigt sans epaissir la rangee. */}
+            {!isLastStep && (
+              <button
+                onClick={() => { sfx.tap(); skipTutorial(); }}
+                aria-label="Passer le tutoriel"
+                className="pointer-events-auto shrink-0 -my-5 -mr-3 px-3 min-h-[44px] flex items-center text-white/75 hover:text-white text-[0.72rem] uppercase tracking-wider font-bold"
+              >
+                Passer
+              </button>
+            )}
           </div>
 
           <div
@@ -175,15 +192,6 @@ export function Tutorial() {
           )}
         </motion.div>
       </AnimatePresence>
-
-      {!isLastStep && (
-        <button
-          onClick={() => { sfx.tap(); skipTutorial(); }}
-          className="pointer-events-auto text-white/75 hover:text-white text-[0.78rem] uppercase tracking-wider font-bold px-4 min-h-[44px] flex items-center rounded-lg bg-black/40 border border-white/10"
-        >
-          Passer le tutoriel
-        </button>
-      )}
     </div>
   );
 }
