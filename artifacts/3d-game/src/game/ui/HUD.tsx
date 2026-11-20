@@ -156,10 +156,12 @@ export function HUD() {
         </div>
 
         <div className="flex items-end justify-between gap-3">
-          {/* Construire */}
+          {/* Construire. A 320 px de large, les deux boutons du bas se
+              chevauchaient de 5 px : sous 340 px ils perdent un peu de marge
+              interieure, rien d'autre ne change. */}
           <button
             onClick={() => { sfx.tap(); setSheetOpen(true); }}
-            className={`pointer-events-auto shrink-0 flex items-center gap-2 bg-[#1e2336ee] backdrop-blur-md border rounded-2xl px-4 py-3 text-white font-black uppercase tracking-wider text-[clamp(0.7rem,3vw,0.8rem)] active:scale-95 transition-transform ${
+            className={`pointer-events-auto shrink-0 flex items-center gap-2 bg-[#1e2336ee] backdrop-blur-md border rounded-2xl px-4 max-[340px]:px-2.5 py-3 text-white font-black uppercase tracking-wider text-[clamp(0.7rem,3vw,0.8rem)] active:scale-95 transition-transform ${
               tutorialStep === 2 ? 'animate-pulse' : 'border-white/12'
             }`}
             style={
@@ -195,7 +197,7 @@ export function HUD() {
                   <WaveRadar />
                   <button
                     onClick={() => { sfx.waveStart(); startWave(); }}
-                    className={`pointer-events-auto bg-gradient-to-r from-amber-400 to-orange-500 text-black font-black py-3 px-5 rounded-2xl shadow-[0_4px_0_#b45309,0_0_20px_rgba(245,158,11,0.5)] active:translate-y-1 active:shadow-[0_0px_0_#b45309,0_0_10px_rgba(245,158,11,0.5)] transition-all uppercase tracking-wider text-[clamp(0.7rem,3vw,0.875rem)] whitespace-nowrap ${
+                    className={`pointer-events-auto bg-gradient-to-r from-amber-400 to-orange-500 text-black font-black py-3 px-5 max-[340px]:px-3 rounded-2xl shadow-[0_4px_0_#b45309,0_0_20px_rgba(245,158,11,0.5)] active:translate-y-1 active:shadow-[0_0px_0_#b45309,0_0_10px_rgba(245,158,11,0.5)] transition-all uppercase tracking-wider text-[clamp(0.7rem,3vw,0.875rem)] whitespace-nowrap ${
                       tutorialStep === 3 ? 'animate-pulse ring-4' : ''
                     }`}
                     style={tutorialStep === 3 ? { boxShadow: TUTORIAL_RING_GLOW, outline: `3px solid ${TUTORIAL_COLOR}` } : undefined}

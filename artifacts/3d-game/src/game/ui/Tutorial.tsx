@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useGameStore, TUTORIAL_DONE } from '../store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { sfx } from '../sfx';
+import { hudClearance } from '../hudClearance';
 import { TUTORIAL_COLOR, TUTORIAL_BORDER, TUTORIAL_GLOW } from './tutorialTheme';
 
 /**
@@ -100,6 +101,28 @@ export function Tutorial() {
     return () => clearTimeout(t);
   }, [step, card, cards, advanceTutorial]);
 
+  // La scene doit savoir jusqu'ou descend la carte : l'etiquette du noyau
+  // passe sous le cristal quand la carte la recouvrirait (ecran court, carte
+  // a deux lignes). `offsetTop/offsetHeight` ignorent les transformations,
+  // donc l'animation d'entree ne fausse pas la mesure ; le ResizeObserver
+  // suit les changements de carte comme les rotations d'ecran.
+  const boxRef = useRef<HTMLDivElement>(null);
+  const shown = step < TUTORIAL_DONE && !!cards?.[card];
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!shown || !el) return undefined;
+    const measure = () => { hudClearance.top = el.offsetTop + el.offsetHeight; };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+      hudClearance.top = 0;
+    };
+  }, [shown]);
+
   if (step >= TUTORIAL_DONE || !cards) return null;
   const def = cards[card];
   if (!def) return null;
@@ -112,6 +135,7 @@ export function Tutorial() {
 
   return (
     <div
+      ref={boxRef}
       className="absolute left-1/2 -translate-x-1/2 pointer-events-none w-[min(21rem,88vw)]"
       style={{ top: 'calc(6.4rem + var(--safe-top))' }}
     >

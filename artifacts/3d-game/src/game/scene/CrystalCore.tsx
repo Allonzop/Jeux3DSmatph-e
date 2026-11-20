@@ -6,6 +6,12 @@ import { Float, Html } from '@react-three/drei';
 import { useToonGradient } from './utils';
 import { CORE_MAX_LEVEL } from '../gamedata';
 import { planetById } from '../planets';
+import { hudClearance } from '../hudClearance';
+
+/** Demi-hauteur de l'etiquette (trois lignes : 55 px). */
+const LABEL_HALF = 28;
+const _above = new THREE.Vector3();
+const _below = new THREE.Vector3();
 
 /**
  * Le noyau de cristal — ce qu'il faut proteger.
@@ -73,6 +79,45 @@ export function CrystalCore() {
     const t = setTimeout(() => setJustRepaired(false), 2200);
     return () => clearTimeout(t);
   }, [hpPercent]);
+
+  /**
+   * Ou poser l'etiquette a l'ecran.
+   *
+   * Sa place est au-dessus du cristal. Mais sur un ecran court la carte du
+   * tutoriel, opaque, descend jusque-la et cache le compteur — on ne lisait
+   * plus que « repare avant chaque vague », a l'instant meme ou le tutoriel
+   * explique que ce cristal est la vie du joueur. Quand le haut de l'etiquette
+   * passerait sous la carte (`hudClearance.top`), elle bascule sous l'anneau,
+   * cote camera. Deux seuils, pour qu'elle ne clignote pas d'une place a
+   * l'autre quand le heros marche et que le cadre glisse.
+   */
+  const flipped = useRef(false);
+  const outerRadius = 2.34 + (coreLevel > 0 ? 0.4 + Math.min(coreLevel, CORE_MAX_LEVEL) * 0.22 : 0);
+  const labelPosition = useMemo(
+    () => (el: THREE.Object3D, camera: THREE.Camera, size: { width: number; height: number }) => {
+      el.getWorldPosition(_above);
+      // Le point de l'anneau le plus proche de la camera : le « bas » a
+      // l'ecran, quelle que soit la rotation de la vue.
+      _below.set(camera.position.x - _above.x, 0, camera.position.z - _above.z);
+      if (_below.lengthSq() < 1e-6) _below.set(0, 0, 1);
+      _below.setLength(outerRadius).add(_above).setY(0);
+
+      _above.project(camera);
+      const x = (_above.x * 0.5 + 0.5) * size.width;
+      const yAbove = (-_above.y * 0.5 + 0.5) * size.height;
+
+      const top = yAbove - LABEL_HALF;
+      const limit = hudClearance.top;
+      if (limit <= 0) flipped.current = false;
+      else if (!flipped.current && top < limit + 2) flipped.current = true;
+      else if (flipped.current && top > limit + 6) flipped.current = false;
+      if (!flipped.current) return [x, yAbove];
+
+      _below.project(camera);
+      return [x, (-_below.y * 0.5 + 0.5) * size.height + LABEL_HALF + 6];
+    },
+    [outerRadius],
+  );
 
   const pedestalProfile = useMemo(() => [
     new THREE.Vector2(0, 0),
@@ -163,7 +208,7 @@ export function CrystalCore() {
           Un seul noeud DOM pour toute la scene — c'est pour ca qu'on peut se
           permettre un `<Html>` ici alors qu'il a ete retire des barres de vie
           des monstres, ou il y en avait un par monstre blesse. */}
-      <Html position={[0, 4.8, 0]} center distanceFactor={undefined} zIndexRange={[40, 0]} style={{ pointerEvents: 'none' }}>
+      <Html position={[0, 4.8, 0]} center distanceFactor={undefined} zIndexRange={[40, 0]} calculatePosition={labelPosition} style={{ pointerEvents: 'none' }}>
         <div
           className="px-2.5 py-1 rounded-xl border backdrop-blur-md text-center whitespace-nowrap"
           style={{
