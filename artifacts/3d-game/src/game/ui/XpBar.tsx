@@ -21,7 +21,7 @@ export function XpBar({ onOpenHero }: { onOpenHero: () => void }) {
   const pct = Math.min(100, (xp / need) * 100);
 
   return (
-    <div className="pointer-events-none flex items-center gap-2 w-[min(20rem,86vw)]">
+    <div className="pointer-events-none flex items-center gap-2 w-[min(20rem,86vw)] couche:w-auto couche:flex-1 couche:min-w-0 couche:max-w-[20rem]">
       {/* Ecusson de niveau — et porte d'entree de la fiche du commandant.
           C'est deja la qu'on regarde pour savoir ou on en est ; y accrocher
           les ameliorations du heros evite un onglet de plus dans une feuille

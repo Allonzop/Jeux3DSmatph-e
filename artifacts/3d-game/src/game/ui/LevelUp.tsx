@@ -52,7 +52,7 @@ export function LevelUp() {
             exit={{ opacity: 0, y: -16, scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 320, damping: 20 }}
             className="absolute left-1/2 -translate-x-1/2 z-[120] pointer-events-none"
-            style={{ top: 'calc(9.5rem + var(--safe-top))' }}
+            style={{ top: 'calc(var(--hud-stack) + 3rem + var(--safe-top))' }}
           >
             <div className="flex items-center gap-3 rounded-2xl border border-amber-300/50 bg-[#241a3fe8] backdrop-blur-md px-4 py-2 shadow-[0_0_28px_rgba(245,158,11,0.5)]">
               <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-300 to-orange-500 flex items-center justify-center text-black font-black text-sm shrink-0">

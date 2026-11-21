@@ -4,6 +4,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Téléphone couché : large mais très peu haut. Le seuil doit rester celui de
+   `isShortLandscape` (src/game/viewport.ts), que lit la caméra. Un écran de
+   bureau est en paysage aussi, mais haut : il garde la mise en page debout. */
+@custom-variant couche (@media (orientation: landscape) and (max-height: 500px));
+
 @theme inline {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -138,6 +143,10 @@
    viewport-fit=cover); the native WebView overrides these variables via
    window.__NATIVE_INSETS__ (see src/lib/safeArea.ts). */
 :root {
+  /* Hauteur de ce que le HUD empile en haut (compteurs + barre d'XP) : le
+     bandeau d'objectif, la carte du tutoriel et le bandeau de pose s'ancrent
+     dessous. Téléphone couché : compteurs et XP sont côte à côte, voir plus bas. */
+  --hud-stack: 6.5rem;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
@@ -154,4 +163,10 @@ html, body, #root {
 canvas {
   touch-action: none;
   display: block;
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  :root {
+    --hud-stack: 3.9rem;
+  }
 }

@@ -80,6 +80,9 @@ const CARDS: Card[][] = [
   ],
 ];
 
+/** Demi-largeur de l'étiquette « NOYAU » de la scène, marge comprise (px). */
+const LABEL_REACH = 82;
+
 export function Tutorial() {
   const step = useGameStore(state => state.tutorialStep);
   const skipTutorial = useGameStore(state => state.skipTutorial);
@@ -111,7 +114,16 @@ export function Tutorial() {
   useEffect(() => {
     const el = boxRef.current;
     if (!shown || !el) return undefined;
-    const measure = () => { hudClearance.top = el.offsetTop + el.offsetHeight; };
+    // Téléphone couché : la carte est rangée à droite, sous la barre d'XP.
+    // Si elle ne passe plus au-dessus de l'étiquette (centrée, ~160 px de
+    // large), il n'y a rien à dégager. Le `translate` du bloc est statique,
+    // donc `getBoundingClientRect` donne ici sa vraie place.
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      const cx = window.innerWidth / 2;
+      const overLabel = r.left < cx + LABEL_REACH && r.right > cx - LABEL_REACH;
+      hudClearance.top = overLabel ? el.offsetTop + el.offsetHeight : 0;
+    };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
@@ -136,8 +148,8 @@ export function Tutorial() {
   return (
     <div
       ref={boxRef}
-      className="absolute left-1/2 -translate-x-1/2 pointer-events-none w-[min(21rem,88vw)]"
-      style={{ top: 'calc(6.4rem + var(--safe-top))' }}
+      className="absolute left-1/2 -translate-x-1/2 pointer-events-none w-[min(21rem,88vw)] couche:w-[min(21rem,35vw)] couche:left-auto couche:translate-x-0 couche:right-[calc(0.75rem+var(--safe-right))]"
+      style={{ top: 'calc(var(--hud-stack) - 0.1rem + var(--safe-top))' }}
     >
       <AnimatePresence mode="wait">
         <motion.div

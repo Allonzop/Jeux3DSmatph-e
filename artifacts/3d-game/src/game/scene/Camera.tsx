@@ -4,11 +4,17 @@ import { surfaceY } from '../world';
 import { damp } from './utils';
 import { shake } from '../effects';
 import { cameraControl } from '../cameraControl';
+import { isShortLandscape } from '../viewport';
 import { useRef } from 'react';
 import * as THREE from 'three';
 
 // Vecteur de travail — la version precedente allouait un Vector3 par image.
 const _target = new THREE.Vector3();
+
+/** Téléphone couché : distance de caméra multipliée par ce facteur. */
+const LYING_ZOOM = 0.72;
+/** Téléphone couché : on vise ce nombre d'unités au-dessus du héros. */
+const LYING_LOOK_UP = 0.9;
 
 /**
  * Camera d'epaule fixe au-dessus du heros.
@@ -23,7 +29,14 @@ export function Camera() {
   /** 0 hors pose, 1 en pleine pose : fondu du cadrage large. Ref, jamais état. */
   const placeBlend = useRef(0);
 
-  useFrame(({ clock }, delta) => {
+  useFrame(({ clock, size }, delta) => {
+    // Téléphone couché : le champ vertical est le même mais l'écran est deux
+    // fois plus large que haut — la vue debout y rend un village minuscule,
+    // collé sous le HUD. On s'approche (la largeur le permet) et on vise plus
+    // haut que le héros, ce qui fait descendre le village sous le bandeau.
+    const lying = isShortLandscape(size.width, size.height);
+    const zoom = lying ? LYING_ZOOM : 1;
+    const lookUp = lying ? LYING_LOOK_UP : 0;
     // Amortissement de l'orientation : une rotation instantanee donne le mal
     // de mer sur un telephone. `damp` la rend independante de la cadence.
     cameraControl.yaw += (cameraControl.target - cameraControl.yaw) * damp(0.12, delta);
@@ -46,7 +59,7 @@ export function Camera() {
     const focusX = heroPos[0] * (1 - pb);
     const focusZ = heroPos[2] * (1 - pb);
     const ground = surfaceY(focusX, focusZ);
-    const back = 13 + pb * 7;
+    const back = (13 + pb * 7) * zoom;
     let targetX = focusX + sin * back;
     let targetZ = focusZ + cos * back;
 
@@ -72,7 +85,7 @@ export function Camera() {
       }
     }
 
-    _target.set(targetX, heroPos[1] + ground + 13.5 + pb * 13, targetZ);
+    _target.set(targetX, heroPos[1] + ground + (13.5 + pb * 13) * zoom, targetZ);
     camera.position.lerp(_target, damp(0.05, delta));
 
     // Secousse : un monstre qui atteint le noyau doit se sentir. L'amplitude
@@ -86,7 +99,7 @@ export function Camera() {
       shake.amount = Math.max(0, a - delta * 2.2);
     }
 
-    camera.lookAt(focusX, heroPos[1] + ground + 1.6, focusZ);
+    camera.lookAt(focusX, heroPos[1] + ground + 1.6 + lookUp, focusZ);
   });
 
   return null;

@@ -20,6 +20,7 @@ node tools/game-check/shot.mjs                       # partie courante, cadre t�
 node tools/game-check/shot.mjs --village             # les six bâtiments construits
 node tools/game-check/shot.mjs --empty               # partie neuve, tutoriel actif
 node tools/game-check/shot.mjs --wide --out /tmp/x.png
+node tools/game-check/shot.mjs --village --landscape --out /tmp/x.png   # téléphone couché (844×390)
 ```
 
 `--wait <ms>` allonge l'attente avant la capture. Le défaut est 30 s, et ce

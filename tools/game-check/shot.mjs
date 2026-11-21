@@ -15,6 +15,7 @@
  *   --upgrading      lance l'amelioration de la tourelle (compte a rebours visible)
  *   --planet <id>   affiche une autre planète (ex. cristalline) (voyage réel, arrivée avec la base de départ)
  *   --wide           cadre bureau (1280×900) au lieu du cadre téléphone
+ *   --landscape      téléphone couché (844×390) — mise en page `couche:` et caméra rapprochée
  *   --wait <ms>      attente avant la capture (défaut 30000)
  *   --out <fichier>  destination (défaut game-shot.png)
  */
@@ -74,7 +75,9 @@ const save = flag('village') ? makeSave(VILLAGE)
     : flag('empty') ? makeSave({ tutorialStep: 0, resources: { boulons: 50, matiere_floue: 0, energie_rire: 0 } })
       : makeSave();
 
-const viewport = flag('wide') ? { width: 1280, height: 900 } : { width: 430, height: 900 };
+const viewport = flag('wide') ? { width: 1280, height: 900 }
+  : flag('landscape') ? { width: 844, height: 390 }
+    : { width: 430, height: 900 };
 const out = opt('out', 'game-shot.png');
 
 const { browser, page, errors } = await openGame(server.url, { save, viewport });
