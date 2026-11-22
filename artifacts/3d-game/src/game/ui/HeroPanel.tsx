@@ -42,11 +42,13 @@ export function HeroPanel({ open, onClose }: { open: boolean; onClose: () => voi
             exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 320, damping: 32 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full bg-[#161a2b] border-t border-white/10 rounded-t-3xl flex flex-col max-h-[82vh]"
+            className="w-full bg-[#161a2b] border-t border-white/10 rounded-t-3xl flex flex-col max-h-[82vh] couche:max-h-[94vh]"
             style={{ paddingBottom: 'var(--safe-bottom)' }}
           >
-            <div className="shrink-0 px-4 pt-3 pb-2">
-              <div className="mx-auto w-10 h-1 rounded-full bg-white/20 mb-3" />
+            {/* Couché : sans poignée, et les cartes sur deux colonnes —
+                même réglage que la feuille Construire. */}
+            <div className="shrink-0 px-4 pt-3 pb-2 couche:pt-2">
+              <div className="mx-auto w-10 h-1 rounded-full bg-white/20 mb-3 couche:hidden" />
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <CharacterPortrait def={heroDef} size={64} />
@@ -67,7 +69,7 @@ export function HeroPanel({ open, onClose }: { open: boolean; onClose: () => voi
               </div>
             </div>
 
-            <div className="overflow-y-auto px-4 pb-4 flex flex-col gap-2.5">
+            <div className="overflow-y-auto px-4 pb-4 flex flex-col gap-2.5 couche:grid couche:grid-cols-2 couche:items-start">
               {HERO_TRACKS.map((track) => {
                 const level = upgrades[track.id] || 0;
                 const maxed = level >= track.maxLevel;
@@ -142,7 +144,7 @@ export function HeroPanel({ open, onClose }: { open: boolean; onClose: () => voi
                 );
               })}
 
-              <div className="text-white/70 text-[0.72rem] font-black uppercase tracking-[0.2em] mt-2 px-1">
+              <div className="text-white/70 text-[0.72rem] font-black uppercase tracking-[0.2em] mt-2 px-1 couche:col-span-2">
                 Pouvoirs
               </div>
 

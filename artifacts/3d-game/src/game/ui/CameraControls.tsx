@@ -88,10 +88,10 @@ export function CameraControls() {
   const button = 'pointer-events-auto w-12 h-12 rounded-2xl bg-[#1e2336dd] backdrop-blur-md border border-white/12 text-white/80 flex items-center justify-center active:scale-90 active:text-white transition-transform';
 
   return (
-    <div
-      className="absolute flex flex-col items-center gap-1.5 pointer-events-none"
-      style={{ left: 'calc(0.75rem + var(--safe-left))', bottom: 'calc(5.5rem + var(--safe-bottom))' }}
-    >
+    // Plus de position absolue : le HUD range ce bloc dans sa rangée du bas, à
+    // gauche des boutons de pouvoir. Posé à 5,5 rem du bas, il recouvrait le
+    // premier pouvoir (au-dessus de « Construire ») — vu téléphone couché.
+    <div className="shrink-0 flex flex-col items-center gap-1.5 pointer-events-none">
       {/* Boussole : le nord de la carte, qui tourne avec la vue. */}
       <button
         onClick={() => { sfx.tap(); resetCameraYaw(); }}

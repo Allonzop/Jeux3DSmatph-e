@@ -139,8 +139,6 @@ export function HUD() {
 
       {!placingBuilding && tutorialStep >= 5 && <ObjectiveChip />}
 
-      <CameraControls />
-
       {/* ---------- Bas : agir ---------- */}
       <div
         className="flex flex-col items-stretch gap-2"
@@ -151,7 +149,13 @@ export function HUD() {
         }}
       >
         <div className="flex items-end justify-between gap-3">
-          <PowerButtons />
+          {/* Vue et pouvoirs côte à côte : la rangée les empêche de se
+              recouvrir, ce que deux blocs placés chacun de leur côté
+              faisaient dès qu'un pouvoir s'ouvrait. */}
+          <div className="flex items-end gap-2 min-w-0">
+            <CameraControls />
+            <PowerButtons />
+          </div>
           <ComboMeter />
         </div>
 

@@ -45,7 +45,10 @@ export function ZonePopup() {
       <div
         className="absolute inset-0 z-[108] pointer-events-auto flex items-end justify-center bg-black/50 backdrop-blur-sm"
         onClick={() => selectZone(null)}
-        style={{ paddingBottom: 'calc(1rem + var(--safe-bottom))' }}
+        style={{
+          paddingBottom: 'calc(1rem + var(--safe-bottom))',
+          paddingTop: 'calc(0.75rem + var(--safe-top))',
+        }}
       >
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -53,11 +56,15 @@ export function ZonePopup() {
           exit={{ opacity: 0, y: 30 }}
           transition={{ duration: 0.2 }}
           onClick={(e) => e.stopPropagation()}
-          className="w-[min(22rem,92vw)] rounded-2xl border bg-[#161a2bf5] backdrop-blur-md overflow-hidden"
+          // Bornée à la hauteur de l'écran, corps défilant : téléphone couché
+          // (390 px), la fiche faisait 470 px et son titre comme sa croix
+          // sortaient par le haut. Couché, elle s'élargit sur deux colonnes
+          // et tient alors sans défiler.
+          className="w-[min(22rem,92vw)] couche:w-[min(40rem,92vw)] max-h-full flex flex-col rounded-2xl border bg-[#161a2bf5] backdrop-blur-md overflow-hidden"
           style={{ borderColor: `${zone.palette.glow}55`, boxShadow: `0 0 34px ${zone.palette.glow}33` }}
         >
           <div
-            className="px-4 py-3 flex items-start justify-between gap-3"
+            className="shrink-0 px-4 py-3 couche:py-2 flex items-start justify-between gap-3"
             style={{ backgroundColor: `${zone.palette.glow}18` }}
           >
             <div className="min-w-0">
@@ -78,7 +85,8 @@ export function ZonePopup() {
             </button>
           </div>
 
-          <div className="p-4 flex flex-col gap-3">
+          <div className="min-h-0 overflow-y-auto p-4 couche:p-3 flex flex-col gap-3 couche:grid couche:grid-cols-2 couche:items-start">
+           <div className="flex flex-col gap-3">
             <p className="text-white/65 text-[0.82rem] leading-snug">{zone.blurb}</p>
 
             {/* Ce que l'annexion rapporte vraiment. Sans ces deux lignes, on
@@ -99,7 +107,9 @@ export function ZonePopup() {
                 </span>
               </div>
             </div>
+           </div>
 
+           <div className="flex flex-col gap-3">
             <div className="rounded-xl bg-black/25 border border-white/5 p-3 flex flex-col gap-1.5 text-[0.75rem]">
               <div className="flex justify-between">
                 <span className="text-white/70">Terrain gagné</span>
@@ -152,6 +162,7 @@ export function ZonePopup() {
                   ? 'Ressources insuffisantes'
                   : 'Annexer ce secteur'}
             </button>
+           </div>
           </div>
         </motion.div>
       </div>

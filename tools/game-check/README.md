@@ -23,6 +23,13 @@ node tools/game-check/shot.mjs --wide --out /tmp/x.png
 node tools/game-check/shot.mjs --village --landscape --out /tmp/x.png   # téléphone couché (844×390)
 ```
 
+Pour les feuilles et écrans (menu Construire, fiches, fin et annonce de
+vague, pouvoirs) à une taille donnée, d'un coup :
+
+```bash
+node tools/game-check/screens.mjs 844 390 /tmp/ecrans      # téléphone couché
+```
+
 `--wait <ms>` allonge l'attente avant la capture. Le défaut est 30 s, et ce
 n'est pas de la prudence excessive : le rendu logiciel tourne à quelques images
 par seconde, et l'apparition des bâtiments borne son pas de temps, donc elle

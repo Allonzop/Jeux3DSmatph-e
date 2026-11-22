@@ -109,12 +109,15 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
             exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 320, damping: 32 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full bg-[#161a2b] border-t border-white/10 rounded-t-3xl flex flex-col max-h-[80vh]"
+            className="w-full bg-[#161a2b] border-t border-white/10 rounded-t-3xl flex flex-col max-h-[80vh] couche:max-h-[94vh]"
             style={{ paddingBottom: 'var(--safe-bottom)' }}
           >
             {/* Poignee + titre */}
-            <div className="shrink-0 px-4 pt-3 pb-2">
-              <div className="mx-auto w-10 h-1 rounded-full bg-white/20 mb-3" />
+            {/* Téléphone couché, la feuille n'a que 370 px : sans poignée ni
+                marges hautes, et les cartes sur deux colonnes, on en voit
+                quatre au lieu d'une et demie. */}
+            <div className="shrink-0 px-4 pt-3 pb-2 couche:pt-2">
+              <div className="mx-auto w-10 h-1 rounded-full bg-white/20 mb-3 couche:hidden" />
               <div className="flex items-center justify-between">
                 <h2 className="text-white font-black uppercase tracking-wider text-sm">Construire</h2>
                 <button
@@ -127,7 +130,7 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
               </div>
 
               {/* Onglets par role : trois familles, pas neuf pastilles. */}
-              <div className="flex gap-1.5 mt-3">
+              <div className="flex gap-1.5 mt-3 couche:mt-1.5">
                 {groups.map((g) => (
                   <button
                     key={g.role}
@@ -153,8 +156,12 @@ export function BuildSheet({ open, onClose }: { open: boolean; onClose: () => vo
               </div>
             </div>
 
-            <div className="overflow-y-auto px-4 pb-4 flex flex-col gap-2.5">
-              {tab === 'empire' && <EmpirePanel onClose={onClose} />}
+            <div className="overflow-y-auto px-4 pb-4 flex flex-col gap-2.5 couche:grid couche:grid-cols-2 couche:items-start">
+              {tab === 'empire' && (
+                <div className="flex flex-col gap-2.5 couche:col-span-2">
+                  <EmpirePanel onClose={onClose} />
+                </div>
+              )}
               {tab === 'defense' && <CoreCard />}
 
               {shown.map((data) => {
