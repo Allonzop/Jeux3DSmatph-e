@@ -214,11 +214,16 @@ export function BuildingPopup() {
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-[#1e2336] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md overflow-y-auto max-h-full"
+          // Bornée à la hauteur de l'écran, en-tête fixe, corps défilant.
+          // Téléphone couché (390 px), la fiche faisait ~560 px : coût et
+          // « Améliorer » n'apparaissaient qu'en défilant. Couché, elle
+          // s'élargit sur deux colonnes (à gauche ce que fait le bâtiment, à
+          // droite ce que coûte la suite), comme la fiche de zone.
+          className="bg-[#1e2336] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md couche:max-w-[46rem] max-h-full flex flex-col overflow-hidden"
           style={{ boxShadow: `0 0 40px ${data.color}33` }}
         >
           {/* Header */}
-          <div className="p-4 flex items-center justify-between border-b border-white/10" style={{ backgroundColor: `${data.color}22` }}>
+          <div className="shrink-0 p-4 couche:py-2 flex items-center justify-between border-b border-white/10" style={{ backgroundColor: `${data.color}22` }}>
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-12 h-12 shrink-0 rounded-xl bg-black/30 flex items-center justify-center shadow-inner border border-white/5">
                 <BuildingIcon id={data.id} className="w-8 h-8" />
@@ -263,7 +268,9 @@ export function BuildingPopup() {
           {/* À quoi ça sert — la premiere chose lue, avant les chiffres —
               et qui l'occupe, en 3D. Le Bar montre un Chasseur spatial : c'est
               lui qu'il recrute, pas un villageois. */}
-          <div className="px-5 pt-4 flex items-start gap-3">
+          <div className="min-h-0 overflow-y-auto couche:grid couche:grid-cols-2 couche:items-start couche:gap-4 couche:p-3">
+          <div className="flex flex-col">
+          <div className="px-5 pt-4 couche:p-0 flex items-start gap-3">
             {resident && <CharacterPortrait def={resident} size={84} />}
             <div className="min-w-0 flex-1">
               {resident && (
@@ -276,7 +283,7 @@ export function BuildingPopup() {
           </div>
 
           {/* Body */}
-          <div className="p-5 flex flex-col gap-4">
+          <div className="p-5 couche:p-0 couche:pt-3 flex flex-col gap-4">
 
             {/* Current Stats */}
             <div className="bg-black/20 rounded-xl p-4 border border-white/5 flex flex-col gap-2">
@@ -299,6 +306,10 @@ export function BuildingPopup() {
                 <span className="text-white/40">—</span>
               )}
             </div>
+          </div>
+          </div>
+
+          <div className="px-5 pb-5 couche:p-0">
 
             {/* Upgrade Section */}
             {!isMax ? (
@@ -368,6 +379,7 @@ export function BuildingPopup() {
                 <div className="text-amber-400 font-bold uppercase tracking-widest">Niveau maximum atteint</div>
               </div>
             )}
+          </div>
           </div>
         </motion.div>
       </div>
