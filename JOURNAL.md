@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-11-24 — Fiche de bâtiment à 360 px : l'en-tête ne se coupe plus
+
+**Fait.** Première tâche non cochée du backlog. Reproduit avec `screens.mjs 360 640 … bld` : « Niveau 2 » puis « / 5 » seul à la ligne, la pastille « DÉFENSE » collée au bouton « déplacer ». `ui/BuildingPopup.tsx` : la ligne niveau + rôle passe en `flex-wrap` (`gap-x-2 gap-y-0.5`), « Niveau N / M » et la pastille en `whitespace-nowrap`. Quand la place manque, c'est la pastille entière qui descend sous le niveau ; sinon rien ne change.
+
+**Vérifié.** typecheck 6 projets OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; `shot.mjs --village` ouverte, inchangée, aucune erreur. Captures `screens.mjs … bld` ouvertes après correctif : 360×640 (« Niveau 2 / 5 » sur une ligne, « DÉFENSE » dessous, détaché des boutons), 320×568 (idem), 430×900 et 844×390 (tout sur une ligne, comme avant). Avant correctif à 320×568 c'était pire qu'à 360 : la pastille passait sous le bouton « déplacer ».
+
+**Pas fait / à juger.** L'en-tête gagne une ligne (~20 px) sous ~400 px de large. Vu, préexistant, ajouté au backlog : à 320 px le nom est tronqué (« Tourell… »). Rien d'essayé sans succès.
+
 ## 2026-11-23 — Téléphone couché : la fiche de bâtiment tient sans défiler
 
 **Fait.** Première tâche non cochée du backlog. Reproduit avec `screens.mjs … bld` : à 844×390 la fiche de la tourelle s'arrêtait sur « Coût du niveau suivant », coût et « Améliorer » sous le bord ; à 568×320 on ne voyait que l'en-tête, l'occupant et deux lignes de stats. `ui/BuildingPopup.tsx` : la fiche devient une colonne flex bornée (`max-h-full`), en-tête fixe (`shrink-0`), corps seul défilant — comme `ZonePopup`. Couché (`couche:`), elle s'élargit à 46 rem et le corps passe sur deux colonnes : à gauche occupant + texte + « Actuellement », à droite coût, « Après amélioration », durée et bouton ; en-tête resserré (`py-2`). Debout, mêmes blocs dans le même ordre : rendu inchangé.

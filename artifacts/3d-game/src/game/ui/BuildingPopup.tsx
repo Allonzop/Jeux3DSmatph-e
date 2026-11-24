@@ -233,12 +233,16 @@ export function BuildingPopup() {
                   {data.name}
                   {copy > 1 && <span className="text-white/40 text-base"> nº{copy}</span>}
                 </h2>
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <span style={{ color: data.color }}>
+                {/* Sur un écran étroit (360 px), « / 5 » tombait seul à la
+                    ligne et la pastille du rôle se collait au bouton
+                    « déplacer » : le niveau ne se coupe plus, et c'est la
+                    pastille entière qui passe dessous s'il manque la place. */}
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm font-medium">
+                  <span className="whitespace-nowrap" style={{ color: data.color }}>
                     Niveau {level} <span className="text-white/30">/ {data.maxLevel}</span>
                   </span>
                   <span
-                    className="px-1.5 py-0.5 rounded text-[0.72rem] font-black uppercase tracking-wider"
+                    className="px-1.5 py-0.5 rounded text-[0.72rem] font-black uppercase tracking-wider whitespace-nowrap"
                     style={{ backgroundColor: `${ROLE_TINT[data.role]}22`, color: ROLE_TINT[data.role] }}
                   >
                     {ROLE_LABEL[data.role]}
