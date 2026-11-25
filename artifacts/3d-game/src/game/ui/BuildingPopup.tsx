@@ -223,13 +223,16 @@ export function BuildingPopup() {
           style={{ boxShadow: `0 0 40px ${data.color}33` }}
         >
           {/* Header */}
-          <div className="shrink-0 p-4 couche:py-2 flex items-center justify-between border-b border-white/10" style={{ backgroundColor: `${data.color}22` }}>
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-12 h-12 shrink-0 rounded-xl bg-black/30 flex items-center justify-center shadow-inner border border-white/5">
-                <BuildingIcon id={data.id} className="w-8 h-8" />
+          <div className="shrink-0 p-4 max-[340px]:px-3 couche:py-2 flex items-center justify-between gap-2 border-b border-white/10" style={{ backgroundColor: `${data.color}22` }}>
+            <div className="flex items-center gap-3 max-[340px]:gap-2 min-w-0">
+              <div className="w-12 h-12 max-[340px]:w-9 max-[340px]:h-9 shrink-0 rounded-xl bg-black/30 flex items-center justify-center shadow-inner border border-white/5">
+                <BuildingIcon id={data.id} className="w-8 h-8 max-[340px]:w-6 max-[340px]:h-6" />
               </div>
               <div className="min-w-0">
-                <h2 className="text-xl font-bold text-white tracking-wide truncate">
+                {/* Le nom ne se tronque plus (« Tourell… » à 320 px) : il passe
+                    sur deux lignes s'il le faut, et sous 340 px l'icône, les
+                    marges et le corps du titre se resserrent. */}
+                <h2 className="text-xl max-[340px]:text-lg leading-tight font-bold text-white tracking-wide max-[340px]:tracking-normal [overflow-wrap:anywhere]">
                   {data.name}
                   {copy > 1 && <span className="text-white/40 text-base"> nº{copy}</span>}
                 </h2>
@@ -250,7 +253,7 @@ export function BuildingPopup() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0 -mr-1">
+            <div className="flex items-center gap-2 max-[340px]:gap-1 shrink-0 -mr-1">
               <button
                 onClick={() => { sfx.tap(); startPlacing(selectedBuilding); }}
                 title="Déplacer ce bâtiment"

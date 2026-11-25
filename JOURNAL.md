@@ -11,6 +11,14 @@ Format : ce qui a été fait, comment ça a été vérifié, ce qui reste ouvert
 
 ---
 
+## 2026-11-25 — Fiche de bâtiment : le nom n'est plus tronqué sur petit écran
+
+**Fait.** Première tâche non cochée du backlog. Reproduit avec `screens.mjs 320 568 … bld` : « Tourell… ». En mesurant les autres bâtiments (script maison : `selectBuilding` sur tourelle, `tourelle#2`, `mortier#2`, cryo, bar, hutte, `getBoundingClientRect` du titre), le défaut n'était pas réservé à 320 px : à 360 px « Tourelle laser » et « Cryo-diffuseur » étaient coupés aussi, et à 430 px « Mortier à plasma nº2 ». `ui/BuildingPopup.tsx` : le titre perd `truncate` et passe sur deux lignes s'il le faut (`leading-tight`, `[overflow-wrap:anywhere]` en filet de sécurité) ; sous 340 px (`max-[340px]:`, même seuil que le HUD) l'icône passe de 48 à 36 px, les marges et l'écart entre les deux boutons ronds se resserrent, le titre passe de `text-xl` à `text-lg` sans interlettrage. Les boutons restent à 44 px.
+
+**Vérifié.** typecheck 6 projets OK ; `wave.mjs --check` 2/2 ; `studio selftest` 5/5 ; `shot.mjs --village` ouverte, inchangée, aucune erreur. Mesures après correctif (`scrollWidth` = `clientWidth` partout, donc rien de coupé) : à 320×568 titre de 122 px de large (≈100 avant) — « Tourelle laser », « Bar Spatial », « Hutte » sur une ligne, « Tourelle laser nº2 », « Mortier à plasma nº2 », « Cryo-diffuseur » sur deux ; à 360×640 (134 px) « Tourelle laser » sur deux lignes ; à 430×900 seul « Mortier à plasma nº2 » passe sur deux lignes ; à 844×390 tout sur une ligne, comme avant. Boutons mesurés à 44 px, 4 px d'écart à 320, 8 ailleurs. Captures d'en-tête ouvertes : 320 (tourelle, mortier nº2), 360 (cryo), 430 (mortier nº2).
+
+**Pas fait / à juger.** « Cryo-diffuseur » se coupe au trait d'union (« Cryo- / diffuseur ») à 320 et 360 px : lisible, pas très élégant. L'en-tête gagne une ligne (~23 px) quand le nom passe sur deux. Le backlog n'a plus de case ouverte hors « En attente d'Allonzo » : la prochaine séance devra jouer pour trouver. Rien d'essayé sans succès. Piège : PIL est cassé dans le conteneur (`_imaging`), pas de planche d'images — ouvrir les captures une par une.
+
 ## 2026-11-24 — Fiche de bâtiment à 360 px : l'en-tête ne se coupe plus
 
 **Fait.** Première tâche non cochée du backlog. Reproduit avec `screens.mjs 360 640 … bld` : « Niveau 2 » puis « / 5 » seul à la ligne, la pastille « DÉFENSE » collée au bouton « déplacer ». `ui/BuildingPopup.tsx` : la ligne niveau + rôle passe en `flex-wrap` (`gap-x-2 gap-y-0.5`), « Niveau N / M » et la pastille en `whitespace-nowrap`. Quand la place manque, c'est la pastille entière qui descend sous le niveau ; sinon rien ne change.
