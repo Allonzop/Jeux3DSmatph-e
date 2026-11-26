@@ -608,6 +608,10 @@ export const useGameStore = create<GameState>()(
       },
       
       updateParticles: (delta) => {
+        // Appele a chaque image : sans particule, ne rien ecrire. Un `set`
+        // ici, meme pour un tableau vide, re-rend ses abonnes soixante fois
+        // par seconde (voir `.agents/memory/r3f-game-perf.md`).
+        if (get().particles.length === 0) return;
         set((state) => {
           const speed = 2 * delta; // 0 to 1 in 0.5 seconds
           const newParticles = state.particles.map(p => ({

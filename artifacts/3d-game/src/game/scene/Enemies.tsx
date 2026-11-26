@@ -39,24 +39,39 @@ export function Enemies() {
   const [mounted, setMounted] = React.useState(INSTANT_BATCH);
 
   // Chaque nouvelle vague repart du premier paquet.
+  //
+  // L'effet se declenche sur `waveActive`, pas sur le tableau `enemies` : ce
+  // tableau change d'identite a *chaque coup porte* (`damageEnemy` le
+  // reconstruit), pas seulement a chaque vague. Declenche dessus, l'effet
+  // remettait `mounted` a six a chaque tir : au-dela de six monstres, les
+  // suivants etaient demontes — donc renvoyes a leur point d'apparition, leur
+  // position ne vivant que le temps du composant — puis remontes 120 ms plus
+  // tard, et ainsi de suite tant qu'une tour tirait. Une vague de onze
+  // arrivait en realite six par six, et ces mises a jour jamais terminees
+  // finissaient en « Maximum update depth exceeded » dans le reconciliateur.
+  const waveActive = useGameStore((state) => state.waveActive);
+  // Remise a six *pendant* le rendu qui voit la vague demarrer, pas dans un
+  // effet : un effet passe apres l'affichage, et la premiere image montait
+  // alors toute la vague d'un coup — le gel que l'etalement doit eviter. En
+  // fin de vague on ne touche a rien, pour laisser finir les animations de
+  // mort des monstres encore dans le tableau.
+  const [seenActive, setSeenActive] = React.useState(waveActive);
+  if (seenActive !== waveActive) {
+    setSeenActive(waveActive);
+    if (waveActive) setMounted(INSTANT_BATCH);
+  }
   React.useEffect(() => {
-    if (enemies.length <= INSTANT_BATCH) {
-      setMounted(INSTANT_BATCH);
-      return undefined;
-    }
-    setMounted(INSTANT_BATCH);
+    if (!waveActive) return undefined;
+    const total = useGameStore.getState().enemies.length;
+    if (total <= INSTANT_BATCH) return undefined;
+    let shown = INSTANT_BATCH;
     const id = setInterval(() => {
-      setMounted((n) => {
-        const next = n + BATCH_SIZE;
-        if (next >= enemies.length) clearInterval(id);
-        return next;
-      });
+      shown += BATCH_SIZE;
+      setMounted(shown);
+      if (shown >= total) clearInterval(id);
     }, BATCH_DELAY);
     return () => clearInterval(id);
-    // Une vague = une identite de tableau. Se declencher sur `enemies.length`
-    // relancerait l'etalement a chaque mort de monstre.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enemies]);
+  }, [waveActive]);
 
   return (
     <group>
